@@ -4,21 +4,19 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/server/better-auth/client";
 
-export function GitHubButton() {
+export function GoogleButton() {
 	const [isPending, startTransition] = useTransition();
 
-	function handleGitHubSignIn() {
+	function handleGoogleSignIn() {
 		startTransition(async () => {
 			try {
 				const result = await authClient.signIn.social({
-					provider: "github",
-					//callbackURL: "/",
+					provider: "google",
 				});
 
-                console.log(result);
-
+				console.log(result);
 			} catch (error) {
-				console.error("Fehler bei GitHub-Anmeldung:", error);
+				console.error("Fehler bei Google-Anmeldung:", error);
 			}
 		});
 	}
@@ -26,10 +24,11 @@ export function GitHubButton() {
 	return (
 		<Button
 			disabled={isPending}
-			onClick={handleGitHubSignIn}
+			onClick={handleGoogleSignIn}
 			variant="outline"
 		>
-			{isPending ? "Wird geladen..." : "GitHub sign in"}
+			{isPending ? "Wird geladen..." : "Google sign in"}
 		</Button>
 	);
 }
+

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/server/better-auth/server";
 import { GitHubButton } from "./github-button";
+import { GoogleButton } from "./google-button";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
@@ -19,6 +20,7 @@ export default async function LoginPage() {
 				<LoginForm />
 			</div>
 			<GitHubButton />
+			<GoogleButton />
 		</div>
 	);
 }

@@ -7,12 +7,15 @@ export const env = createEnv({
 	 * isn't built with invalid env vars.
 	 */
 	server: {
+		BETTER_AUTH_URL: z.string().url(),
 		BETTER_AUTH_SECRET:
 			process.env.NODE_ENV === "production"
 				? z.string()
 				: z.string().optional(),
 		BETTER_AUTH_GITHUB_CLIENT_ID: z.string(),
 		BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string(),
+		BETTER_AUTH_GOOGLE_CLIENT_ID: z.string(),
+		BETTER_AUTH_GOOGLE_CLIENT_SECRET: z.string(),
 		DATABASE_URL: z.string().url(),
 		AUTH_RESEND_KEY: z.string(),
 		AUTH_RESEND_FROM_ADDRESS: z.string().email(),
@@ -35,10 +38,14 @@ export const env = createEnv({
 	 * middlewares) or client-side so we need to destruct manually.
 	 */
 	runtimeEnv: {
+		BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_GITHUB_CLIENT_ID: process.env.BETTER_AUTH_GITHUB_CLIENT_ID,
 		BETTER_AUTH_GITHUB_CLIENT_SECRET:
 			process.env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
+		BETTER_AUTH_GOOGLE_CLIENT_ID: process.env.BETTER_AUTH_GOOGLE_CLIENT_ID,
+		BETTER_AUTH_GOOGLE_CLIENT_SECRET:
+			process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET,
 		DATABASE_URL: process.env.DATABASE_URL,
 		AUTH_RESEND_KEY: process.env.AUTH_RESEND_KEY,
 		AUTH_RESEND_FROM_ADDRESS: process.env.AUTH_RESEND_FROM_ADDRESS,
