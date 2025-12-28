@@ -62,7 +62,6 @@ export function LoginForm() {
 		} catch (error) {
 			form.setError("email", {
 				message: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
-				
 			});
 		} finally {
 			setIsLoading(false);
@@ -100,7 +99,7 @@ export function LoginForm() {
 					name="email"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel className="text-white">E-Mail-Adresse</FormLabel>
+							<FormLabel>E-Mail-Adresse</FormLabel>
 							<FormControl>
 								<Input
 									disabled={isLoading}
