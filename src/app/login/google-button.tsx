@@ -13,8 +13,6 @@ export function GoogleButton() {
 				const result = await authClient.signIn.social({
 					provider: "google",
 				});
-
-				console.log(result);
 			} catch (error) {
 				console.error("Fehler bei Google-Anmeldung:", error);
 			}
@@ -22,13 +20,8 @@ export function GoogleButton() {
 	}
 
 	return (
-		<Button
-			disabled={isPending}
-			onClick={handleGoogleSignIn}
-			variant="outline"
-		>
+		<Button disabled={isPending} onClick={handleGoogleSignIn} variant="outline">
 			{isPending ? "Wird geladen..." : "Google sign in"}
 		</Button>
 	);
 }
-

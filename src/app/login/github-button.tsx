@@ -14,9 +14,6 @@ export function GitHubButton() {
 					provider: "github",
 					//callbackURL: "/",
 				});
-
-                console.log(result);
-
 			} catch (error) {
 				console.error("Fehler bei GitHub-Anmeldung:", error);
 			}
@@ -24,11 +21,7 @@ export function GitHubButton() {
 	}
 
 	return (
-		<Button
-			disabled={isPending}
-			onClick={handleGitHubSignIn}
-			variant="outline"
-		>
+		<Button disabled={isPending} onClick={handleGitHubSignIn} variant="outline">
 			{isPending ? "Wird geladen..." : "GitHub sign in"}
 		</Button>
 	);
