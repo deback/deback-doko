@@ -331,13 +331,6 @@ export default class GameServer implements Party.Server {
 		leadSuit: Suit,
 		trump: Suit | "jacks" | "queens",
 	): number {
-		// In Doppelkopf:
-		// - Jacks (Buben) are always trump, highest value
-		// - Queens (Damen) are also trump
-		// - Diamonds (Karo) are also trump
-		// - Ace is highest in non-trump suits
-		// - Then King, Queen (if not trump), 10, 9
-
 		const isTrump = this.isTrump(card, trump);
 		const isLeadSuit = card.suit === leadSuit;
 

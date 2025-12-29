@@ -424,58 +424,142 @@ export function GameClient({ player, gameId }: GameClientProps) {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="flex flex-wrap gap-2">
-						{sortedHand.map((card) => {
-							// In Doppelkopf sind Herz 10, Buben, Damen und Karo Trumpf
-							const isHearts10 = card.suit === "hearts" && card.rank === "10";
-							const isTrump =
-								isHearts10 ||
-								(gameState.trump === "jacks"
-									? card.rank === "jack" ||
-										card.rank === "queen" ||
-										card.suit === "diamonds"
-									: card.rank === "queen" || card.suit === "diamonds");
+					<div className="relative flex items-center justify-center py-12">
+						<div
+							className="relative"
+							style={{ height: "200px", width: "100%" }}
+						>
+							{sortedHand.map((card, index) => {
+								// In Doppelkopf sind Herz 10, Buben, Damen und Karo Trumpf
+								const isHearts10 = card.suit === "hearts" && card.rank === "10";
+								const isTrump =
+									isHearts10 ||
+									(gameState.trump === "jacks"
+										? card.rank === "jack" ||
+											card.rank === "queen" ||
+											card.suit === "diamonds"
+										: card.rank === "queen" || card.suit === "diamonds");
 
-							const isPlayable = playableCards.some((c) => c.id === card.id);
-							const canClick = isMyTurn() && isPlayable;
+								const isPlayable = playableCards.some((c) => c.id === card.id);
+								const canClick = isMyTurn() && isPlayable;
 
-							return (
-								<Button
-									className={`h-20 w-14 flex-col gap-1 p-2 ${
-										isHearts10
-											? "border-2 border-red-600 bg-red-50 dark:bg-red-950"
-											: isTrump
-												? "border-2 border-yellow-500"
+								// Berechne Rotation und Position für Halbkreis-Effekt
+								const totalCards = sortedHand.length;
+								const maxRotation = 30; // Maximale Rotation in Grad
+								const rotationStep = (maxRotation * 2) / (totalCards - 1 || 1);
+								const rotation = -maxRotation + index * rotationStep;
+
+								// Halbkreis-Form: Berechne Position auf einem Kreisbogen
+								const radius = 200; // Radius des Halbkreises
+								const angle = (rotation * Math.PI) / 180; // Winkel in Radiant
+								const translateX = Math.sin(angle) * radius;
+								const translateY = -Math.cos(angle) * radius + radius;
+
+								const zIndex = index;
+
+								return (
+									<Button
+										className={`absolute top-0 left-1/2 h-36 w-24 rounded-lg transition-all duration-200 hover:z-50 hover:scale-110 ${
+											isHearts10
+												? "border-2 border-red-600 bg-red-50 dark:bg-red-950"
+												: isTrump
+													? "border-2 border-yellow-500"
+													: "bg-white dark:bg-gray-800"
+										} ${
+											isMyTurn() && isPlayable
+												? "ring-2 ring-green-500 ring-offset-2"
 												: ""
-									} ${
-										isMyTurn() && isPlayable
-											? "ring-2 ring-green-500 ring-offset-2"
-											: ""
-									} ${
-										isMyTurn() && !isPlayable
-											? "cursor-not-allowed opacity-50"
-											: ""
-									}`}
-									disabled={!canClick}
-									key={card.id}
-									onClick={() => playCard(card.id)}
-									variant={canClick ? "default" : "outline"}
-								>
-									<span
-										className={`font-bold text-lg ${getSuitColor(card.suit)}`}
+										} ${
+											isMyTurn() && !isPlayable
+												? "cursor-not-allowed opacity-50"
+												: ""
+										}`}
+										disabled={!canClick}
+										key={card.id}
+										onClick={() => playCard(card.id)}
+										style={{
+											transform: `translate(calc(-50% + ${translateX}px), ${translateY}px) rotate(${rotation}deg)`,
+											zIndex: zIndex,
+										}}
+										variant={canClick ? "default" : "outline"}
 									>
-										{getSuitSymbol(card.suit)}
-									</span>
-									<span className="text-xs">{getRankDisplay(card.rank)}</span>
-									{isHearts10 && (
-										<span className="font-bold text-red-600 text-xs">★</span>
-									)}
-									{isTrump && !isHearts10 && (
-										<span className="text-xs text-yellow-500">T</span>
-									)}
-								</Button>
-							);
-						})}
+										{/* Oben links */}
+										<div
+											className={`absolute top-1 left-1 flex flex-col items-start ${getSuitColor(card.suit)}`}
+										>
+											<span className="font-bold leading-none">
+												{getRankDisplay(card.rank)}
+											</span>
+											<span className="text-xs leading-none">
+												{getSuitSymbol(card.suit)}
+											</span>
+										</div>
+
+										{/* Oben rechts */}
+										<div
+											className={`absolute top-1 right-1 flex flex-col items-end ${getSuitColor(card.suit)}`}
+										>
+											<span className="font-bold leading-none">
+												{getRankDisplay(card.rank)}
+											</span>
+											<span className="text-xs leading-none">
+												{getSuitSymbol(card.suit)}
+											</span>
+										</div>
+
+										{/* Unten links */}
+										<div
+											className={`absolute bottom-1 left-1 flex rotate-180 flex-col items-start ${getSuitColor(card.suit)}`}
+										>
+											<span className="font-bold leading-none">
+												{getRankDisplay(card.rank)}
+											</span>
+											<span className="text-xs leading-none">
+												{getSuitSymbol(card.suit)}
+											</span>
+										</div>
+
+										{/* Unten rechts */}
+										<div
+											className={`absolute right-1 bottom-1 flex rotate-180 flex-col items-end ${getSuitColor(card.suit)}`}
+										>
+											<span className="font-bold leading-none">
+												{getRankDisplay(card.rank)}
+											</span>
+											<span className="text-xs leading-none">
+												{getSuitSymbol(card.suit)}
+											</span>
+										</div>
+
+										{/* Zentrum - größere Anzeige */}
+										<div className="flex h-full items-center justify-center">
+											<div
+												className={`flex flex-col items-center ${getSuitColor(card.suit)}`}
+											>
+												<span className="font-bold text-2xl">
+													{getSuitSymbol(card.suit)}
+												</span>
+												<span className="font-semibold text-sm">
+													{getRankDisplay(card.rank)}
+												</span>
+											</div>
+										</div>
+
+										{/* Trumpf-Markierungen */}
+										{isHearts10 && (
+											<span className="absolute top-2 right-2 font-bold text-red-600 text-xs">
+												★
+											</span>
+										)}
+										{isTrump && !isHearts10 && (
+											<span className="absolute top-2 right-2 text-xs text-yellow-500">
+												T
+											</span>
+										)}
+									</Button>
+								);
+							})}
+						</div>
 					</div>
 				</CardContent>
 			</Card>
