@@ -1,10 +1,15 @@
 import { redirect } from "next/navigation";
-import { TablesClient } from "@/components/tables/tables-client";
 import { getSession } from "@/server/better-auth/server";
+import { GameClient } from "@/components/game/game-client";
 import type { Player } from "@/types/tables";
 
-export default async function TablesPage() {
+interface GamePageProps {
+	params: Promise<{ gameId: string }>;
+}
+
+export default async function GamePage({ params }: GamePageProps) {
 	const session = await getSession();
+	const { gameId } = await params;
 
 	if (!session?.user) {
 		redirect("/login");
@@ -19,7 +24,8 @@ export default async function TablesPage() {
 
 	return (
 		<main className="min-h-screen">
-			<TablesClient player={player} />
+			<GameClient player={player} gameId={gameId} />
 		</main>
 	);
 }
+

@@ -1,6 +1,7 @@
 export interface Player {
 	id: string;
 	name: string;
+	email?: string;
 }
 
 export interface Table {
@@ -8,6 +9,8 @@ export interface Table {
 	name: string;
 	players: Player[];
 	createdAt: number;
+	gameId?: string;
+	gameStarted: boolean;
 }
 
 export interface TablesState {
@@ -23,4 +26,10 @@ export type TableEvent =
 
 export type TableMessage =
 	| { type: "state"; state: TablesState }
-	| { type: "error"; message: string };
+	| { type: "error"; message: string }
+	| {
+			type: "game-started";
+			gameId: string;
+			tableId: string;
+			players: Player[];
+	  };

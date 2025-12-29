@@ -22,6 +22,7 @@ export function TablesClient({ player }: TablesClientProps) {
 	const [tables, setTables] = useState<Table[]>([]);
 	const [newTableName, setNewTableName] = useState("");
 	const [isConnected, setIsConnected] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const socketRef = useRef<PartySocket | null>(null);
 
 	useEffect(() => {
@@ -51,8 +52,21 @@ export function TablesClient({ player }: TablesClientProps) {
 
 				if (message.type === "state") {
 					setTables(message.state.tables);
+					setError(null); // Clear error on successful state update
 				} else if (message.type === "error") {
+					setError(message.message);
 					console.error("Error from server:", message.message);
+				} else if (message.type === "game-started") {
+					// Store game info in sessionStorage for game client
+					sessionStorage.setItem(
+						`game-${message.gameId}`,
+						JSON.stringify({
+							players: message.players,
+							tableId: message.tableId,
+						}),
+					);
+					// Redirect to game page
+					window.location.href = `/game/${message.gameId}`;
 				}
 			} catch (error) {
 				console.error("Error parsing message:", error);
@@ -137,6 +151,14 @@ export function TablesClient({ player }: TablesClientProps) {
 				</div>
 			</div>
 
+			{error && (
+				<Card className="border-destructive">
+					<CardContent className="pt-6">
+						<p className="text-center text-destructive">{error}</p>
+					</CardContent>
+				</Card>
+			)}
+
 			<Card>
 				<CardHeader>
 					<CardTitle>Neuen Tisch erstellen</CardTitle>
@@ -187,7 +209,7 @@ export function TablesClient({ player }: TablesClientProps) {
 												}`}
 												key={p.id}
 											>
-												{p.name}
+												{p.name || p.email}
 											</li>
 										))}
 										{Array.from({ length: 4 - table.players.length }).map(
