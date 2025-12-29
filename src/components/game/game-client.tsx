@@ -354,6 +354,9 @@ export function GameClient({ player, gameId }: GameClientProps) {
 									<div className="text-muted-foreground text-sm">
 										{gameState.hands[p.id]?.length || 0} Karten
 									</div>
+									<div className="font-bold text-primary">
+										{gameState.scores?.[p.id] || 0} Punkte
+									</div>
 								</div>
 							);
 						})}
@@ -475,7 +478,12 @@ export function GameClient({ player, gameId }: GameClientProps) {
 										>
 											<div className="text-muted-foreground text-sm">
 												Stich {gameState.completedTricks.length - index} -{" "}
-												Gewinner: {winner?.name}
+												Gewinner: {winner?.name || winner?.email}
+												{trick.points !== undefined && (
+													<span className="ml-2 font-bold text-primary">
+														({trick.points} Punkte)
+													</span>
+												)}
 											</div>
 										</div>
 									);

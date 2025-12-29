@@ -18,6 +18,7 @@ interface Trick {
 	cards: Array<{ card: Card; playerId: string }>;
 	winnerId?: string;
 	completed: boolean;
+	points?: number;
 }
 
 interface GameState {
@@ -32,6 +33,7 @@ interface GameState {
 	gameStarted: boolean;
 	gameEnded: boolean;
 	round: number;
+	scores: Record<string, number>;
 }
 
 type GameEvent =
@@ -149,6 +151,12 @@ export default class GameServer implements Party.Server {
 		// Determine trump (simplified: jacks are always trump in Doppelkopf)
 		const trump: Suit | "jacks" | "queens" = "jacks";
 
+		// Initialisiere Scores für alle Spieler mit 0
+		const scores: Record<string, number> = {};
+		for (const player of players) {
+			scores[player.id] = 0;
+		}
+
 		this.state = {
 			id: gameId,
 			tableId,
@@ -164,6 +172,7 @@ export default class GameServer implements Party.Server {
 			gameStarted: true,
 			gameEnded: false,
 			round: 1,
+			scores,
 		};
 
 		this.broadcastState();
@@ -243,6 +252,19 @@ export default class GameServer implements Party.Server {
 		const winner = this.determineTrickWinner(trick);
 		trick.winnerId = winner;
 		trick.completed = true;
+
+		// Berechne und speichere Punkte des Stichs
+		const trickPoints = this.calculateTrickPoints(trick);
+		trick.points = trickPoints;
+
+		// Addiere Punkte zum Gewinner
+		if (winner && !this.state.scores[winner]) {
+			this.state.scores[winner] = 0;
+		}
+		if (winner) {
+			this.state.scores[winner] =
+				(this.state.scores[winner] || 0) + trickPoints;
+		}
 
 		this.state.completedTricks.push(trick);
 		this.state.currentPlayerIndex = this.state.players.findIndex(
@@ -344,6 +366,36 @@ export default class GameServer implements Party.Server {
 			if (card.suit === "diamonds") return true;
 		}
 		return card.suit === trump;
+	}
+
+	getCardPoints(card: Card): number {
+		// Doppelkopf Punktewerte: Dame=3, König=4, 10=10, 9=0, Ass=11
+		switch (card.rank) {
+			case "9":
+				return 0;
+			case "10":
+				return 10;
+			case "jack":
+				return 0; // Bube hat keine Punkte
+			case "queen":
+				return 3;
+			case "king":
+				return 4;
+			case "ace":
+				return 11;
+			default:
+				return 0;
+		}
+	}
+
+	calculateTrickPoints(trick: Trick): number {
+		let totalPoints = 0;
+		for (const cardEntry of trick.cards) {
+			if (cardEntry.card) {
+				totalPoints += this.getCardPoints(cardEntry.card);
+			}
+		}
+		return totalPoints;
 	}
 
 	getPlayableCards(

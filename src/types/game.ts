@@ -13,6 +13,7 @@ export interface Trick {
 	cards: Array<{ card: Card; playerId: string }>;
 	winnerId?: string;
 	completed: boolean;
+	points?: number;
 }
 
 export interface GameState {
@@ -27,6 +28,7 @@ export interface GameState {
 	gameStarted: boolean;
 	gameEnded: boolean;
 	round: number;
+	scores: Record<string, number>; // playerId -> Gesamtpunkte
 }
 
 export type GameEvent =
