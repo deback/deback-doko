@@ -502,8 +502,16 @@ export default class Server implements Party.Server {
 		const isLeadSuit = card.suit === leadSuit;
 
 		if (isTrump) {
-			if (card.rank === "jack") return 1000;
-			if (card.rank === "queen") return 900;
+			// In Doppelkopf: Damen sind höchster Trumpf, dann Buben, dann Karo
+			if (card.rank === "queen") return 1000;
+			if (card.rank === "jack") return 900;
+			// Karo (Diamonds) ist auch Trumpf
+			if (card.suit === "diamonds") {
+				if (card.rank === "ace") return 850;
+				if (card.rank === "king") return 840;
+				if (card.rank === "10") return 830;
+				if (card.rank === "9") return 820;
+			}
 		}
 
 		if (isLeadSuit && !isTrump) {
@@ -518,11 +526,16 @@ export default class Server implements Party.Server {
 	}
 
 	isTrump(card: Card, trump: Suit | "jacks" | "queens"): boolean {
+		// In Doppelkopf sind Buben, Damen und Karo Trumpf
 		if (trump === "jacks") {
-			return card.rank === "jack" || card.rank === "queen";
+			// Buben und Damen sind immer Trumpf
+			if (card.rank === "jack" || card.rank === "queen") return true;
+			// Karo (Diamonds) ist auch Trumpf
+			if (card.suit === "diamonds") return true;
 		}
 		if (trump === "queens") {
-			return card.rank === "queen";
+			if (card.rank === "queen") return true;
+			if (card.suit === "diamonds") return true;
 		}
 		return card.suit === trump;
 	}

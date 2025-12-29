@@ -10,7 +10,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import type { GameEvent, GameMessage, GameState } from "@/types/game";
+import type {
+	Card as GameCard,
+	GameEvent,
+	GameMessage,
+	GameState,
+	Suit,
+} from "@/types/game";
 import type { Player } from "@/types/tables";
 
 interface GameClientProps {
@@ -152,6 +158,77 @@ export function GameClient({ player, gameId }: GameClientProps) {
 	const myHand = gameState?.hands[player.id] || [];
 	const currentPlayer = gameState?.players[gameState.currentPlayerIndex || 0];
 
+	// Sort cards: Trumpf first, then by suit and rank
+	const sortedHand = [...myHand].sort((a, b) => {
+		if (!gameState) return 0;
+
+		// Check if cards are trump
+		const aIsTrump =
+			gameState.trump === "jacks"
+				? a.rank === "jack" || a.rank === "queen" || a.suit === "diamonds"
+				: a.rank === "queen" || a.suit === "diamonds";
+		const bIsTrump =
+			gameState.trump === "jacks"
+				? b.rank === "jack" || b.rank === "queen" || b.suit === "diamonds"
+				: b.rank === "queen" || b.suit === "diamonds";
+
+		// Trump cards come first
+		if (aIsTrump && !bIsTrump) return -1;
+		if (!aIsTrump && bIsTrump) return 1;
+
+		// If both are trump, sort by trump value
+		if (aIsTrump && bIsTrump) {
+			const aValue = getCardValueForSort(a, gameState.trump);
+			const bValue = getCardValueForSort(b, gameState.trump);
+			return bValue - aValue; // Higher value first
+		}
+
+		// If neither is trump, sort by suit then rank
+		// Doppelkopf Farb-Reihenfolge: Kreuz, Herz, Pik, Karo
+		const suitOrder: Record<Suit, number> = {
+			clubs: 1,
+			hearts: 2,
+			spades: 3,
+			diamonds: 4,
+		};
+
+		if (a.suit !== b.suit) {
+			const aOrder = suitOrder[a.suit] ?? 99;
+			const bOrder = suitOrder[b.suit] ?? 99;
+			return aOrder - bOrder;
+		}
+
+		// Same suit, sort by rank (Doppelkopf order: Ass, 10, König, Bube, Dame, 9)
+		const rankOrder: Record<string, number> = {
+			ace: 1,
+			"10": 2,
+			king: 3,
+			jack: 4,
+			queen: 5,
+			"9": 6,
+		};
+
+		const aRankOrder = rankOrder[a.rank] ?? 99;
+		const bRankOrder = rankOrder[b.rank] ?? 99;
+		return aRankOrder - bRankOrder;
+	});
+
+	function getCardValueForSort(
+		card: GameCard,
+		_trump: Suit | "jacks" | "queens",
+	): number {
+		// Trump values: Damen (1000), Buben (900), Karo (820-850)
+		if (card.rank === "queen") return 1000;
+		if (card.rank === "jack") return 900;
+		if (card.suit === "diamonds") {
+			if (card.rank === "ace") return 850;
+			if (card.rank === "king") return 840;
+			if (card.rank === "10") return 830;
+			if (card.rank === "9") return 820;
+		}
+		return 0;
+	}
+
 	if (!gameState) {
 		return (
 			<div className="container mx-auto p-6">
@@ -194,7 +271,8 @@ export function GameClient({ player, gameId }: GameClientProps) {
 				<CardHeader>
 					<CardTitle>Spieler</CardTitle>
 					<CardDescription>
-						Trumpf: {gameState.trump === "jacks" ? "Buben" : "Damen"}
+						Trumpf:{" "}
+						{gameState.trump === "jacks" ? "Damen, Buben, Karo" : "Damen, Karo"}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -270,11 +348,14 @@ export function GameClient({ player, gameId }: GameClientProps) {
 				</CardHeader>
 				<CardContent>
 					<div className="flex flex-wrap gap-2">
-						{myHand.map((card) => {
+						{sortedHand.map((card) => {
+							// In Doppelkopf sind Buben, Damen und Karo Trumpf
 							const isTrump =
 								gameState.trump === "jacks"
-									? card.rank === "jack" || card.rank === "queen"
-									: card.rank === "queen";
+									? card.rank === "jack" ||
+										card.rank === "queen" ||
+										card.suit === "diamonds"
+									: card.rank === "queen" || card.suit === "diamonds";
 
 							return (
 								<Button
