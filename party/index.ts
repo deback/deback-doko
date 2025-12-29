@@ -464,7 +464,12 @@ export default class Server implements Party.Server {
 
 	completeTrick(gameState: GameState) {
 		const trick = gameState.currentTrick;
-		const winner = this.determineTrickWinner(trick, gameState.trump);
+		const isLastTrick = gameState.completedTricks.length === 11; // 12. Stich
+		const winner = this.determineTrickWinner(
+			trick,
+			gameState.trump,
+			isLastTrick,
+		);
 		trick.winnerId = winner;
 		trick.completed = true;
 
@@ -495,7 +500,11 @@ export default class Server implements Party.Server {
 		}
 	}
 
-	determineTrickWinner(trick: Trick, trump: Suit | "jacks" | "queens"): string {
+	determineTrickWinner(
+		trick: Trick,
+		trump: Suit | "jacks" | "queens",
+		isLastTrick = false,
+	): string {
 		if (trick.cards.length === 0) return "";
 
 		const firstCardEntry = trick.cards[0];
@@ -507,6 +516,17 @@ export default class Server implements Party.Server {
 		const leadSuit = firstCard.suit;
 		let winner = firstCardEntry;
 		let highestValue = this.getCardValue(firstCard, leadSuit, trump);
+
+		// Sonderregel für letzten Stich: Wenn beide Herz 10 sind, gewinnt die zweite
+		if (isLastTrick) {
+			const hearts10Cards = trick.cards.filter(
+				(entry) => entry.card.suit === "hearts" && entry.card.rank === "10",
+			);
+			if (hearts10Cards.length === 2) {
+				// Zweite Herz 10 gewinnt im letzten Stich
+				return hearts10Cards[1]?.playerId || winner.playerId;
+			}
+		}
 
 		for (let i = 1; i < trick.cards.length; i++) {
 			const cardEntry = trick.cards[i];
@@ -531,7 +551,8 @@ export default class Server implements Party.Server {
 		const isLeadSuit = card.suit === leadSuit;
 
 		if (isTrump) {
-			// In Doppelkopf: Damen sind höchster Trumpf, dann Buben, dann Karo
+			// In Doppelkopf: Herz 10 ist höchster Trumpf, dann Damen, dann Buben, dann Karo
+			if (card.suit === "hearts" && card.rank === "10") return 1100;
 			if (card.rank === "queen") return 1000;
 			if (card.rank === "jack") return 900;
 			// Karo (Diamonds) ist auch Trumpf
@@ -555,7 +576,10 @@ export default class Server implements Party.Server {
 	}
 
 	isTrump(card: Card, trump: Suit | "jacks" | "queens"): boolean {
-		// In Doppelkopf sind Buben, Damen und Karo Trumpf
+		// In Doppelkopf sind Herz 10, Buben, Damen und Karo Trumpf
+		// Herz 10 ist immer der höchste Trumpf
+		if (card.suit === "hearts" && card.rank === "10") return true;
+
 		if (trump === "jacks") {
 			// Buben und Damen sind immer Trumpf
 			if (card.rank === "jack" || card.rank === "queen") return true;

@@ -249,7 +249,8 @@ export default class GameServer implements Party.Server {
 		if (!this.state) return;
 
 		const trick = this.state.currentTrick;
-		const winner = this.determineTrickWinner(trick);
+		const isLastTrick = this.state.completedTricks.length === 11; // 12. Stich
+		const winner = this.determineTrickWinner(trick, isLastTrick);
 		trick.winnerId = winner;
 		trick.completed = true;
 
@@ -283,7 +284,7 @@ export default class GameServer implements Party.Server {
 		}
 	}
 
-	determineTrickWinner(trick: Trick): string {
+	determineTrickWinner(trick: Trick, isLastTrick = false): string {
 		if (trick.cards.length === 0) return trick.cards[0]?.playerId || "";
 
 		// Get first card suit
@@ -296,6 +297,17 @@ export default class GameServer implements Party.Server {
 		// Find highest card
 		const firstCardEntry = trick.cards[0];
 		if (!firstCardEntry) return "";
+
+		// Sonderregel für letzten Stich: Wenn beide Herz 10 sind, gewinnt die zweite
+		if (isLastTrick) {
+			const hearts10Cards = trick.cards.filter(
+				(entry) => entry.card.suit === "hearts" && entry.card.rank === "10",
+			);
+			if (hearts10Cards.length === 2) {
+				// Zweite Herz 10 gewinnt im letzten Stich
+				return hearts10Cards[1]?.playerId || firstCardEntry.playerId;
+			}
+		}
 
 		let winner = firstCardEntry;
 		let highestValue = this.getCardValue(firstCardEntry.card, leadSuit, trump);
@@ -330,7 +342,8 @@ export default class GameServer implements Party.Server {
 		const isLeadSuit = card.suit === leadSuit;
 
 		if (isTrump) {
-			// In Doppelkopf: Damen sind höchster Trumpf, dann Buben, dann Karo
+			// In Doppelkopf: Herz 10 ist höchster Trumpf, dann Damen, dann Buben, dann Karo
+			if (card.suit === "hearts" && card.rank === "10") return 1100;
 			if (card.rank === "queen") return 1000;
 			if (card.rank === "jack") return 900;
 			// Karo (Diamonds) ist auch Trumpf
@@ -354,7 +367,10 @@ export default class GameServer implements Party.Server {
 	}
 
 	isTrump(card: Card, trump: Suit | "jacks" | "queens"): boolean {
-		// In Doppelkopf sind Buben, Damen und Karo Trumpf
+		// In Doppelkopf sind Herz 10, Buben, Damen und Karo Trumpf
+		// Herz 10 ist immer der höchste Trumpf
+		if (card.suit === "hearts" && card.rank === "10") return true;
+
 		if (trump === "jacks") {
 			// Buben und Damen sind immer Trumpf
 			if (card.rank === "jack" || card.rank === "queen") return true;

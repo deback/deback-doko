@@ -157,6 +157,9 @@ export function GameClient({ player, gameId }: GameClientProps) {
 
 	const isTrump = (card: GameCard): boolean => {
 		if (!gameState) return false;
+		// Herz 10 ist immer der höchste Trumpf
+		if (card.suit === "hearts" && card.rank === "10") return true;
+
 		const trump = gameState.trump;
 		if (trump === "jacks") {
 			return (
@@ -199,9 +202,14 @@ export function GameClient({ player, gameId }: GameClientProps) {
 			return myHand;
 		} else {
 			// Fehlfarbe angespielt: Prüfe ob Spieler diese Farbe hat
+			// Herz 10 ist immer Trumpf, auch wenn Herz angespielt wurde
 			const suitCards = myHand.filter((card) => {
-				// Nicht-Trumpf-Karten dieser Farbe
-				return card.suit === leadSuit && !isTrump(card);
+				// Nicht-Trumpf-Karten dieser Farbe (Herz 10 ist Trumpf!)
+				return (
+					card.suit === leadSuit &&
+					!(card.suit === "hearts" && card.rank === "10") &&
+					!isTrump(card)
+				);
 			});
 			if (suitCards.length > 0) {
 				return suitCards;
@@ -219,15 +227,19 @@ export function GameClient({ player, gameId }: GameClientProps) {
 	const sortedHand = [...myHand].sort((a, b) => {
 		if (!gameState) return 0;
 
-		// Check if cards are trump
+		// Check if cards are trump (Herz 10 ist immer Trumpf)
+		const aIsHearts10 = a.suit === "hearts" && a.rank === "10";
+		const bIsHearts10 = b.suit === "hearts" && b.rank === "10";
 		const aIsTrump =
-			gameState.trump === "jacks"
+			aIsHearts10 ||
+			(gameState.trump === "jacks"
 				? a.rank === "jack" || a.rank === "queen" || a.suit === "diamonds"
-				: a.rank === "queen" || a.suit === "diamonds";
+				: a.rank === "queen" || a.suit === "diamonds");
 		const bIsTrump =
-			gameState.trump === "jacks"
+			bIsHearts10 ||
+			(gameState.trump === "jacks"
 				? b.rank === "jack" || b.rank === "queen" || b.suit === "diamonds"
-				: b.rank === "queen" || b.suit === "diamonds";
+				: b.rank === "queen" || b.suit === "diamonds");
 
 		// Trump cards come first
 		if (aIsTrump && !bIsTrump) return -1;
@@ -235,6 +247,10 @@ export function GameClient({ player, gameId }: GameClientProps) {
 
 		// If both are trump, sort by trump value
 		if (aIsTrump && bIsTrump) {
+			// Herz 10 ist immer höchster Trumpf
+			if (aIsHearts10 && !bIsHearts10) return -1;
+			if (!aIsHearts10 && bIsHearts10) return 1;
+
 			const aValue = getCardValueForSort(a, gameState.trump);
 			const bValue = getCardValueForSort(b, gameState.trump);
 			return bValue - aValue; // Higher value first
@@ -274,7 +290,8 @@ export function GameClient({ player, gameId }: GameClientProps) {
 		card: GameCard,
 		_trump: Suit | "jacks" | "queens",
 	): number {
-		// Trump values: Damen (1000), Buben (900), Karo (820-850)
+		// Trump values: Herz 10 (1100), Damen (1000), Buben (900), Karo (820-850)
+		if (card.suit === "hearts" && card.rank === "10") return 1100;
 		if (card.rank === "queen") return 1000;
 		if (card.rank === "jack") return 900;
 		if (card.suit === "diamonds") {
@@ -409,13 +426,15 @@ export function GameClient({ player, gameId }: GameClientProps) {
 				<CardContent>
 					<div className="flex flex-wrap gap-2">
 						{sortedHand.map((card) => {
-							// In Doppelkopf sind Buben, Damen und Karo Trumpf
+							// In Doppelkopf sind Herz 10, Buben, Damen und Karo Trumpf
+							const isHearts10 = card.suit === "hearts" && card.rank === "10";
 							const isTrump =
-								gameState.trump === "jacks"
+								isHearts10 ||
+								(gameState.trump === "jacks"
 									? card.rank === "jack" ||
 										card.rank === "queen" ||
 										card.suit === "diamonds"
-									: card.rank === "queen" || card.suit === "diamonds";
+									: card.rank === "queen" || card.suit === "diamonds");
 
 							const isPlayable = playableCards.some((c) => c.id === card.id);
 							const canClick = isMyTurn() && isPlayable;
@@ -423,7 +442,11 @@ export function GameClient({ player, gameId }: GameClientProps) {
 							return (
 								<Button
 									className={`h-20 w-14 flex-col gap-1 p-2 ${
-										isTrump ? "border-2 border-yellow-500" : ""
+										isHearts10
+											? "border-2 border-red-600 bg-red-50 dark:bg-red-950"
+											: isTrump
+												? "border-2 border-yellow-500"
+												: ""
 									} ${
 										isMyTurn() && isPlayable
 											? "ring-2 ring-green-500 ring-offset-2"
@@ -444,7 +467,10 @@ export function GameClient({ player, gameId }: GameClientProps) {
 										{getSuitSymbol(card.suit)}
 									</span>
 									<span className="text-xs">{getRankDisplay(card.rank)}</span>
-									{isTrump && (
+									{isHearts10 && (
+										<span className="font-bold text-red-600 text-xs">★</span>
+									)}
+									{isTrump && !isHearts10 && (
 										<span className="text-xs text-yellow-500">T</span>
 									)}
 								</Button>
