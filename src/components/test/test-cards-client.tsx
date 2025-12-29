@@ -218,10 +218,9 @@ export function TestCardsClient() {
 									e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}), ${transformY}) rotate(${rotation}deg)`;
 								}}
 								style={{
-									// Karten-Größe: Größer auf kleinen Bildschirmen, maximal bei 1024px Viewport
-									// Auf iPhone (375px): 20vw = 75px, clamp sorgt für Mindestgröße von 5rem (80px)
-									width: "clamp(5rem, 20vw, 7.6875rem)",
-									height: "clamp(7.5rem, 30vw, 11.53125rem)",
+									// Karten-Größe: Feste Größe, keine Skalierung
+									width: "6rem",
+									height: "9rem",
 									transform: `translate(calc(-50% + ${translateX}), ${translateY > 0 ? `-${translateY}px` : "0"}) rotate(${rotation}deg)`,
 									transformOrigin: "50% 50%",
 									zIndex: zIndex,
@@ -231,15 +230,12 @@ export function TestCardsClient() {
 								{/* Oben links */}
 								<div
 									className={`absolute top-1 left-1 flex flex-col items-start ${getSuitColor(card.suit)}`}
-									style={{ fontSize: "clamp(0.75rem, 1.5vw, 1.5rem)" }}
+									style={{ fontSize: "1rem" }}
 								>
 									<span className="font-bold leading-none">
 										{getRankDisplay(card.rank)}
 									</span>
-									<span
-										className="leading-none"
-										style={{ fontSize: "clamp(0.625rem, 1.2vw, 1.2rem)" }}
-									>
+									<span className="text-sm leading-none">
 										{getSuitSymbol(card.suit)}
 									</span>
 								</div>
@@ -247,15 +243,12 @@ export function TestCardsClient() {
 								{/* Oben rechts */}
 								<div
 									className={`absolute top-1 right-1 flex flex-col items-end ${getSuitColor(card.suit)}`}
-									style={{ fontSize: "clamp(0.75rem, 1.5vw, 1.5rem)" }}
+									style={{ fontSize: "1rem" }}
 								>
 									<span className="font-bold leading-none">
 										{getRankDisplay(card.rank)}
 									</span>
-									<span
-										className="leading-none"
-										style={{ fontSize: "clamp(0.625rem, 1.2vw, 1.2rem)" }}
-									>
+									<span className="text-sm leading-none">
 										{getSuitSymbol(card.suit)}
 									</span>
 								</div>
@@ -263,15 +256,12 @@ export function TestCardsClient() {
 								{/* Unten links */}
 								<div
 									className={`absolute bottom-1 left-1 flex rotate-180 flex-col items-start ${getSuitColor(card.suit)}`}
-									style={{ fontSize: "clamp(0.75rem, 1.5vw, 1.5rem)" }}
+									style={{ fontSize: "1rem" }}
 								>
 									<span className="font-bold leading-none">
 										{getRankDisplay(card.rank)}
 									</span>
-									<span
-										className="leading-none"
-										style={{ fontSize: "clamp(0.625rem, 1.2vw, 1.2rem)" }}
-									>
+									<span className="text-sm leading-none">
 										{getSuitSymbol(card.suit)}
 									</span>
 								</div>
@@ -279,15 +269,12 @@ export function TestCardsClient() {
 								{/* Unten rechts */}
 								<div
 									className={`absolute right-1 bottom-1 flex rotate-180 flex-col items-end ${getSuitColor(card.suit)}`}
-									style={{ fontSize: "clamp(0.75rem, 1.5vw, 1.5rem)" }}
+									style={{ fontSize: "1rem" }}
 								>
 									<span className="font-bold leading-none">
 										{getRankDisplay(card.rank)}
 									</span>
-									<span
-										className="leading-none"
-										style={{ fontSize: "clamp(0.625rem, 1.2vw, 1.2rem)" }}
-									>
+									<span className="text-sm leading-none">
 										{getSuitSymbol(card.suit)}
 									</span>
 								</div>
@@ -297,10 +284,7 @@ export function TestCardsClient() {
 									<div
 										className={`flex items-center justify-center ${getSuitColor(card.suit)}`}
 									>
-										<span
-											className="font-bold"
-											style={{ fontSize: "clamp(1.5rem, 4vw, 4rem)" }}
-										>
+										<span className="font-bold text-4xl">
 											{getSuitSymbol(card.suit)}
 										</span>
 									</div>
