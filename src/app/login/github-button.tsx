@@ -10,7 +10,7 @@ export function GitHubButton() {
 	function handleGitHubSignIn() {
 		startTransition(async () => {
 			try {
-				const result = await authClient.signIn.social({
+				await authClient.signIn.social({
 					provider: "github",
 				});
 			} catch (error) {

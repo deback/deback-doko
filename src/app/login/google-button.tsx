@@ -10,7 +10,7 @@ export function GoogleButton() {
 	function handleGoogleSignIn() {
 		startTransition(async () => {
 			try {
-				const result = await authClient.signIn.social({
+				await authClient.signIn.social({
 					provider: "google",
 				});
 			} catch (error) {

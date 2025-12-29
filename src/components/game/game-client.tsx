@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import PartySocket from "partysocket";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -10,13 +10,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import type { GameEvent, GameMessage, GameState } from "@/types/game";
 import type { Player } from "@/types/tables";
-import type {
-	Card as GameCard,
-	GameEvent,
-	GameMessage,
-	GameState,
-} from "@/types/game";
 
 interface GameClientProps {
 	player: Player;
@@ -155,8 +150,7 @@ export function GameClient({ player, gameId }: GameClientProps) {
 	};
 
 	const myHand = gameState?.hands[player.id] || [];
-	const currentPlayer =
-		gameState?.players[gameState.currentPlayerIndex || 0];
+	const currentPlayer = gameState?.players[gameState.currentPlayerIndex || 0];
 
 	if (!gameState) {
 		return (
@@ -164,9 +158,7 @@ export function GameClient({ player, gameId }: GameClientProps) {
 				<Card>
 					<CardContent className="pt-6">
 						<p className="text-center text-muted-foreground">
-							{isConnected
-								? "Warte auf Spielstart..."
-								: "Verbinde..."}
+							{isConnected ? "Warte auf Spielstart..." : "Verbinde..."}
 						</p>
 					</CardContent>
 				</Card>
@@ -213,12 +205,10 @@ export function GameClient({ player, gameId }: GameClientProps) {
 
 							return (
 								<div
-									key={p.id}
 									className={`rounded-lg border p-4 ${
-										isCurrent
-											? "border-primary bg-primary/10"
-											: "border-border"
+										isCurrent ? "border-primary bg-primary/10" : "border-border"
 									}`}
+									key={p.id}
 								>
 									<div className="font-semibold">
 										{p.name} {isMe && "(Du)"}
@@ -243,20 +233,20 @@ export function GameClient({ player, gameId }: GameClientProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-							{gameState.currentTrick.cards.map((trickCard, index) => {
+							{gameState.currentTrick.cards.map((trickCard) => {
 								const trickPlayer = gameState.players.find(
 									(p) => p.id === trickCard.playerId,
 								);
 								return (
 									<div
-										key={index}
 										className="rounded-lg border border-border bg-card p-4"
+										key={`${trickCard.playerId}-${trickCard.card.id}`}
 									>
 										<div className="text-muted-foreground text-sm">
 											{trickPlayer?.name}
 										</div>
 										<div
-											className={`text-2xl font-bold ${getSuitColor(trickCard.card.suit)}`}
+											className={`font-bold text-2xl ${getSuitColor(trickCard.card.suit)}`}
 										>
 											{getSuitSymbol(trickCard.card.suit)}{" "}
 											{getRankDisplay(trickCard.card.rank)}
@@ -288,24 +278,22 @@ export function GameClient({ player, gameId }: GameClientProps) {
 
 							return (
 								<Button
-									key={card.id}
-									onClick={() => playCard(card.id)}
-									disabled={!isMyTurn()}
 									className={`h-20 w-14 flex-col gap-1 p-2 ${
 										isTrump ? "border-2 border-yellow-500" : ""
 									}`}
+									disabled={!isMyTurn()}
+									key={card.id}
+									onClick={() => playCard(card.id)}
 									variant={isMyTurn() ? "default" : "outline"}
 								>
 									<span
-										className={`text-lg font-bold ${getSuitColor(card.suit)}`}
+										className={`font-bold text-lg ${getSuitColor(card.suit)}`}
 									>
 										{getSuitSymbol(card.suit)}
 									</span>
-									<span className="text-xs">
-										{getRankDisplay(card.rank)}
-									</span>
+									<span className="text-xs">{getRankDisplay(card.rank)}</span>
 									{isTrump && (
-										<span className="text-yellow-500 text-xs">T</span>
+										<span className="text-xs text-yellow-500">T</span>
 									)}
 								</Button>
 							);
@@ -333,8 +321,8 @@ export function GameClient({ player, gameId }: GameClientProps) {
 									);
 									return (
 										<div
-											key={index}
 											className="rounded-lg border border-border bg-muted/50 p-2"
+											key={`trick-${trick.winnerId}-${index}-${gameState.completedTricks.length - index}`}
 										>
 											<div className="text-muted-foreground text-sm">
 												Stich {gameState.completedTricks.length - index} -{" "}
@@ -360,4 +348,3 @@ export function GameClient({ player, gameId }: GameClientProps) {
 		</div>
 	);
 }
-

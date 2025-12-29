@@ -36,7 +36,7 @@ interface GameState {
 
 type GameEvent =
 	| { type: "get-state" }
-	| { type: "play-card"; cardId: string }
+	| { type: "play-card"; cardId: string; playerId: string }
 	| { type: "start-game"; players: Player[]; tableId: string };
 
 type GameMessage =
@@ -111,7 +111,11 @@ export default class GameServer implements Party.Server {
 		const shuffled = [...deck];
 		for (let i = shuffled.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
-			[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+			const temp = shuffled[i];
+			if (temp && shuffled[j]) {
+				shuffled[i] = shuffled[j];
+				shuffled[j] = temp;
+			}
 		}
 		return shuffled;
 	}
@@ -121,10 +125,13 @@ export default class GameServer implements Party.Server {
 		const cardsPerPlayer = 12;
 
 		for (let i = 0; i < players.length; i++) {
-			hands[players[i].id] = deck.slice(
-				i * cardsPerPlayer,
-				(i + 1) * cardsPerPlayer,
-			);
+			const player = players[i];
+			if (player) {
+				hands[player.id] = deck.slice(
+					i * cardsPerPlayer,
+					(i + 1) * cardsPerPlayer,
+				);
+			}
 		}
 
 		return hands;
@@ -170,6 +177,11 @@ export default class GameServer implements Party.Server {
 
 		const currentPlayer = this.state.players[this.state.currentPlayerIndex];
 		
+		if (!currentPlayer) {
+			this.sendError(sender, "Spieler nicht gefunden.");
+			return;
+		}
+
 		// Check if it's the current player's turn
 		if (currentPlayer.id !== playerId) {
 			this.sendError(sender, "Du bist nicht dran.");
@@ -177,7 +189,7 @@ export default class GameServer implements Party.Server {
 		}
 
 		const hand = this.state.hands[currentPlayer.id];
-		
+
 		if (!hand) {
 			this.sendError(sender, "Spieler nicht gefunden.");
 			return;
@@ -192,6 +204,10 @@ export default class GameServer implements Party.Server {
 
 		// Validate card can be played (simplified - would need to check suit following rules)
 		const card = hand[cardIndex];
+		if (!card) {
+			this.sendError(sender, "Karte nicht gefunden.");
+			return;
+		}
 
 		// Remove card from hand
 		hand.splice(cardIndex, 1);
@@ -207,8 +223,7 @@ export default class GameServer implements Party.Server {
 			this.completeTrick();
 		} else {
 			// Move to next player
-			this.state.currentPlayerIndex =
-				(this.state.currentPlayerIndex + 1) % 4;
+			this.state.currentPlayerIndex = (this.state.currentPlayerIndex + 1) % 4;
 		}
 
 		this.broadcastState();
@@ -250,25 +265,31 @@ export default class GameServer implements Party.Server {
 		const trump = this.state?.trump || "jacks";
 
 		// Find highest card
-		let winner = trick.cards[0];
-		let highestValue = this.getCardValue(trick.cards[0].card, leadSuit, trump);
+		const firstCardEntry = trick.cards[0];
+		if (!firstCardEntry) return "";
+
+		let winner = firstCardEntry;
+		let highestValue = this.getCardValue(firstCardEntry.card, leadSuit, trump);
 
 		for (let i = 1; i < trick.cards.length; i++) {
-			const value = this.getCardValue(
-				trick.cards[i].card,
-				leadSuit,
-				trump,
-			);
+			const cardEntry = trick.cards[i];
+			if (!cardEntry) continue;
+
+			const value = this.getCardValue(cardEntry.card, leadSuit, trump);
 			if (value > highestValue) {
 				highestValue = value;
-				winner = trick.cards[i];
+				winner = cardEntry;
 			}
 		}
 
 		return winner.playerId;
 	}
 
-	getCardValue(card: Card, leadSuit: Suit, trump: Suit | "jacks" | "queens"): number {
+	getCardValue(
+		card: Card,
+		leadSuit: Suit,
+		trump: Suit | "jacks" | "queens",
+	): number {
 		// In Doppelkopf:
 		// - Jacks (Buben) are always trump, highest value
 		// - Queens (Damen) are also trump if jacks are trump
@@ -334,4 +355,3 @@ export default class GameServer implements Party.Server {
 }
 
 GameServer satisfies Party.Worker;
-

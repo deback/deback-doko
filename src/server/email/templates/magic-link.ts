@@ -4,7 +4,11 @@ interface MagicLinkEmailProps {
 
 export function MagicLinkEmailHTML({ url }: MagicLinkEmailProps): string {
 	// URL für HTML escapen
-	const escapedUrl = url.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+	const escapedUrl = url
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;");
 
 	return `<!DOCTYPE html>
 <html lang="de">

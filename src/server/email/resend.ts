@@ -1,9 +1,6 @@
 import { Resend } from "resend";
 import { env } from "@/env";
-import {
-	MagicLinkEmailHTML,
-	MagicLinkEmailText,
-} from "./templates/magic-link";
+import { MagicLinkEmailHTML, MagicLinkEmailText } from "./templates/magic-link";
 
 const resend = new Resend(env.AUTH_RESEND_KEY);
 
@@ -30,6 +27,3 @@ export async function sendMagicLinkEmail({
 		throw error;
 	}
 }
-
-
-

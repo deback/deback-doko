@@ -32,10 +32,13 @@ export interface GameState {
 export type GameEvent =
 	| { type: "get-state" }
 	| { type: "play-card"; cardId: string; playerId: string }
-	| { type: "start-game"; players: Array<{ id: string; name: string }>; tableId: string };
+	| {
+			type: "start-game";
+			players: Array<{ id: string; name: string }>;
+			tableId: string;
+	  };
 
 export type GameMessage =
 	| { type: "state"; state: GameState }
 	| { type: "error"; message: string }
 	| { type: "game-started"; gameId: string };
-

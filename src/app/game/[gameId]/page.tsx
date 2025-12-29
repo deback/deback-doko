@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/server/better-auth/server";
 import { GameClient } from "@/components/game/game-client";
+import { getSession } from "@/server/better-auth/server";
 import type { Player } from "@/types/tables";
 
 interface GamePageProps {
@@ -24,8 +24,7 @@ export default async function GamePage({ params }: GamePageProps) {
 
 	return (
 		<main className="min-h-screen">
-			<GameClient player={player} gameId={gameId} />
+			<GameClient gameId={gameId} player={player} />
 		</main>
 	);
 }
-

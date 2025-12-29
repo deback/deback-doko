@@ -59,7 +59,7 @@ export function LoginForm() {
 			} else {
 				setSuccess(true);
 			}
-		} catch (error) {
+		} catch (_error) {
 			form.setError("email", {
 				message: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
 			});
