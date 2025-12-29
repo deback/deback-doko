@@ -8,7 +8,7 @@ import { sendMagicLinkEmail } from "@/server/email/resend";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
-		provider: "pg", // or "pg" or "mysql"
+		provider: "pg",
 	}),
 	emailAndPassword: {
 		enabled: true,
@@ -18,10 +18,10 @@ export const auth = betterAuth({
 			clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID,
 			clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
 		},
-		google: { 
-            clientId: env.BETTER_AUTH_GOOGLE_CLIENT_ID as string, 
-            clientSecret: env.BETTER_AUTH_GOOGLE_CLIENT_SECRET as string, 
-        },
+		google: {
+			clientId: env.BETTER_AUTH_GOOGLE_CLIENT_ID,
+			clientSecret: env.BETTER_AUTH_GOOGLE_CLIENT_SECRET,
+		},
 	},
 	plugins: [
 		magicLink({

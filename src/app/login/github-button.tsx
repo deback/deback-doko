@@ -12,7 +12,6 @@ export function GitHubButton() {
 			try {
 				const result = await authClient.signIn.social({
 					provider: "github",
-					//callbackURL: "/",
 				});
 			} catch (error) {
 				console.error("Fehler bei GitHub-Anmeldung:", error);
