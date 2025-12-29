@@ -429,6 +429,14 @@ export default class Server implements Party.Server {
 			return;
 		}
 
+		// Validierung: Prüfe Bedien-Regeln
+		if (
+			!this.canPlayCard(card, hand, gameState.currentTrick, gameState.trump)
+		) {
+			this.sendGameError(sender, "Du musst die angespielte Farbe bedienen.");
+			return;
+		}
+
 		hand.splice(cardIndex, 1);
 
 		gameState.currentTrick.cards.push({
@@ -538,6 +546,56 @@ export default class Server implements Party.Server {
 			if (card.suit === "diamonds") return true;
 		}
 		return card.suit === trump;
+	}
+
+	getPlayableCards(
+		hand: Card[],
+		currentTrick: Trick,
+		trump: Suit | "jacks" | "queens",
+	): Card[] {
+		// Erste Karte im Stich: Alle Karten spielbar
+		if (currentTrick.cards.length === 0) {
+			return hand;
+		}
+
+		// Bestimme angespielte Farbe/Trumpf
+		const firstCard = currentTrick.cards[0]?.card;
+		if (!firstCard) return hand;
+
+		const firstCardIsTrump = this.isTrump(firstCard, trump);
+		const leadSuit = firstCard.suit;
+
+		// Prüfe, ob Spieler passende Karten hat
+		if (firstCardIsTrump) {
+			// Trumpf angespielt: Prüfe ob Spieler Trumpf hat
+			const trumpCards = hand.filter((card) => this.isTrump(card, trump));
+			if (trumpCards.length > 0) {
+				return trumpCards;
+			}
+			// Keine Trumpf-Karten: Alle Karten spielbar
+			return hand;
+		} else {
+			// Fehlfarbe angespielt: Prüfe ob Spieler diese Farbe hat
+			const suitCards = hand.filter((card) => {
+				// Nicht-Trumpf-Karten dieser Farbe
+				return card.suit === leadSuit && !this.isTrump(card, trump);
+			});
+			if (suitCards.length > 0) {
+				return suitCards;
+			}
+			// Keine passende Farbe: Alle Karten spielbar
+			return hand;
+		}
+	}
+
+	canPlayCard(
+		card: Card,
+		hand: Card[],
+		currentTrick: Trick,
+		trump: Suit | "jacks" | "queens",
+	): boolean {
+		const playableCards = this.getPlayableCards(hand, currentTrick, trump);
+		return playableCards.some((c) => c.id === card.id);
 	}
 
 	sendGameState(conn: Party.Connection, gameState: GameState) {

@@ -155,8 +155,65 @@ export function GameClient({ player, gameId }: GameClientProps) {
 		return currentPlayer?.id === player.id;
 	};
 
+	const isTrump = (card: GameCard): boolean => {
+		if (!gameState) return false;
+		const trump = gameState.trump;
+		if (trump === "jacks") {
+			return (
+				card.rank === "jack" ||
+				card.rank === "queen" ||
+				card.suit === "diamonds"
+			);
+		}
+		if (trump === "queens") {
+			return card.rank === "queen" || card.suit === "diamonds";
+		}
+		return card.suit === trump;
+	};
+
+	const getPlayableCards = (): GameCard[] => {
+		if (!gameState) return [];
+		const myHand = gameState.hands[player.id] || [];
+		const currentTrick = gameState.currentTrick;
+
+		// Erste Karte im Stich: Alle Karten spielbar
+		if (currentTrick.cards.length === 0) {
+			return myHand;
+		}
+
+		// Bestimme angespielte Farbe/Trumpf
+		const firstCard = currentTrick.cards[0]?.card;
+		if (!firstCard) return myHand;
+
+		const firstCardIsTrump = isTrump(firstCard);
+		const leadSuit = firstCard.suit;
+
+		// Prüfe, ob Spieler passende Karten hat
+		if (firstCardIsTrump) {
+			// Trumpf angespielt: Prüfe ob Spieler Trumpf hat
+			const trumpCards = myHand.filter((card) => isTrump(card));
+			if (trumpCards.length > 0) {
+				return trumpCards;
+			}
+			// Keine Trumpf-Karten: Alle Karten spielbar
+			return myHand;
+		} else {
+			// Fehlfarbe angespielt: Prüfe ob Spieler diese Farbe hat
+			const suitCards = myHand.filter((card) => {
+				// Nicht-Trumpf-Karten dieser Farbe
+				return card.suit === leadSuit && !isTrump(card);
+			});
+			if (suitCards.length > 0) {
+				return suitCards;
+			}
+			// Keine passende Farbe: Alle Karten spielbar
+			return myHand;
+		}
+	};
+
 	const myHand = gameState?.hands[player.id] || [];
 	const currentPlayer = gameState?.players[gameState.currentPlayerIndex || 0];
+	const playableCards = isMyTurn() ? getPlayableCards() : [];
 
 	// Sort cards: Trumpf first, then by suit and rank
 	const sortedHand = [...myHand].sort((a, b) => {
@@ -357,15 +414,26 @@ export function GameClient({ player, gameId }: GameClientProps) {
 										card.suit === "diamonds"
 									: card.rank === "queen" || card.suit === "diamonds";
 
+							const isPlayable = playableCards.some((c) => c.id === card.id);
+							const canClick = isMyTurn() && isPlayable;
+
 							return (
 								<Button
 									className={`h-20 w-14 flex-col gap-1 p-2 ${
 										isTrump ? "border-2 border-yellow-500" : ""
+									} ${
+										isMyTurn() && isPlayable
+											? "ring-2 ring-green-500 ring-offset-2"
+											: ""
+									} ${
+										isMyTurn() && !isPlayable
+											? "cursor-not-allowed opacity-50"
+											: ""
 									}`}
-									disabled={!isMyTurn()}
+									disabled={!canClick}
 									key={card.id}
 									onClick={() => playCard(card.id)}
-									variant={isMyTurn() ? "default" : "outline"}
+									variant={canClick ? "default" : "outline"}
 								>
 									<span
 										className={`font-bold text-lg ${getSuitColor(card.suit)}`}
