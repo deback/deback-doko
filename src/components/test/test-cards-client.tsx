@@ -159,7 +159,7 @@ export function TestCardsClient() {
 					</div>
 				</CardContent>
 			</Card>
-			<div className="fixed right-0 bottom-0 left-0 z-10 flex items-center justify-center">
+			<div className="fixed right-0 bottom-0 left-0 z-10 flex items-end justify-center">
 				<div
 					className="relative"
 					style={{
@@ -203,25 +203,26 @@ export function TestCardsClient() {
 
 						return (
 							<Button
-								className={`absolute top-0 left-1/2 rounded-lg transition-all duration-200 hover:z-50 ${
+								className={`absolute bottom-0 left-1/2 rounded-lg transition-all duration-200 hover:z-50 ${
 									isHearts10
 										? "border-2 border-red-600 bg-red-50 dark:bg-red-950"
 										: "bg-white dark:bg-gray-800"
 								}`}
 								key={card.id}
 								onMouseEnter={(e) => {
-									const transformY = translateY > 0 ? `${translateY}px` : "0";
+									const transformY = translateY > 0 ? `-${translateY}px` : "0";
 									e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}), ${transformY}) rotate(${rotation}deg) scale(1.1)`;
 								}}
 								onMouseLeave={(e) => {
-									const transformY = translateY > 0 ? `${translateY}px` : "0";
+									const transformY = translateY > 0 ? `-${translateY}px` : "0";
 									e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}), ${transformY}) rotate(${rotation}deg)`;
 								}}
 								style={{
-									// Karten-Größe: 12vw, aber maximal bei 1024px Viewport = 122.88px ≈ 7.6875rem
-									width: "min(12vw, 7.6875rem)",
-									height: "min(18vw, 11.53125rem)",
-									transform: `translate(calc(-50% + ${translateX}), ${translateY > 0 ? `${translateY}px` : "0"}) rotate(${rotation}deg)`,
+									// Karten-Größe: Größer auf kleinen Bildschirmen, maximal bei 1024px Viewport
+									// Auf iPhone (375px): 20vw = 75px, clamp sorgt für Mindestgröße von 5rem (80px)
+									width: "clamp(5rem, 20vw, 7.6875rem)",
+									height: "clamp(7.5rem, 30vw, 11.53125rem)",
+									transform: `translate(calc(-50% + ${translateX}), ${translateY > 0 ? `-${translateY}px` : "0"}) rotate(${rotation}deg)`,
 									transformOrigin: "50% 50%",
 									zIndex: zIndex,
 								}}
@@ -291,22 +292,16 @@ export function TestCardsClient() {
 									</span>
 								</div>
 
-								{/* Zentrum - größere Anzeige */}
+								{/* Zentrum - größere Anzeige (nur Symbol) */}
 								<div className="flex h-full items-center justify-center">
 									<div
-										className={`flex flex-col items-center ${getSuitColor(card.suit)}`}
+										className={`flex items-center justify-center ${getSuitColor(card.suit)}`}
 									>
 										<span
 											className="font-bold"
 											style={{ fontSize: "clamp(1.5rem, 4vw, 4rem)" }}
 										>
 											{getSuitSymbol(card.suit)}
-										</span>
-										<span
-											className="font-semibold"
-											style={{ fontSize: "clamp(0.875rem, 2vw, 2rem)" }}
-										>
-											{getRankDisplay(card.rank)}
 										</span>
 									</div>
 								</div>
