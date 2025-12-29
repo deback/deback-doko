@@ -169,8 +169,6 @@ export function TestCardsClient() {
 					}}
 				>
 					{sortedHand.map((card, index) => {
-						const isHearts10 = card.suit === "hearts" && card.rank === "10";
-
 						// Berechne Rotation und Position
 						const totalCards = sortedHand.length;
 						const maxRotation = 10; // Maximale Rotation in Grad
@@ -190,38 +188,39 @@ export function TestCardsClient() {
 						const cardSpacingPx = maxSpreadPx / totalCards;
 						const translateX = `calc((${index} - ${centerIndex}) * min(${cardSpacingVw}vw, ${cardSpacingPx}px))`;
 
-						// translateY nur bei Rotation > 0 für Halbkreis-Effekt
+						// translateY: Je größer die Rotation, desto weiter nach unten
 						let translateY = 0;
 						if (maxRotation > 0) {
-							const radius = 180; // Radius des Halbkreises (erhöht für besseren Halbkreis)
-							const angle = (rotation * Math.PI) / 180; // Winkel in Radiant
-							// Berechne translateY so, dass äußere Karten weiter unten sind
-							translateY = -Math.cos(angle) * radius + radius;
+							const radius = 180; // Radius des Halbkreises
+							const absRotation = Math.abs(rotation); // Absolute Rotation
+							const angle = (absRotation * Math.PI) / 180; // Winkel in Radiant
+							// Je größer die Rotation, desto größer translateY (weiter unten)
+							// Bei rotation = 0: translateY = 0
+							// Bei größerer Rotation: translateY wird größer (weiter unten)
+							// Multiplikator für stärkere Verschiebung nach unten
+							const downShiftMultiplier = 7;
+							translateY = (1 - Math.cos(angle)) * radius * downShiftMultiplier;
 						}
 
 						const zIndex = index;
 
 						return (
 							<Button
-								className={`absolute bottom-0 left-1/2 rounded-lg transition-all duration-200 hover:z-50 ${
-									isHearts10
-										? "border-2 border-red-600 bg-red-50 dark:bg-red-950"
-										: "bg-white dark:bg-gray-800"
-								}`}
+								className="absolute bottom-0 left-1/2 rounded-lg bg-white transition-all duration-200 hover:z-50 dark:bg-gray-800"
 								key={card.id}
 								onMouseEnter={(e) => {
-									const transformY = translateY > 0 ? `-${translateY}px` : "0";
+									const transformY = translateY > 0 ? `${translateY}px` : "0";
 									e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}), ${transformY}) rotate(${rotation}deg) scale(1.1)`;
 								}}
 								onMouseLeave={(e) => {
-									const transformY = translateY > 0 ? `-${translateY}px` : "0";
+									const transformY = translateY > 0 ? `${translateY}px` : "0";
 									e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}), ${transformY}) rotate(${rotation}deg)`;
 								}}
 								style={{
 									// Karten-Größe: Feste Größe, keine Skalierung
 									width: "6rem",
 									height: "9rem",
-									transform: `translate(calc(-50% + ${translateX}), ${translateY > 0 ? `-${translateY}px` : "0"}) rotate(${rotation}deg)`,
+									transform: `translate(calc(-50% + ${translateX}), ${translateY > 0 ? `${translateY}px` : "0"}) rotate(${rotation}deg)`,
 									transformOrigin: "50% 50%",
 									zIndex: zIndex,
 								}}
@@ -289,13 +288,6 @@ export function TestCardsClient() {
 										</span>
 									</div>
 								</div>
-
-								{/* Herz 10 Markierung */}
-								{isHearts10 && (
-									<span className="absolute top-2 right-2 font-bold text-red-600 text-xs">
-										★
-									</span>
-								)}
 							</Button>
 						);
 					})}
