@@ -459,7 +459,7 @@ export function GameClient({ player, gameId }: GameClientProps) {
 
 								return (
 									<Button
-										className={`absolute top-0 left-1/2 h-36 w-24 rounded-lg transition-all duration-200 hover:z-50 hover:scale-110 ${
+										className={`absolute top-0 left-1/2 h-36 w-24 rounded-lg transition-all duration-200 hover:z-50 ${
 											isHearts10
 												? "border-2 border-red-600 bg-red-50 dark:bg-red-950"
 												: isTrump
@@ -477,8 +477,15 @@ export function GameClient({ player, gameId }: GameClientProps) {
 										disabled={!canClick}
 										key={card.id}
 										onClick={() => playCard(card.id)}
+										onMouseEnter={(e) => {
+											e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}px), ${translateY}px) rotate(${rotation}deg) scale(1.1)`;
+										}}
+										onMouseLeave={(e) => {
+											e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}px), ${translateY}px) rotate(${rotation}deg)`;
+										}}
 										style={{
 											transform: `translate(calc(-50% + ${translateX}px), ${translateY}px) rotate(${rotation}deg)`,
+											transformOrigin: "50% 50%",
 											zIndex: zIndex,
 										}}
 										variant={canClick ? "default" : "outline"}
