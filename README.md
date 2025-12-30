@@ -1,29 +1,196 @@
-# Create T3 App
+# Doppelkopf Online
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+An online multiplayer card game application for playing Doppelkopf (a popular German card game) in real-time with friends.
 
-## What's next? How do I make an app with this?
+## Features
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- **User Authentication**: Multiple authentication methods including email/password, GitHub OAuth, Google OAuth, and Magic Link
+- **User Profiles**: View and edit your profile, including username customization
+- **Game Tables**: Create, join, and leave game tables
+- **Real-time Gameplay**: Real-time game functionality powered by PartyKit
+- **User Directory**: Browse all users and view their profiles
+- **Responsive Design**: Mobile-friendly interface with bottom navigation bar
+- **Modern UI**: Built with shadcn/ui components and Tailwind CSS
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Tech Stack
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+- **Framework**: [Next.js 16.1.1](https://nextjs.org) (App Router)
+- **React**: 19.2.3
+- **Language**: TypeScript
+- **Authentication**: [Better Auth](https://www.better-auth.com/)
+- **Database**: PostgreSQL with [Drizzle ORM](https://orm.drizzle.team)
+- **Real-time**: [PartyKit](https://partykit.io) for WebSocket connections
+- **Styling**: [Tailwind CSS](https://tailwindcss.com)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com)
+- **Forms**: React Hook Form + Zod validation
+- **Email**: Resend API for magic link emails
+- **Code Quality**: Biome for linting and formatting
+
+## Prerequisites
+
+- Node.js (v18 or higher)
+- pnpm (package manager)
+- PostgreSQL database
+- PartyKit account (for real-time features)
+- GitHub OAuth App (for GitHub login)
+- Google OAuth App (for Google login)
+- Resend API key (for email functionality)
+
+## Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd deback-doko
+```
+
+### 2. Install dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Set up environment variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/deback-doko"
+
+# Better Auth
+BETTER_AUTH_URL="http://localhost:3000"
+BETTER_AUTH_SECRET="your-secret-key-here"
+
+# GitHub OAuth
+BETTER_AUTH_GITHUB_CLIENT_ID="your-github-client-id"
+BETTER_AUTH_GITHUB_CLIENT_SECRET="your-github-client-secret"
+
+# Google OAuth
+BETTER_AUTH_GOOGLE_CLIENT_ID="your-google-client-id"
+BETTER_AUTH_GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# Resend (Email)
+AUTH_RESEND_KEY="your-resend-api-key"
+AUTH_RESEND_FROM_ADDRESS="noreply@yourdomain.com"
+
+# PartyKit (optional for local development)
+NEXT_PUBLIC_PARTYKIT_HOST="localhost:1999"
+```
+
+### 4. Set up the database
+
+Run database migrations:
+
+```bash
+pnpm db:push
+```
+
+Or use migrations:
+
+```bash
+pnpm db:migrate
+```
+
+### 5. Run the development server
+
+Start both Next.js and PartyKit development servers:
+
+```bash
+pnpm dev
+```
+
+This will start:
+- Next.js dev server on `http://localhost:3000`
+- PartyKit dev server on `http://localhost:1999`
+
+Or run them separately:
+
+```bash
+# Next.js only
+pnpm dev:next
+
+# PartyKit only
+pnpm dev:partykit
+```
+
+## Available Scripts
+
+- `pnpm dev` - Start development servers (Next.js + PartyKit)
+- `pnpm build` - Create production build
+- `pnpm start` - Start production server
+- `pnpm preview` - Build and start production server
+- `pnpm typecheck` - Run TypeScript type checking
+- `pnpm check` - Run Biome linter
+- `pnpm check:write` - Run Biome linter and fix issues
+- `pnpm db:generate` - Generate Drizzle migrations
+- `pnpm db:migrate` - Run database migrations
+- `pnpm db:push` - Push schema changes to database
+- `pnpm db:studio` - Open Drizzle Studio
+- `pnpm deploy:partykit` - Deploy PartyKit server
+
+## Project Structure
+
+```
+deback-doko/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── (with-navigation)/  # Pages with bottom navigation
+│   │   │   ├── page.tsx        # Home page
+│   │   │   ├── tables/         # Game tables page
+│   │   │   └── profile/        # User profile pages
+│   │   ├── api/                # API routes
+│   │   ├── game/               # Game pages
+│   │   └── login/              # Authentication pages
+│   ├── components/             # React components
+│   │   ├── game/               # Game-related components
+│   │   ├── profile/            # Profile components
+│   │   ├── tables/             # Table components
+│   │   ├── navigation.tsx      # Bottom navigation
+│   │   └── ui/                 # shadcn/ui components
+│   ├── server/                 # Server-side code
+│   │   ├── better-auth/        # Auth configuration
+│   │   ├── db/                 # Database setup
+│   │   └── email/              # Email templates
+│   ├── lib/                    # Utility functions
+│   └── types/                  # TypeScript types
+├── party/                      # PartyKit server code
+│   ├── index.ts                # Main PartyKit server
+│   └── game/                   # Game server logic
+├── drizzle/                    # Database migrations
+└── public/                     # Static assets
+```
+
+## Deployment
+
+### Vercel (Next.js)
+
+1. Push your code to GitHub
+2. Import the repository in Vercel
+3. Configure environment variables
+4. Deploy
+
+### PartyKit
+
+Deploy the PartyKit server:
+
+```bash
+pnpm deploy:partykit
+```
+
+### Database
+
+Set up a PostgreSQL database (e.g., using Vercel Postgres, Supabase, or Railway) and update the `DATABASE_URL` environment variable.
 
 ## Learn More
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Better Auth Documentation](https://www.better-auth.com/docs)
+- [Drizzle ORM Documentation](https://orm.drizzle.team/docs)
+- [PartyKit Documentation](https://docs.partykit.io)
+- [shadcn/ui Documentation](https://ui.shadcn.com)
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+## License
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
-
-## How do I deploy this?
-
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+Private project - All rights reserved
