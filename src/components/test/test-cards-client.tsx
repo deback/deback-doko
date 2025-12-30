@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { Card as GameCard, Rank, Suit } from "@/types/game";
 
 export function TestCardsClient() {
@@ -206,7 +207,10 @@ export function TestCardsClient() {
 
 						return (
 							<Button
-								className="absolute bottom-0 left-1/2 rounded-lg bg-white transition-all duration-200 hover:z-50 dark:bg-gray-800"
+								className={cn(
+									"absolute bottom-0 left-1/2 rounded-lg bg-white transition-all duration-200 hover:z-50 dark:bg-gray-800",
+									getSuitColor(card.suit),
+								)}
 								key={card.id}
 								onMouseEnter={(e) => {
 									const transformY = translateY > 0 ? `${translateY}px` : "0";
@@ -227,11 +231,8 @@ export function TestCardsClient() {
 								variant="outline"
 							>
 								{/* Oben links */}
-								<div
-									className={`absolute top-1 left-1 flex flex-col items-start ${getSuitColor(card.suit)}`}
-									style={{ fontSize: "1rem" }}
-								>
-									<span className="font-bold leading-none">
+								<div className="absolute top-1 left-1 flex flex-col items-center">
+									<span className="font-bold text-lg leading-none">
 										{getRankDisplay(card.rank)}
 									</span>
 									<span className="text-sm leading-none">
@@ -240,10 +241,7 @@ export function TestCardsClient() {
 								</div>
 
 								{/* Oben rechts */}
-								<div
-									className={`absolute top-1 right-1 flex flex-col items-end ${getSuitColor(card.suit)}`}
-									style={{ fontSize: "1rem" }}
-								>
+								<div className="absolute top-1 right-1 flex flex-col items-center">
 									<span className="font-bold leading-none">
 										{getRankDisplay(card.rank)}
 									</span>
@@ -253,10 +251,7 @@ export function TestCardsClient() {
 								</div>
 
 								{/* Unten links */}
-								<div
-									className={`absolute bottom-1 left-1 flex rotate-180 flex-col items-start ${getSuitColor(card.suit)}`}
-									style={{ fontSize: "1rem" }}
-								>
+								<div className="absolute bottom-1 left-1 flex rotate-180 flex-col items-center">
 									<span className="font-bold leading-none">
 										{getRankDisplay(card.rank)}
 									</span>
@@ -266,10 +261,7 @@ export function TestCardsClient() {
 								</div>
 
 								{/* Unten rechts */}
-								<div
-									className={`absolute right-1 bottom-1 flex rotate-180 flex-col items-end ${getSuitColor(card.suit)}`}
-									style={{ fontSize: "1rem" }}
-								>
+								<div className="absolute right-1 bottom-1 flex rotate-180 flex-col items-center">
 									<span className="font-bold leading-none">
 										{getRankDisplay(card.rank)}
 									</span>
@@ -280,9 +272,7 @@ export function TestCardsClient() {
 
 								{/* Zentrum - größere Anzeige (nur Symbol) */}
 								<div className="flex h-full items-center justify-center">
-									<div
-										className={`flex items-center justify-center ${getSuitColor(card.suit)}`}
-									>
+									<div className="flex items-center justify-center">
 										<span className="font-bold text-4xl">
 											{getSuitSymbol(card.suit)}
 										</span>
