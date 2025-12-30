@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { updateUserName } from "@/app/profile/me/actions";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -22,7 +23,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { updateUserName } from "@/app/profile/me/actions";
 
 const usernameFormSchema = z.object({
 	name: z
@@ -74,7 +74,7 @@ export function UsernameForm({ currentName, userId }: UsernameFormProps) {
 					text: result.error ?? "Fehler beim Aktualisieren des Usernamens",
 				});
 			}
-		} catch (error) {
+		} catch (_error) {
 			setSubmitMessage({
 				type: "error",
 				text: "Ein unerwarteter Fehler ist aufgetreten.",
@@ -94,7 +94,7 @@ export function UsernameForm({ currentName, userId }: UsernameFormProps) {
 			</CardHeader>
 			<CardContent>
 				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+					<form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
 						<FormField
 							control={form.control}
 							name="name"
@@ -124,7 +124,7 @@ export function UsernameForm({ currentName, userId }: UsernameFormProps) {
 							</div>
 						)}
 
-						<Button type="submit" disabled={isSubmitting}>
+						<Button disabled={isSubmitting} type="submit">
 							{isSubmitting ? "Wird gespeichert..." : "Speichern"}
 						</Button>
 					</form>
@@ -133,4 +133,3 @@ export function UsernameForm({ currentName, userId }: UsernameFormProps) {
 		</Card>
 	);
 }
-

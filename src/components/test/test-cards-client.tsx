@@ -18,13 +18,13 @@ export function TestCardsClient() {
 	const trump: Suit | "jacks" | "queens" = "jacks";
 
 	const getCardValueForSort = useCallback(
-		(card: GameCard, _trump: Suit | "jacks" | "queens", hasSchweinerei: boolean): number => {
+		(
+			card: GameCard,
+			_trump: Suit | "jacks" | "queens",
+			hasSchweinerei: boolean,
+		): number => {
 			// Schweinerei: Karo-Assen sind höher als Herz 10, wenn beide vorhanden sind
-			if (
-				card.suit === "diamonds" &&
-				card.rank === "ace" &&
-				hasSchweinerei
-			) {
+			if (card.suit === "diamonds" && card.rank === "ace" && hasSchweinerei) {
 				return 1200; // Höher als Herz 10 (1100)
 			}
 			// Herz 10 ist höchster Trumpf
@@ -120,7 +120,7 @@ export function TestCardsClient() {
 			const bRankOrder = rankOrder[b.rank] ?? 99;
 			return aRankOrder - bRankOrder;
 		});
-	}, [cards, getCardValueForSort, trump]);
+	}, [cards, getCardValueForSort]);
 
 	const getSuitColor = (suit: string) => {
 		switch (suit) {

@@ -32,14 +32,14 @@ export function UserProfile({ user }: UserProfileProps) {
 				<div className="flex items-center gap-4">
 					{user.image ? (
 						<Image
-							src={user.image}
 							alt={user.name}
-							width={80}
-							height={80}
 							className="rounded-full"
+							height={80}
+							src={user.image}
+							width={80}
 						/>
 					) : (
-						<div className="flex size-20 items-center justify-center rounded-full bg-muted text-2xl font-bold">
+						<div className="flex size-20 items-center justify-center rounded-full bg-muted font-bold text-2xl">
 							{user.name.charAt(0).toUpperCase()}
 						</div>
 					)}
@@ -51,7 +51,7 @@ export function UserProfile({ user }: UserProfileProps) {
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="space-y-2">
-					<p className="text-sm font-medium text-muted-foreground">
+					<p className="font-medium text-muted-foreground text-sm">
 						Email-Verifizierung
 					</p>
 					<p className="text-sm">
@@ -68,22 +68,17 @@ export function UserProfile({ user }: UserProfileProps) {
 				</div>
 
 				<div className="space-y-2">
-					<p className="text-sm font-medium text-muted-foreground">
+					<p className="font-medium text-muted-foreground text-sm">
 						Mitglied seit
 					</p>
 					<p className="text-sm">{createdAt}</p>
 				</div>
 
 				<div className="space-y-2">
-					<p className="text-sm font-medium text-muted-foreground">
-						User-ID
-					</p>
-					<p className="font-mono text-xs text-muted-foreground">
-						{user.id}
-					</p>
+					<p className="font-medium text-muted-foreground text-sm">User-ID</p>
+					<p className="font-mono text-muted-foreground text-xs">{user.id}</p>
 				</div>
 			</CardContent>
 		</Card>
 	);
 }
-

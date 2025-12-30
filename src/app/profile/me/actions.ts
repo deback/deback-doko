@@ -6,7 +6,10 @@ import { db } from "@/server/db";
 import { user } from "@/server/db/schema";
 
 const updateUserNameSchema = z.object({
-	name: z.string().min(2, "Der Name muss mindestens 2 Zeichen lang sein.").max(50, "Der Name darf maximal 50 Zeichen lang sein."),
+	name: z
+		.string()
+		.min(2, "Der Name muss mindestens 2 Zeichen lang sein.")
+		.max(50, "Der Name darf maximal 50 Zeichen lang sein."),
 });
 
 export async function updateUserName(userId: string, newName: string) {
@@ -49,4 +52,3 @@ export async function updateUserName(userId: string, newName: string) {
 		};
 	}
 }
-

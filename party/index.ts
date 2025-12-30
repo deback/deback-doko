@@ -82,10 +82,10 @@ export default class Server implements Party.Server {
 	tables: Map<string, Table> = new Map();
 	games: Map<string, GameState> = new Map();
 
-  constructor(readonly room: Party.Room) {}
+	constructor(readonly room: Party.Room) {}
 
-  onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
-    console.log(
+	onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
+		console.log(
 			`Connected: id: ${conn.id}, room: ${this.room.id}, url: ${new URL(ctx.request.url).pathname}`,
 		);
 
@@ -99,9 +99,9 @@ export default class Server implements Party.Server {
 				this.sendGameState(conn, gameState);
 			}
 		}
-  }
+	}
 
-  onMessage(message: string, sender: Party.Connection) {
+	onMessage(message: string, sender: Party.Connection) {
 		if (this.room.id.startsWith("game-")) {
 			// Handle game events
 			try {
@@ -737,7 +737,7 @@ export default class Server implements Party.Server {
 			state: gameState,
 		};
 		this.room.broadcast(JSON.stringify(message));
-  }
+	}
 }
 
 Server satisfies Party.Worker;

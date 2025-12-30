@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
+import { getUserById } from "@/app/profile/[userId]/actions";
 import { UserProfile } from "@/components/profile/user-profile";
 import { UsernameForm } from "@/components/profile/username-form";
 import { getSession } from "@/server/better-auth/server";
-import { getUserById } from "@/app/profile/[userId]/actions";
 
 export default async function MyProfilePage() {
 	const session = await getSession();
@@ -23,12 +23,8 @@ export default async function MyProfilePage() {
 			<div className="space-y-6 p-6">
 				<h1 className="font-bold text-3xl">Mein Profil</h1>
 				<UserProfile user={result.data} />
-				<UsernameForm
-					currentName={result.data.name}
-					userId={result.data.id}
-				/>
+				<UsernameForm currentName={result.data.name} userId={result.data.id} />
 			</div>
 		</main>
 	);
 }
-
