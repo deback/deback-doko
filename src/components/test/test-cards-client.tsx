@@ -161,14 +161,7 @@ export function TestCardsClient() {
 				</CardContent>
 			</Card>
 			<div className="fixed right-0 bottom-0 left-0 z-10 flex items-end justify-center">
-				<div
-					className="relative"
-					style={{
-						height: "200px",
-						width: "100%",
-						maxWidth: "1024px",
-					}}
-				>
+				<div className="relative w-full max-w-2xl">
 					{sortedHand.map((card, index) => {
 						// Berechne Rotation und Position
 						const totalCards = sortedHand.length;
@@ -203,31 +196,28 @@ export function TestCardsClient() {
 							translateY = (1 - Math.cos(angle)) * radius * downShiftMultiplier;
 						}
 
-						const zIndex = index;
-
 						return (
 							<Button
 								className={cn(
-									"absolute bottom-0 left-1/2 rounded-lg bg-white transition-all duration-200 hover:z-50 dark:bg-gray-800",
+									"absolute bottom-0 left-1/2 h-36 w-24 rounded-lg bg-white transition-all duration-200 dark:bg-gray-800",
 									getSuitColor(card.suit),
 								)}
 								key={card.id}
 								onMouseEnter={(e) => {
-									const transformY = translateY > 0 ? `${translateY}px` : "0";
-									e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}), ${transformY}) rotate(${rotation}deg) scale(1.1)`;
+									e.currentTarget.style.setProperty("--scale", "1.1");
 								}}
 								onMouseLeave={(e) => {
-									const transformY = translateY > 0 ? `${translateY}px` : "0";
-									e.currentTarget.style.transform = `translate(calc(-50% + ${translateX}), ${transformY}) rotate(${rotation}deg)`;
+									e.currentTarget.style.setProperty("--scale", "1");
 								}}
-								style={{
-									// Karten-Größe: Feste Größe, keine Skalierung
-									width: "6rem",
-									height: "9rem",
-									transform: `translate(calc(-50% + ${translateX}), ${translateY > 0 ? `${translateY}px` : "0"}) rotate(${rotation}deg)`,
-									transformOrigin: "50% 50%",
-									zIndex: zIndex,
-								}}
+								style={
+									{
+										"--translate-x": translateX,
+										"--translate-y": translateY > 0 ? `${translateY}px` : "0",
+										"--rotation": `${rotation}deg`,
+										"--scale": "1",
+										transform: `translate(calc(-50% + var(--translate-x)), var(--translate-y)) rotate(var(--rotation)) scale(var(--scale))`,
+									} as React.CSSProperties
+								}
 								variant="outline"
 							>
 								{/* Oben links */}
