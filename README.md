@@ -169,14 +169,24 @@ deback-doko/
 1. Push your code to GitHub
 2. Import the repository in Vercel
 3. Configure environment variables
-4. **Enable Deployment Protection** (Important):
-   - Go to your Vercel project → Settings → Git → Deployment Protection
-   - Enable "Wait for GitHub Checks to Pass"
-   - Select the required status checks: `lint`, `typecheck`, and `build`
-   - This ensures Vercel only deploys when the CI pipeline succeeds
-5. Deploy
+4. **Configure GitHub Branch Protection** (Recommended - prevents merges when CI fails):
+   - Go to your GitHub repository → **Settings** → **Branches**
+   - Add a branch protection rule for `main` (or `master`)
+   - Enable **"Require status checks to pass before merging"**
+   - Select the required status checks: `lint`, `typecheck`, `build`
+   - Enable **"Require branches to be up to date before merging"**
+   - Save the rule
+5. **Alternative: Use Vercel Deployment Checks** (if available):
+   - Go to your Vercel project → **Settings** → **Git**
+   - Look for "Deployment Checks" or similar options
+   - Configure checks to wait for GitHub Actions status checks
+6. Deploy
 
-**Note**: The CI pipeline runs three checks (lint, typecheck, build) that must all pass before Vercel will deploy. This prevents deployments when the pipeline fails.
+**Note**: 
+- The CI pipeline runs three checks (lint, typecheck, build) that must all pass
+- With branch protection enabled, failed checks prevent merging to main/master
+- Vercel will only deploy from the main branch, so failed checks prevent deployments
+- The status checks are automatically created by GitHub Actions when the workflow runs
 
 ### PartyKit
 

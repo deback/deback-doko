@@ -19,7 +19,7 @@ export default async function TablesPage() {
 
 	return (
 		<main className="min-h-screen">
-			<TablesClientX player={player} />
+			<TablesClient player={player} />
 		</main>
 	);
 }
