@@ -169,7 +169,14 @@ deback-doko/
 1. Push your code to GitHub
 2. Import the repository in Vercel
 3. Configure environment variables
-4. Deploy
+4. **Enable Deployment Protection** (Important):
+   - Go to your Vercel project → Settings → Git → Deployment Protection
+   - Enable "Wait for GitHub Checks to Pass"
+   - Select the required status checks: `lint`, `typecheck`, and `build`
+   - This ensures Vercel only deploys when the CI pipeline succeeds
+5. Deploy
+
+**Note**: The CI pipeline runs three checks (lint, typecheck, build) that must all pass before Vercel will deploy. This prevents deployments when the pipeline fails.
 
 ### PartyKit
 
