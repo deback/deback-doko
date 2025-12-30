@@ -2,9 +2,9 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getAllUsers } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getAllUsers } from "@/app/actions";
 import { auth } from "@/server/better-auth";
 import { getSession } from "@/server/better-auth/server";
 
@@ -19,7 +19,7 @@ export default async function Home() {
 	const users = usersResult.success ? usersResult.data : [];
 
 	return (
-		<main className="mx-auto min-h-screen max-w-screen-md overflow-hidden border-x px-4">
+		<main className="mx-auto min-h-screen max-w-3xl overflow-hidden border-x px-4">
 			<div className="space-y-6 p-6">
 				<h1 className="font-bold text-3xl">Doppelkopf</h1>
 				<Link href="/tables">
@@ -49,19 +49,19 @@ export default async function Home() {
 					) : (
 						<div className="space-y-2">
 							{users.map((user) => (
-								<Link key={user.id} href={`/profile/${user.id}`}>
+								<Link href={`/profile/${user.id}`} key={user.id}>
 									<Card className="transition-colors hover:bg-accent">
 										<CardContent className="flex items-center gap-4 p-4">
 											{user.image ? (
 												<Image
-													src={user.image}
 													alt={user.name}
-													width={48}
-													height={48}
 													className="rounded-full"
+													height={48}
+													src={user.image}
+													width={48}
 												/>
 											) : (
-												<div className="flex size-12 items-center justify-center rounded-full bg-muted text-lg font-bold">
+												<div className="flex size-12 items-center justify-center rounded-full bg-muted font-bold text-lg">
 													{user.name.charAt(0).toUpperCase()}
 												</div>
 											)}

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { UserProfile } from "@/components/profile/user-profile";
 import { UsernameForm } from "@/components/profile/username-form";
 import { getSession } from "@/server/better-auth/server";
-import { getUserById } from "../[userId]/actions";
+import { getUserById } from "@/app/profile/[userId]/actions";
 
 export default async function MyProfilePage() {
 	const session = await getSession();
