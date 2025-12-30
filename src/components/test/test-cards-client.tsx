@@ -18,7 +18,15 @@ export function TestCardsClient() {
 	const trump: Suit | "jacks" | "queens" = "jacks";
 
 	const getCardValueForSort = useCallback(
-		(card: GameCard, _trump: Suit | "jacks" | "queens"): number => {
+		(card: GameCard, _trump: Suit | "jacks" | "queens", hasSchweinerei: boolean): number => {
+			// Schweinerei: Karo-Assen sind höher als Herz 10, wenn beide vorhanden sind
+			if (
+				card.suit === "diamonds" &&
+				card.rank === "ace" &&
+				hasSchweinerei
+			) {
+				return 1200; // Höher als Herz 10 (1100)
+			}
 			// Herz 10 ist höchster Trumpf
 			if (card.suit === "hearts" && card.rank === "10") return 1100;
 			// Damen sind zweithöchster Trumpf
@@ -38,6 +46,12 @@ export function TestCardsClient() {
 	);
 
 	const sortedHand = useMemo(() => {
+		// Prüfe, ob beide Karo-Assen vorhanden sind (Schweinerei)
+		const diamondsAces = cards.filter(
+			(card) => card.suit === "diamonds" && card.rank === "ace",
+		);
+		const hasSchweinerei = diamondsAces.length === 2;
+
 		return [...cards].sort((a, b) => {
 			// Check if cards are trump (Herz 10 ist immer Trumpf)
 			const aIsHearts10 = a.suit === "hearts" && a.rank === "10";
@@ -59,12 +73,21 @@ export function TestCardsClient() {
 
 			// If both are trump, sort by trump value
 			if (aIsTrump && bIsTrump) {
-				// Herz 10 ist immer höchster Trumpf
-				if (aIsHearts10 && !bIsHearts10) return -1;
-				if (!aIsHearts10 && bIsHearts10) return 1;
+				// Schweinerei: Karo-Assen sind höher als Herz 10
+				const aIsSchweinerei =
+					a.suit === "diamonds" && a.rank === "ace" && hasSchweinerei;
+				const bIsSchweinerei =
+					b.suit === "diamonds" && b.rank === "ace" && hasSchweinerei;
 
-				const aValue = getCardValueForSort(a, trump);
-				const bValue = getCardValueForSort(b, trump);
+				if (aIsSchweinerei && !bIsSchweinerei) return -1;
+				if (!aIsSchweinerei && bIsSchweinerei) return 1;
+
+				// Herz 10 ist höchster Trumpf (nach Schweinerei)
+				if (aIsHearts10 && !bIsHearts10 && !bIsSchweinerei) return -1;
+				if (!aIsHearts10 && bIsHearts10 && !aIsSchweinerei) return 1;
+
+				const aValue = getCardValueForSort(a, trump, hasSchweinerei);
+				const bValue = getCardValueForSort(b, trump, hasSchweinerei);
 				return bValue - aValue; // Higher value first
 			}
 
@@ -97,7 +120,7 @@ export function TestCardsClient() {
 			const bRankOrder = rankOrder[b.rank] ?? 99;
 			return aRankOrder - bRankOrder;
 		});
-	}, [cards, getCardValueForSort]);
+	}, [cards, getCardValueForSort, trump]);
 
 	const getSuitColor = (suit: string) => {
 		switch (suit) {
@@ -282,13 +305,16 @@ function generateRandomCards(count: number): GameCard[] {
 	const ranks: Rank[] = ["9", "10", "jack", "queen", "king", "ace"];
 
 	const allCards: GameCard[] = [];
-	for (const suit of suits) {
-		for (const rank of ranks) {
-			allCards.push({
-				suit,
-				rank,
-				id: `${suit}-${rank}-${Math.random().toString(36).substring(7)}`,
-			});
+	// Doppelkopf: Jede Karte kommt doppelt vor
+	for (let deck = 0; deck < 2; deck++) {
+		for (const suit of suits) {
+			for (const rank of ranks) {
+				allCards.push({
+					suit,
+					rank,
+					id: `${suit}-${rank}-${deck}-${Math.random().toString(36).substring(7)}`,
+				});
+			}
 		}
 	}
 

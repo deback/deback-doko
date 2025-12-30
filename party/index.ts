@@ -66,6 +66,7 @@ interface GameState {
 	gameEnded: boolean;
 	round: number;
 	scores: Record<string, number>;
+	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
 }
 
 type GameEvent =
@@ -379,6 +380,20 @@ export default class Server implements Party.Server {
 		const hands = this.dealCards(deck, players);
 		const trump: Suit | "jacks" | "queens" = "jacks";
 
+		// Prüfe, welche Spieler beide Karo-Assen haben (Schweinerei)
+		const schweinereiPlayers: string[] = [];
+		for (const player of players) {
+			const hand = hands[player.id];
+			if (hand) {
+				const diamondsAces = hand.filter(
+					(card) => card.suit === "diamonds" && card.rank === "ace",
+				);
+				if (diamondsAces.length === 2) {
+					schweinereiPlayers.push(player.id);
+				}
+			}
+		}
+
 		// Initialisiere Scores für alle Spieler mit 0
 		const scores: Record<string, number> = {};
 		for (const player of players) {
@@ -401,6 +416,7 @@ export default class Server implements Party.Server {
 			gameEnded: false,
 			round: 1,
 			scores,
+			schweinereiPlayers,
 		};
 
 		this.games.set(gameId, gameState);
@@ -468,6 +484,7 @@ export default class Server implements Party.Server {
 		const winner = this.determineTrickWinner(
 			trick,
 			gameState.trump,
+			gameState.schweinereiPlayers,
 			isLastTrick,
 		);
 		trick.winnerId = winner;
@@ -503,6 +520,7 @@ export default class Server implements Party.Server {
 	determineTrickWinner(
 		trick: Trick,
 		trump: Suit | "jacks" | "queens",
+		schweinereiPlayers: string[],
 		isLastTrick = false,
 	): string {
 		if (trick.cards.length === 0) return "";
@@ -515,7 +533,14 @@ export default class Server implements Party.Server {
 
 		const leadSuit = firstCard.suit;
 		let winner = firstCardEntry;
-		let highestValue = this.getCardValue(firstCard, leadSuit, trump);
+		const firstPlayerId = firstCardEntry.playerId || "";
+		let highestValue = this.getCardValue(
+			firstCard,
+			leadSuit,
+			trump,
+			firstPlayerId,
+			schweinereiPlayers,
+		);
 
 		// Sonderregel für letzten Stich: Wenn beide Herz 10 sind, gewinnt die zweite
 		if (isLastTrick) {
@@ -532,7 +557,14 @@ export default class Server implements Party.Server {
 			const cardEntry = trick.cards[i];
 			if (!cardEntry) continue;
 
-			const value = this.getCardValue(cardEntry.card, leadSuit, trump);
+			const playerId = cardEntry.playerId || "";
+			const value = this.getCardValue(
+				cardEntry.card,
+				leadSuit,
+				trump,
+				playerId,
+				schweinereiPlayers,
+			);
 			if (value > highestValue) {
 				highestValue = value;
 				winner = cardEntry;
@@ -546,11 +578,21 @@ export default class Server implements Party.Server {
 		card: Card,
 		leadSuit: Suit,
 		trump: Suit | "jacks" | "queens",
+		playerId: string,
+		schweinereiPlayers: string[],
 	): number {
 		const isTrump = this.isTrump(card, trump);
 		const isLeadSuit = card.suit === leadSuit;
 
 		if (isTrump) {
+			// Schweinerei: Karo-Assen sind höher als Herz 10, wenn Spieler beide hat
+			if (
+				card.suit === "diamonds" &&
+				card.rank === "ace" &&
+				schweinereiPlayers.includes(playerId)
+			) {
+				return 1200; // Höher als Herz 10 (1100)
+			}
 			// In Doppelkopf: Herz 10 ist höchster Trumpf, dann Damen, dann Buben, dann Karo
 			if (card.suit === "hearts" && card.rank === "10") return 1100;
 			if (card.rank === "queen") return 1000;

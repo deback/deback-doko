@@ -29,6 +29,7 @@ export interface GameState {
 	gameEnded: boolean;
 	round: number;
 	scores: Record<string, number>; // playerId -> Gesamtpunkte
+	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
 }
 
 export type GameEvent =

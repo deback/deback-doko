@@ -247,9 +247,22 @@ export function GameClient({ player, gameId }: GameClientProps) {
 
 		// If both are trump, sort by trump value
 		if (aIsTrump && bIsTrump) {
-			// Herz 10 ist immer höchster Trumpf
-			if (aIsHearts10 && !bIsHearts10) return -1;
-			if (!aIsHearts10 && bIsHearts10) return 1;
+			// Schweinerei: Karo-Assen sind höher als Herz 10
+			const aIsSchweinerei =
+				a.suit === "diamonds" &&
+				a.rank === "ace" &&
+				gameState.schweinereiPlayers.includes(player.id);
+			const bIsSchweinerei =
+				b.suit === "diamonds" &&
+				b.rank === "ace" &&
+				gameState.schweinereiPlayers.includes(player.id);
+
+			if (aIsSchweinerei && !bIsSchweinerei) return -1;
+			if (!aIsSchweinerei && bIsSchweinerei) return 1;
+
+			// Herz 10 ist höchster Trumpf (nach Schweinerei)
+			if (aIsHearts10 && !bIsHearts10 && !bIsSchweinerei) return -1;
+			if (!aIsHearts10 && bIsHearts10 && !aIsSchweinerei) return 1;
 
 			const aValue = getCardValueForSort(a, gameState.trump);
 			const bValue = getCardValueForSort(b, gameState.trump);
@@ -290,6 +303,14 @@ export function GameClient({ player, gameId }: GameClientProps) {
 		card: GameCard,
 		_trump: Suit | "jacks" | "queens",
 	): number {
+		// Schweinerei: Karo-Assen sind höher als Herz 10, wenn Spieler beide hat
+		if (
+			card.suit === "diamonds" &&
+			card.rank === "ace" &&
+			gameState?.schweinereiPlayers.includes(player.id)
+		) {
+			return 1200; // Höher als Herz 10 (1100)
+		}
 		// Trump values: Herz 10 (1100), Damen (1000), Buben (900), Karo (820-850)
 		if (card.suit === "hearts" && card.rank === "10") return 1100;
 		if (card.rank === "queen") return 1000;
