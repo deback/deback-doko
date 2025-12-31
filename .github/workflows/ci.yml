@@ -69,39 +69,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.26.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: vercel-build
-          path: .vercel/output
-
-      - name: Deploy Project Artifacts to Vercel
+      - name: Trigger Vercel Deployment
         id: deploy
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          # Trigger Vercel deployment - Vercel will build automatically
+          DEPLOYMENT_URL=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
           echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
           echo "Deployment URL: $DEPLOYMENT_URL"
         env:
@@ -111,5 +86,6 @@ jobs:
       - name: Deployment Summary
         if: success()
         run: |
-          echo "✅ Deployment successful!"
+          echo "✅ Deployment triggered successfully!"
           echo "🌐 URL: ${{ steps.deploy.outputs.url }}"
+          echo "ℹ️  Vercel is building and deploying the application..."
