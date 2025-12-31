@@ -23,23 +23,37 @@ export function TestCardsClient() {
 			_trump: Suit | "jacks" | "queens",
 			hasSchweinerei: boolean,
 		): number => {
-			// Schweinerei: Karo-Assen sind höher als Herz 10, wenn beide vorhanden sind
+			// Schweinerei: Karo-Assen sind höchster Trumpf, wenn beide vorhanden sind
 			if (card.suit === "diamonds" && card.rank === "ace" && hasSchweinerei) {
 				return 1200; // Höher als Herz 10 (1100)
 			}
-			// Herz 10 ist höchster Trumpf
+			// Herz 10 ist höchster Trumpf (nach Schweinerei)
 			if (card.suit === "hearts" && card.rank === "10") return 1100;
 			// Damen sind zweithöchster Trumpf
 			if (card.rank === "queen") return 1000;
 			// Buben sind dritthöchster Trumpf
 			if (card.rank === "jack") return 900;
+
+			// Farbtrumpf: Farbreihenfolge Kreuz > Pik > Herz > Karo
+			// Trumpf-Farb-Reihenfolge: clubs (Kreuz) = 4, spades (Pik) = 3, hearts (Herz) = 2, diamonds (Karo) = 1
+			const trumpSuitOrder: Record<Suit, number> = {
+				clubs: 4, // Kreuz: höchster Farbtrumpf
+				spades: 3, // Pik: zweithöchster Farbtrumpf
+				hearts: 2, // Herz: dritthöchster Farbtrumpf
+				diamonds: 1, // Karo: niedrigster Farbtrumpf
+			};
+
 			// Karo (Diamonds) ist auch Trumpf
 			if (card.suit === "diamonds") {
-				if (card.rank === "ace") return 850;
-				if (card.rank === "king") return 840;
-				if (card.rank === "10") return 830;
-				if (card.rank === "9") return 820;
+				const suitValue = trumpSuitOrder[card.suit] ?? 0;
+				if (card.rank === "ace") return 800 + suitValue;
+				if (card.rank === "king") return 700 + suitValue;
+				if (card.rank === "10") return 600 + suitValue;
+				if (card.rank === "9") return 500 + suitValue;
 			}
+
+			// Andere Farben als Trumpf (Kreuz, Pik, Herz) - nur wenn sie Trumpf sind
+			// Diese werden durch die Sortierlogik behandelt, hier nur für Vollständigkeit
 			return 0;
 		},
 		[],
@@ -73,7 +87,7 @@ export function TestCardsClient() {
 
 			// If both are trump, sort by trump value
 			if (aIsTrump && bIsTrump) {
-				// Schweinerei: Karo-Assen sind höher als Herz 10
+				// Schweinerei: Karo-Assen sind höchster Trumpf
 				const aIsSchweinerei =
 					a.suit === "diamonds" && a.rank === "ace" && hasSchweinerei;
 				const bIsSchweinerei =
@@ -86,18 +100,111 @@ export function TestCardsClient() {
 				if (aIsHearts10 && !bIsHearts10 && !bIsSchweinerei) return -1;
 				if (!aIsHearts10 && bIsHearts10 && !aIsSchweinerei) return 1;
 
+				// Damen sind zweithöchster Trumpf - mit Farbreihenfolge: Kreuz > Pik > Herz > Karo
+				if (a.rank === "queen" && b.rank === "queen") {
+					const trumpSuitOrder: Record<Suit, number> = {
+						clubs: 4, // Kreuz: höchste Dame
+						spades: 3, // Pik: zweithöchste Dame
+						hearts: 2, // Herz: dritthöchste Dame
+						diamonds: 1, // Karo: niedrigste Dame
+					};
+					const aSuitOrder = trumpSuitOrder[a.suit] ?? 0;
+					const bSuitOrder = trumpSuitOrder[b.suit] ?? 0;
+					return bSuitOrder - aSuitOrder; // Höhere Farbe zuerst
+				}
+				if (
+					a.rank === "queen" &&
+					b.rank !== "queen" &&
+					!bIsSchweinerei &&
+					!bIsHearts10
+				)
+					return -1;
+				if (
+					a.rank !== "queen" &&
+					b.rank === "queen" &&
+					!aIsSchweinerei &&
+					!aIsHearts10
+				)
+					return 1;
+
+				// Buben sind dritthöchster Trumpf - mit Farbreihenfolge: Kreuz > Pik > Herz > Karo
+				if (a.rank === "jack" && b.rank === "jack") {
+					const trumpSuitOrder: Record<Suit, number> = {
+						clubs: 4, // Kreuz: höchster Bube
+						spades: 3, // Pik: zweithöchster Bube
+						hearts: 2, // Herz: dritthöchster Bube
+						diamonds: 1, // Karo: niedrigster Bube
+					};
+					const aSuitOrder = trumpSuitOrder[a.suit] ?? 0;
+					const bSuitOrder = trumpSuitOrder[b.suit] ?? 0;
+					return bSuitOrder - aSuitOrder; // Höhere Farbe zuerst
+				}
+				if (
+					a.rank === "jack" &&
+					b.rank !== "jack" &&
+					!bIsSchweinerei &&
+					!bIsHearts10 &&
+					b.rank !== "queen"
+				)
+					return -1;
+				if (
+					a.rank !== "jack" &&
+					b.rank === "jack" &&
+					!aIsSchweinerei &&
+					!aIsHearts10 &&
+					a.rank !== "queen"
+				)
+					return 1;
+
+				// Farbtrumpf: Farbreihenfolge Kreuz > Pik > Herz > Karo
+				// Nur wenn beide Farbtrumpf sind (nicht Damen/Buben/Herz 10)
+				const aIsColorTrump =
+					aIsTrump && a.rank !== "queen" && a.rank !== "jack" && !aIsHearts10;
+				const bIsColorTrump =
+					bIsTrump && b.rank !== "queen" && b.rank !== "jack" && !bIsHearts10;
+
+				if (aIsColorTrump && bIsColorTrump) {
+					const trumpSuitOrder: Record<Suit, number> = {
+						clubs: 4, // Kreuz: höchster Farbtrumpf
+						spades: 3, // Pik: zweithöchster Farbtrumpf
+						hearts: 2, // Herz: dritthöchster Farbtrumpf
+						diamonds: 1, // Karo: niedrigster Farbtrumpf
+					};
+
+					const aSuitOrder = trumpSuitOrder[a.suit] ?? 0;
+					const bSuitOrder = trumpSuitOrder[b.suit] ?? 0;
+
+					// Wenn gleiche Farbe, nach Rang sortieren
+					if (a.suit === b.suit) {
+						const rankOrder: Record<string, number> = {
+							ace: 4,
+							king: 3,
+							"10": 2,
+							"9": 1,
+						};
+						const aRankOrder = rankOrder[a.rank] ?? 0;
+						const bRankOrder = rankOrder[b.rank] ?? 0;
+						if (aRankOrder !== bRankOrder) {
+							return bRankOrder - aRankOrder; // Höherer Rang zuerst
+						}
+					}
+
+					// Verschiedene Farben: nach Farbreihenfolge sortieren
+					return bSuitOrder - aSuitOrder; // Höhere Farbe zuerst
+				}
+
 				const aValue = getCardValueForSort(a, trump, hasSchweinerei);
 				const bValue = getCardValueForSort(b, trump, hasSchweinerei);
 				return bValue - aValue; // Higher value first
 			}
 
 			// If neither is trump, sort by suit then rank
-			// Doppelkopf Farb-Reihenfolge: Kreuz, Herz, Pik, Karo
+			// Doppelkopf Farb-Reihenfolge für Fehlfarben: Kreuz, Herz, Pik, Karo
 			const suitOrder: Record<Suit, number> = {
-				clubs: 1,
-				hearts: 2,
-				spades: 3,
-				diamonds: 4,
+				clubs: 1, // Kreuz
+				hearts: 2, // Herz
+				spades: 3, // Pik
+				diamonds: 4, // Karo
 			};
 
 			if (a.suit !== b.suit) {
