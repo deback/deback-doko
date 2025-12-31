@@ -168,24 +168,30 @@ deback-doko/
 
 1. Push your code to GitHub
 2. Import the repository in Vercel
-3. Configure environment variables
-4. **Configure GitHub Branch Protection** (Recommended - prevents merges when CI fails):
+3. Configure environment variables in Vercel Dashboard
+4. **Set up GitHub Secrets** (Required for automatic deployment):
+   - Go to your GitHub repository → **Settings** → **Secrets and variables** → **Actions**
+   - Add the following secrets:
+     - `VERCEL_TOKEN` - Get from Vercel Dashboard → Settings → Tokens
+     - `VERCEL_ORG_ID` - Get from Vercel Dashboard → Settings → General
+     - `VERCEL_PROJECT_ID` - Get from Vercel Dashboard → Settings → General
+   - Also add all environment variables that are needed for the build (same as in Vercel)
+5. **Configure GitHub Branch Protection** (Recommended - prevents merges when CI fails):
    - Go to your GitHub repository → **Settings** → **Branches**
    - Add a branch protection rule for `main` (or `master`)
    - Enable **"Require status checks to pass before merging"**
    - Select the required status checks: `lint`, `typecheck`, `build`
    - Enable **"Require branches to be up to date before merging"**
    - Save the rule
-5. **Alternative: Use Vercel Deployment Checks** (if available):
-   - Go to your Vercel project → **Settings** → **Git**
-   - Look for "Deployment Checks" or similar options
-   - Configure checks to wait for GitHub Actions status checks
-6. Deploy
+6. **Automatic Deployment**:
+   - The CI pipeline automatically deploys to Vercel after all checks pass
+   - Deployment only happens on push to `main`/`master`, not on pull requests
+   - The deploy job runs after lint, typecheck, and build jobs succeed
 
 **Note**: 
 - The CI pipeline runs three checks (lint, typecheck, build) that must all pass
+- After successful checks, the pipeline automatically deploys to Vercel
 - With branch protection enabled, failed checks prevent merging to main/master
-- Vercel will only deploy from the main branch, so failed checks prevent deployments
 - The status checks are automatically created by GitHub Actions when the workflow runs
 
 ### PartyKit
