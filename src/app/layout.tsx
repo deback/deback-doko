@@ -1,5 +1,6 @@
 import "@/styles/globals.css";
-
+// biome-ignore lint/correctness/noUnusedImports: for vercel analytics
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
