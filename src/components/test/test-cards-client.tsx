@@ -1,440 +1,286 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Card as GameCard, Rank, Suit } from "@/types/game";
 
+// --- KONSTANTEN & VISUALS ---
+
+const SUIT_SYMBOL: Record<Suit, string> = {
+	hearts: "♥",
+	diamonds: "♦",
+	clubs: "♣",
+	spades: "♠",
+};
+
+const RANK_DISPLAY: Record<string, string> = {
+	jack: "B",
+	queen: "D",
+	king: "K",
+	ace: "A",
+};
+
+const SUIT_COLORS: Record<Suit, string> = {
+	hearts: "text-red-600",
+	diamonds: "text-red-500",
+	clubs: "text-slate-900",
+	spades: "text-slate-900",
+};
+
+// --- LOGIK & SORTIERUNG ---
+
+/**
+ * Bestimmt, ob eine Karte Trumpf ist.
+ * Dient als "Single Source of Truth".
+ */
+const isTrump = (card: GameCard): boolean => {
+	// 1. Herz 10 (Dullen)
+	if (card.suit === "hearts" && card.rank === "10") return true;
+	// 2. Damen
+	if (card.rank === "queen") return true;
+	// 3. Buben
+	if (card.rank === "jack") return true;
+	// 4. Karo (sofern nicht schon durch Dame/Bube abgedeckt)
+	if (card.suit === "diamonds") return true;
+
+	return false;
+};
+
+/**
+ * Berechnet einen numerischen Wert für die Sortierung.
+ * Hoher Wert = Weiter Links (Trumpf).
+ * Niedriger Wert = Weiter Rechts (Fehlfarben).
+ */
+const getCardValue = (card: GameCard, hasSchweinerei: boolean): number => {
+	// 1. Sonderfall Schweinerei (Karo Ass, wenn beide da sind)
+	// Dies überschreibt alles andere.
+	if (hasSchweinerei && card.suit === "diamonds" && card.rank === "ace") {
+		return 1000;
+	}
+
+	// 2. Unterscheidung Trumpf vs. Fehlfarbe
+	if (isTrump(card)) {
+		// --- TRUMPF-LOGIK ---
+
+		// Herz 10
+		if (card.suit === "hearts" && card.rank === "10") return 900;
+
+		// Damen (Reihenfolge: Kreuz, Pik, Herz, Karo)
+		if (card.rank === "queen") {
+			const suitVal =
+				{ clubs: 4, spades: 3, hearts: 2, diamonds: 1 }[card.suit] || 0;
+			return 800 + suitVal;
+		}
+
+		// Buben (Reihenfolge: Kreuz, Pik, Herz, Karo)
+		if (card.rank === "jack") {
+			const suitVal =
+				{ clubs: 4, spades: 3, hearts: 2, diamonds: 1 }[card.suit] || 0;
+			return 700 + suitVal;
+		}
+
+		// Farb-Trümpfe (Karo Ass, 10, K, 9 - sofern keine Schweinerei)
+		// Ass=4, 10=3, K=2, 9=1
+		const rankVal = { ace: 4, "10": 3, king: 2, "9": 1 }[card.rank] || 0;
+		return 600 + rankVal;
+	} else {
+		// --- FEHLFARBEN-LOGIK ---
+		// Doppelkopf Sortierung meist: Kreuz, Pik, Herz (Karo ist Trumpf)
+
+		const suitBase: Record<Suit, number> = {
+			clubs: 300,
+			spades: 200,
+			hearts: 100,
+			diamonds: 0, // Karo ist eigentlich Trumpf, sollte hier nicht vorkommen
+		};
+		const suitVal = suitBase[card.suit] ?? 0;
+
+		// Innerhalb der Fehlfarbe: A, 10, K, B, D, 9
+		const rankValMap: Record<string, number> = {
+			ace: 6,
+			"10": 5,
+			king: 4,
+			jack: 3,
+			queen: 2,
+			"9": 1,
+		};
+		const rankVal = rankValMap[card.rank] ?? 0;
+
+		return suitVal + rankVal;
+	}
+};
+
+// --- KARTEN-KOMPONENTE ---
+
+interface PlayingCardProps {
+	card: GameCard;
+	style: React.CSSProperties;
+}
+
+function PlayingCard({ card, style }: PlayingCardProps) {
+	return (
+		<div
+			className={cn(
+				"absolute bottom-0 left-1/2 h-36 w-24 origin-bottom", // Rotation vom unteren Rand
+				"rounded-lg border bg-white shadow-xl transition-all duration-300 ease-out", // Animationen
+				"hover:z-50 hover:-translate-y-12 hover:scale-110", // Interaktion: Hochspringen & Vergrößern
+				"cursor-pointer select-none",
+				SUIT_COLORS[card.suit],
+			)}
+			style={style}
+		>
+			{/* Ecken-Indikatoren (Oben Links & Unten Rechts) */}
+			{[
+				{ pos: "top-1 left-1", rot: "", id: "tl" },
+				{ pos: "bottom-1 right-1", rot: "rotate-180", id: "br" },
+			].map((corner) => (
+				<div
+					className={cn(
+						"absolute flex flex-col items-center",
+						corner.pos,
+						corner.rot,
+					)}
+					key={`${card.id}-${corner.id}`}
+				>
+					<span className="font-bold text-lg leading-none">
+						{RANK_DISPLAY[card.rank] ?? card.rank}
+					</span>
+					<span className="text-sm leading-none">{SUIT_SYMBOL[card.suit]}</span>
+				</div>
+			))}
+
+			{/* Großes Symbol in der Mitte */}
+			<div className="flex h-full items-center justify-center">
+				<span className="text-5xl">{SUIT_SYMBOL[card.suit]}</span>
+			</div>
+		</div>
+	);
+}
+
+// --- HAUPT-KOMPONENTE ---
+
 export function TestCardsClient() {
 	const [cards, setCards] = useState<GameCard[]>([]);
+	const [isClient, setIsClient] = useState(false);
 
+	// Hydration-Fix: Erst rendern, wenn Client bereit ist
 	useEffect(() => {
-		// Generiere Karten nur auf dem Client, um Hydration-Fehler zu vermeiden
+		setIsClient(true);
 		setCards(generateRandomCards(12));
 	}, []);
 
-	// Für Test: Verwende "jacks" als Standard-Trumpf
-	const trump: Suit | "jacks" | "queens" = "jacks";
-
-	const getCardValueForSort = useCallback(
-		(
-			card: GameCard,
-			_trump: Suit | "jacks" | "queens",
-			hasSchweinerei: boolean,
-		): number => {
-			// Schweinerei: Karo-Assen sind höchster Trumpf, wenn beide vorhanden sind
-			if (card.suit === "diamonds" && card.rank === "ace" && hasSchweinerei) {
-				return 1200; // Höher als Herz 10 (1100)
-			}
-			// Herz 10 ist höchster Trumpf (nach Schweinerei)
-			if (card.suit === "hearts" && card.rank === "10") return 1100;
-			// Damen sind zweithöchster Trumpf
-			if (card.rank === "queen") return 1000;
-			// Buben sind dritthöchster Trumpf
-			if (card.rank === "jack") return 900;
-
-			// Farbtrumpf: Farbreihenfolge Kreuz > Pik > Herz > Karo
-			// Trumpf-Farb-Reihenfolge: clubs (Kreuz) = 4, spades (Pik) = 3, hearts (Herz) = 2, diamonds (Karo) = 1
-			const trumpSuitOrder: Record<Suit, number> = {
-				clubs: 4, // Kreuz: höchster Farbtrumpf
-				spades: 3, // Pik: zweithöchster Farbtrumpf
-				hearts: 2, // Herz: dritthöchster Farbtrumpf
-				diamonds: 1, // Karo: niedrigster Farbtrumpf
-			};
-
-			// Karo (Diamonds) ist auch Trumpf
-			if (card.suit === "diamonds") {
-				const suitValue = trumpSuitOrder[card.suit] ?? 0;
-				if (card.rank === "ace") return 800 + suitValue;
-				if (card.rank === "king") return 700 + suitValue;
-				if (card.rank === "10") return 600 + suitValue;
-				if (card.rank === "9") return 500 + suitValue;
-			}
-
-			// Andere Farben als Trumpf (Kreuz, Pik, Herz) - nur wenn sie Trumpf sind
-			// Diese werden durch die Sortierlogik behandelt, hier nur für Vollständigkeit
-			return 0;
-		},
-		[],
-	);
-
 	const sortedHand = useMemo(() => {
-		// Prüfe, ob beide Karo-Assen vorhanden sind (Schweinerei)
+		if (!cards.length) return [];
+
+		// Schweinerei-Check (Sind beide Karo Asse auf der Hand?)
 		const diamondsAces = cards.filter(
-			(card) => card.suit === "diamonds" && card.rank === "ace",
+			(c) => c.suit === "diamonds" && c.rank === "ace",
 		);
 		const hasSchweinerei = diamondsAces.length === 2;
 
 		return [...cards].sort((a, b) => {
-			// Check if cards are trump (Herz 10 ist immer Trumpf)
-			const aIsHearts10 = a.suit === "hearts" && a.rank === "10";
-			const bIsHearts10 = b.suit === "hearts" && b.rank === "10";
-			const aIsTrump =
-				aIsHearts10 ||
-				(trump === "jacks"
-					? a.rank === "jack" || a.rank === "queen" || a.suit === "diamonds"
-					: a.rank === "queen" || a.suit === "diamonds");
-			const bIsTrump =
-				bIsHearts10 ||
-				(trump === "jacks"
-					? b.rank === "jack" || b.rank === "queen" || b.suit === "diamonds"
-					: b.rank === "queen" || b.suit === "diamonds");
-
-			// Trump cards come first
-			if (aIsTrump && !bIsTrump) return -1;
-			if (!aIsTrump && bIsTrump) return 1;
-
-			// If both are trump, sort by trump value
-			if (aIsTrump && bIsTrump) {
-				// Schweinerei: Karo-Assen sind höchster Trumpf
-				const aIsSchweinerei =
-					a.suit === "diamonds" && a.rank === "ace" && hasSchweinerei;
-				const bIsSchweinerei =
-					b.suit === "diamonds" && b.rank === "ace" && hasSchweinerei;
-
-				if (aIsSchweinerei && !bIsSchweinerei) return -1;
-				if (!aIsSchweinerei && bIsSchweinerei) return 1;
-
-				// Herz 10 ist höchster Trumpf (nach Schweinerei)
-				if (aIsHearts10 && !bIsHearts10 && !bIsSchweinerei) return -1;
-				if (!aIsHearts10 && bIsHearts10 && !aIsSchweinerei) return 1;
-
-				// Damen sind zweithöchster Trumpf - mit Farbreihenfolge: Kreuz > Pik > Herz > Karo
-				if (a.rank === "queen" && b.rank === "queen") {
-					const trumpSuitOrder: Record<Suit, number> = {
-						clubs: 4, // Kreuz: höchste Dame
-						spades: 3, // Pik: zweithöchste Dame
-						hearts: 2, // Herz: dritthöchste Dame
-						diamonds: 1, // Karo: niedrigste Dame
-					};
-					const aSuitOrder = trumpSuitOrder[a.suit] ?? 0;
-					const bSuitOrder = trumpSuitOrder[b.suit] ?? 0;
-					return bSuitOrder - aSuitOrder; // Höhere Farbe zuerst
-				}
-				if (
-					a.rank === "queen" &&
-					b.rank !== "queen" &&
-					!bIsSchweinerei &&
-					!bIsHearts10
-				)
-					return -1;
-				if (
-					a.rank !== "queen" &&
-					b.rank === "queen" &&
-					!aIsSchweinerei &&
-					!aIsHearts10
-				)
-					return 1;
-
-				// Buben sind dritthöchster Trumpf - mit Farbreihenfolge: Kreuz > Pik > Herz > Karo
-				if (a.rank === "jack" && b.rank === "jack") {
-					const trumpSuitOrder: Record<Suit, number> = {
-						clubs: 4, // Kreuz: höchster Bube
-						spades: 3, // Pik: zweithöchster Bube
-						hearts: 2, // Herz: dritthöchster Bube
-						diamonds: 1, // Karo: niedrigster Bube
-					};
-					const aSuitOrder = trumpSuitOrder[a.suit] ?? 0;
-					const bSuitOrder = trumpSuitOrder[b.suit] ?? 0;
-					return bSuitOrder - aSuitOrder; // Höhere Farbe zuerst
-				}
-				if (
-					a.rank === "jack" &&
-					b.rank !== "jack" &&
-					!bIsSchweinerei &&
-					!bIsHearts10 &&
-					b.rank !== "queen"
-				)
-					return -1;
-				if (
-					a.rank !== "jack" &&
-					b.rank === "jack" &&
-					!aIsSchweinerei &&
-					!aIsHearts10 &&
-					a.rank !== "queen"
-				)
-					return 1;
-
-				// Farbtrumpf: Farbreihenfolge Kreuz > Pik > Herz > Karo
-				// Nur wenn beide Farbtrumpf sind (nicht Damen/Buben/Herz 10)
-				const aIsColorTrump =
-					aIsTrump && a.rank !== "queen" && a.rank !== "jack" && !aIsHearts10;
-				const bIsColorTrump =
-					bIsTrump && b.rank !== "queen" && b.rank !== "jack" && !bIsHearts10;
-
-				if (aIsColorTrump && bIsColorTrump) {
-					const trumpSuitOrder: Record<Suit, number> = {
-						clubs: 4, // Kreuz: höchster Farbtrumpf
-						spades: 3, // Pik: zweithöchster Farbtrumpf
-						hearts: 2, // Herz: dritthöchster Farbtrumpf
-						diamonds: 1, // Karo: niedrigster Farbtrumpf
-					};
-
-					const aSuitOrder = trumpSuitOrder[a.suit] ?? 0;
-					const bSuitOrder = trumpSuitOrder[b.suit] ?? 0;
-
-					// Wenn gleiche Farbe, nach Rang sortieren
-					if (a.suit === b.suit) {
-						const rankOrder: Record<string, number> = {
-							ace: 4,
-							king: 3,
-							"10": 2,
-							"9": 1,
-						};
-						const aRankOrder = rankOrder[a.rank] ?? 0;
-						const bRankOrder = rankOrder[b.rank] ?? 0;
-						if (aRankOrder !== bRankOrder) {
-							return bRankOrder - aRankOrder; // Höherer Rang zuerst
-						}
-					}
-
-					// Verschiedene Farben: nach Farbreihenfolge sortieren
-					return bSuitOrder - aSuitOrder; // Höhere Farbe zuerst
-				}
-
-				const aValue = getCardValueForSort(a, trump, hasSchweinerei);
-				const bValue = getCardValueForSort(b, trump, hasSchweinerei);
-				return bValue - aValue; // Higher value first
-			}
-
-			// If neither is trump, sort by suit then rank
-			// Doppelkopf Farb-Reihenfolge für Fehlfarben: Kreuz, Herz, Pik, Karo
-			const suitOrder: Record<Suit, number> = {
-				clubs: 1, // Kreuz
-				hearts: 2, // Herz
-				spades: 3, // Pik
-				diamonds: 4, // Karo
-			};
-
-			if (a.suit !== b.suit) {
-				const aOrder = suitOrder[a.suit] ?? 99;
-				const bOrder = suitOrder[b.suit] ?? 99;
-				return aOrder - bOrder;
-			}
-
-			// Same suit, sort by rank (Doppelkopf order: Ass, 10, König, Bube, Dame, 9)
-			const rankOrder: Record<string, number> = {
-				ace: 1,
-				"10": 2,
-				king: 3,
-				jack: 4,
-				queen: 5,
-				"9": 6,
-			};
-
-			const aRankOrder = rankOrder[a.rank] ?? 99;
-			const bRankOrder = rankOrder[b.rank] ?? 99;
-			return aRankOrder - bRankOrder;
+			const valA = getCardValue(a, hasSchweinerei);
+			const valB = getCardValue(b, hasSchweinerei);
+			// Absteigend sortieren: Höchste Werte (Trümpfe) links
+			return valB - valA;
 		});
-	}, [cards, getCardValueForSort]);
+	}, [cards]);
 
-	const getSuitColor = (suit: string) => {
-		switch (suit) {
-			case "hearts":
-				return "text-red-600";
-			case "diamonds":
-				return "text-red-500";
-			case "clubs":
-				return "text-black";
-			case "spades":
-				return "text-black";
-			default:
-				return "text-gray-600";
-		}
-	};
-
-	const getSuitSymbol = (suit: string) => {
-		switch (suit) {
-			case "hearts":
-				return "♥";
-			case "diamonds":
-				return "♦";
-			case "clubs":
-				return "♣";
-			case "spades":
-				return "♠";
-			default:
-				return "";
-		}
-	};
-
-	const getRankDisplay = (rank: string) => {
-		switch (rank) {
-			case "jack":
-				return "B";
-			case "queen":
-				return "D";
-			case "king":
-				return "K";
-			case "ace":
-				return "A";
-			default:
-				return rank;
-		}
-	};
-
-	const generateNewCards = () => {
+	const handleNewCards = () => {
 		setCards(generateRandomCards(12));
 	};
 
+	if (!isClient) return null;
+
 	return (
-		<>
-			<Card>
+		<div className="flex flex-col items-center gap-8 p-4">
+			<Card className="w-full max-w-md">
 				<CardHeader>
-					<CardTitle>12 Zufällige Karten</CardTitle>
+					<CardTitle>Doppelkopf Hand ({cards.length} Karten)</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="mb-4">
-						<Button onClick={generateNewCards}>Neue Karten generieren</Button>
-					</div>
+					<Button className="w-full" onClick={handleNewCards}>
+						Neu Geben
+					</Button>
 				</CardContent>
 			</Card>
-			<div className="fixed right-0 bottom-0 left-0 z-10 flex items-end justify-center">
-				<div className="relative w-full max-w-2xl">
-					{sortedHand.map((card, index) => {
-						// Berechne Rotation und Position
-						const totalCards = sortedHand.length;
-						const maxRotation = 10; // Maximale Rotation in Grad
-						// maxSpread: 80vw, aber maximal 80% von 1024px = 819.2px
-						// Bei 1024px Viewport: 80vw = 819.2px, das ist unser Maximum
-						const maxSpreadVw = 80;
-						const maxSpreadPx = 819.2; // 80% von 1024px
 
-						// Rotation berechnen
-						const rotationStep = (maxRotation * 2) / (totalCards - 1 || 1);
-						const rotation = -maxRotation + index * rotationStep;
+			{/* Hand-Container */}
+			{/* perspective-1000 gibt den 3D-Effekt beim Rotieren */}
+			<div className="perspective-1000 relative mt-10 flex h-48 w-full max-w-4xl justify-center">
+				{sortedHand.map((card, index) => {
+					const total = sortedHand.length;
 
-						// Lineare Positionierung: Karten nebeneinander
-						// Abstand zwischen Karten: min(maxSpreadVw / totalCards, maxSpreadPx / totalCards)
-						const centerIndex = (totalCards - 1) / 2;
-						const cardSpacingVw = maxSpreadVw / totalCards;
-						const cardSpacingPx = maxSpreadPx / totalCards;
-						const translateX = `calc((${index} - ${centerIndex}) * min(${cardSpacingVw}vw, ${cardSpacingPx}px))`;
+					// --- Fächer-Berechnung ---
 
-						// translateY: Je größer die Rotation, desto weiter nach unten
-						let translateY = 0;
-						if (maxRotation > 0) {
-							const radius = 180; // Radius des Halbkreises
-							const absRotation = Math.abs(rotation); // Absolute Rotation
-							const angle = (absRotation * Math.PI) / 180; // Winkel in Radiant
-							// Je größer die Rotation, desto größer translateY (weiter unten)
-							// Bei rotation = 0: translateY = 0
-							// Bei größerer Rotation: translateY wird größer (weiter unten)
-							// Multiplikator für stärkere Verschiebung nach unten
-							const downShiftMultiplier = 7;
-							translateY = (1 - Math.cos(angle)) * radius * downShiftMultiplier;
-						}
+					// Gesamter Winkel des Fächers (z.B. 60 Grad)
+					const angleRange = 60;
 
-						return (
-							<Button
-								className={cn(
-									"absolute bottom-0 left-1/2 h-36 w-24 rounded-lg bg-white transition-all duration-200 dark:bg-gray-800",
-									getSuitColor(card.suit),
-								)}
-								key={card.id}
-								onMouseEnter={(e) => {
-									e.currentTarget.style.setProperty("--scale", "1.1");
-								}}
-								onMouseLeave={(e) => {
-									e.currentTarget.style.setProperty("--scale", "1");
-								}}
-								style={
-									{
-										"--translate-x": translateX,
-										"--translate-y": translateY > 0 ? `${translateY}px` : "0",
-										"--rotation": `${rotation}deg`,
-										"--scale": "1",
-										transform: `translate(calc(-50% + var(--translate-x)), var(--translate-y)) rotate(var(--rotation)) scale(var(--scale))`,
-									} as React.CSSProperties
-								}
-								variant="outline"
-							>
-								{/* Oben links */}
-								<div className="absolute top-1 left-1 flex flex-col items-center">
-									<span className="font-bold text-lg leading-none">
-										{getRankDisplay(card.rank)}
-									</span>
-									<span className="text-sm leading-none">
-										{getSuitSymbol(card.suit)}
-									</span>
-								</div>
+					// Winkel pro Karte
+					const step = angleRange / (total - 1 || 1);
 
-								{/* Oben rechts */}
-								<div className="absolute top-1 right-1 flex flex-col items-center">
-									<span className="font-bold leading-none">
-										{getRankDisplay(card.rank)}
-									</span>
-									<span className="text-sm leading-none">
-										{getSuitSymbol(card.suit)}
-									</span>
-								</div>
+					// Aktueller Winkel (-30 bis +30)
+					const rotate = -angleRange / 2 + index * step;
 
-								{/* Unten links */}
-								<div className="absolute bottom-1 left-1 flex rotate-180 flex-col items-center">
-									<span className="font-bold leading-none">
-										{getRankDisplay(card.rank)}
-									</span>
-									<span className="text-sm leading-none">
-										{getSuitSymbol(card.suit)}
-									</span>
-								</div>
+					// X-Versatz (Überlappung der Karten)
+					// (index - Mitte) * Abstand
+					const translateX = (index - (total - 1) / 2) * 35;
 
-								{/* Unten rechts */}
-								<div className="absolute right-1 bottom-1 flex rotate-180 flex-col items-center">
-									<span className="font-bold leading-none">
-										{getRankDisplay(card.rank)}
-									</span>
-									<span className="text-sm leading-none">
-										{getSuitSymbol(card.suit)}
-									</span>
-								</div>
+					// Y-Versatz (Bogenform)
+					// Wir nutzen eine Parabel (x^2), damit die äußeren Karten tiefer sitzen
+					// Multiplikator 0.2 bestimmt die "Krümmung" des Bogens
+					const translateY = Math.abs(rotate) ** 2 * 0.2;
 
-								{/* Zentrum - größere Anzeige (nur Symbol) */}
-								<div className="flex h-full items-center justify-center">
-									<div className="flex items-center justify-center">
-										<span className="font-bold text-4xl">
-											{getSuitSymbol(card.suit)}
-										</span>
-									</div>
-								</div>
-							</Button>
-						);
-					})}
-				</div>
+					return (
+						<PlayingCard
+							card={card}
+							key={card.id}
+							style={{
+								// Die Reihenfolge der Transforms ist wichtig!
+								transform: `translateX(${translateX}px) translateY(${translateY}px) rotate(${rotate}deg)`,
+								zIndex: index + 1, // Standard Layering (links unten, rechts oben)
+							}}
+						/>
+					);
+				})}
 			</div>
-		</>
+		</div>
 	);
 }
+
+// --- GENERATOR-FUNKTION ---
 
 function generateRandomCards(count: number): GameCard[] {
 	const suits: Suit[] = ["hearts", "diamonds", "clubs", "spades"];
 	const ranks: Rank[] = ["9", "10", "jack", "queen", "king", "ace"];
 
-	const allCards: GameCard[] = [];
-	// Doppelkopf: Jede Karte kommt doppelt vor
-	for (let deck = 0; deck < 2; deck++) {
-		for (const suit of suits) {
-			for (const rank of ranks) {
-				allCards.push({
-					suit,
-					rank,
-					id: `${suit}-${rank}-${deck}-${Math.random().toString(36).substring(7)}`,
-				});
-			}
-		}
-	}
+	// 1. Erstelle ein einfaches Deck (24 Karten)
+	const singleDeck = suits.flatMap((suit) =>
+		ranks.map((rank) => ({ suit, rank })),
+	);
 
-	// Mische die Karten
-	for (let i = allCards.length - 1; i > 0; i--) {
+	// 2. Verdopple das Deck für Doppelkopf (48 Karten)
+	// Wir nutzen crypto.randomUUID() für eindeutige Keys, fallback auf Math.random
+	const doubleDeck: GameCard[] = [...singleDeck, ...singleDeck].map((c) => ({
+		...c,
+		id:
+			typeof crypto !== "undefined" && crypto.randomUUID
+				? crypto.randomUUID()
+				: `${c.suit}-${c.rank}-${Math.random().toString(36).substr(2, 9)}`,
+	}));
+
+	// 3. Fisher-Yates Shuffle (Effizienter als .sort mit random)
+	for (let i = doubleDeck.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
-		const temp = allCards[i];
-		if (temp && allCards[j]) {
-			allCards[i] = allCards[j];
-			allCards[j] = temp;
+		const temp = doubleDeck[i];
+		if (temp && doubleDeck[j]) {
+			doubleDeck[i] = doubleDeck[j];
+			doubleDeck[j] = temp;
 		}
 	}
 
-	// Nimm die ersten 'count' Karten
-	return allCards.slice(0, count);
+	// 4. Ziehe die gewünschte Anzahl
+	return doubleDeck.slice(0, count);
 }
