@@ -7,8 +7,8 @@ on:
     branches: [main, master]
 
 jobs:
-  lint:
-    name: Lint
+  quality-check:
+    name: Quality Check (Lint + Typecheck)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -33,27 +33,6 @@ jobs:
         # Exit code will be non-zero if linting fails, which will fail the job
         # This creates a status check that Vercel can wait for
 
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.26.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Run TypeScript type checking
         run: pnpm typecheck
         # Exit code will be non-zero if type checking fails, which will fail the job
@@ -62,7 +41,7 @@ jobs:
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
-    needs: [lint, typecheck]
+    needs: [quality-check]
     # Only deploy on push to main/master, not on pull requests
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
