@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { startTransition, useActionState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
 	Form,
@@ -14,75 +14,46 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { authClient } from "@/server/better-auth/client";
+import { emailSchema } from "@/lib/validations/auth";
+import { type ActionState, signInMagicLinkAction } from "@/server/actions/auth";
 
-const formSchema = z.object({
-	email: z
-		.string()
-		.min(1, {
-			message: "E-Mail-Adresse ist erforderlich.",
-		})
-		.email({
-			message: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
-		}),
-});
+type FormValues = z.infer<typeof emailSchema>;
 
-type LoginFormValues = z.infer<typeof formSchema>;
+const initialState: ActionState = { success: false };
 
 export function LoginForm() {
-	const [isLoading, setIsLoading] = useState(false);
-	const [success, setSuccess] = useState(false);
+	const [state, formAction, isPending] = useActionState(
+		signInMagicLinkAction,
+		initialState,
+	);
 
-	// 1. Define your form.
-	const form = useForm<LoginFormValues>({
-		resolver: zodResolver(formSchema),
+	const form = useForm<FormValues>({
+		resolver: zodResolver(emailSchema),
 		defaultValues: {
 			email: "",
 		},
 	});
 
-	// 2. Define a submit handler.
-	async function onSubmit(values: LoginFormValues) {
-		setIsLoading(true);
-		setSuccess(false);
-
-		try {
-			const result = await authClient.signIn.magicLink({
-				email: values.email,
-				callbackURL: "/",
-			});
-
-			if (result.error) {
-				form.setError("email", {
-					message: result.error.message || "Fehler beim Senden des Magic Links",
-				});
-			} else {
-				setSuccess(true);
-			}
-		} catch (_error) {
-			form.setError("email", {
-				message: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
-			});
-		} finally {
-			setIsLoading(false);
-		}
+	function onSubmit(values: FormValues) {
+		const formData = new FormData();
+		formData.append("email", values.email);
+		startTransition(() => {
+			formAction(formData);
+		});
 	}
 
-	if (success) {
+	if (state.success) {
 		return (
 			<div className="space-y-4">
 				<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
-					<p className="text-green-400 text-sm">
+					<p className="text-green-600 text-sm dark:text-green-400">
 						Magic Link wurde erfolgreich gesendet! Bitte überprüfen Sie Ihr
 						E-Mail-Postfach und klicken Sie auf den Link, um sich anzumelden.
 					</p>
 				</div>
 				<Button
 					className="w-full"
-					onClick={() => {
-						setSuccess(false);
-						form.reset();
-					}}
+					onClick={() => window.location.reload()}
 					variant="outline"
 				>
 					Neuen Link anfordern
@@ -93,7 +64,7 @@ export function LoginForm() {
 
 	return (
 		<Form {...form}>
-			<form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
+			<form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
 				<FormField
 					control={form.control}
 					name="email"
@@ -101,19 +72,21 @@ export function LoginForm() {
 						<FormItem>
 							<FormLabel>E-Mail-Adresse</FormLabel>
 							<FormControl>
-								<Input
-									disabled={isLoading}
-									placeholder="ihre@email.de"
-									type="email"
-									{...field}
-								/>
+								<Input placeholder="ihre@email.de" type="email" {...field} />
 							</FormControl>
 							<FormMessage />
 						</FormItem>
 					)}
 				/>
-				<Button className="w-full" disabled={isLoading} type="submit">
-					{isLoading ? "Wird gesendet..." : "Magic Link senden"}
+
+				{state.error && (
+					<div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
+						<p className="text-red-500 text-sm">{state.error}</p>
+					</div>
+				)}
+
+				<Button className="w-full" disabled={isPending} type="submit">
+					{isPending ? "Wird gesendet..." : "Magic Link senden"}
 				</Button>
 			</form>
 		</Form>

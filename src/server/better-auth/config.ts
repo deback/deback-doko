@@ -4,7 +4,11 @@ import { magicLink } from "better-auth/plugins";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
-import { sendMagicLinkEmail } from "@/server/email/resend";
+import {
+	sendMagicLinkEmail,
+	sendPasswordResetEmail,
+	sendVerificationEmail,
+} from "@/server/email/resend";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -12,6 +16,18 @@ export const auth = betterAuth({
 	}),
 	emailAndPassword: {
 		enabled: true,
+		requireEmailVerification: true,
+		sendResetPassword: async ({ user, url }) => {
+			await sendPasswordResetEmail({ email: user.email, url });
+		},
+	},
+	emailVerification: {
+		sendVerificationEmail: async ({ user, url }) => {
+			await sendVerificationEmail({ email: user.email, url });
+		},
+		sendOnSignUp: true,
+		autoSignInAfterVerification: true,
+		callbackURL: "/welcome",
 	},
 	socialProviders: {
 		github: {
