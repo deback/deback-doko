@@ -17,23 +17,8 @@
 			}
 		}
 	},
-	"formatter": {
-		"enabled": true
-	},
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"recommended": true,
-			"nursery": {
-				"useSortedClasses": {
-					"level": "warn",
-					"fix": "safe",
-					"options": {
-						"functions": ["clsx", "cva", "cn"]
-					}
-				}
-			}
-		}
+	"files": {
+		"includes": ["**", "!src/components/ui"]
 	},
 	"html": {
 		"formatter": {

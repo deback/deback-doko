@@ -27,7 +27,10 @@ export async function signUpAction(
 
 	const parsed = signUpSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
+		return {
+			success: false,
+			error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
+		};
 	}
 
 	try {
@@ -71,7 +74,10 @@ export async function signInEmailAction(
 
 	const parsed = signInEmailSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
+		return {
+			success: false,
+			error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
+		};
 	}
 
 	let success = false;
@@ -129,7 +135,10 @@ export async function signInMagicLinkAction(
 
 	const parsed = emailSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
+		return {
+			success: false,
+			error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
+		};
 	}
 
 	try {
@@ -159,7 +168,10 @@ export async function requestPasswordResetAction(
 
 	const parsed = emailSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
+		return {
+			success: false,
+			error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
+		};
 	}
 
 	try {
@@ -192,7 +204,10 @@ export async function resetPasswordAction(
 
 	const parsed = resetPasswordSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
+		return {
+			success: false,
+			error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
+		};
 	}
 
 	try {

@@ -18,7 +18,9 @@ export function LoginClient() {
 		<div className="flex h-screen items-center justify-center p-8">
 			<Card className="w-full max-w-sm">
 				<CardHeader className="text-center">
-					<CardTitle className="text-2xl">Anmelden</CardTitle>
+					<CardTitle className="font-serif text-2xl uppercase">
+						Anmelden
+					</CardTitle>
 					<CardDescription>
 						Melde dich mit Ihrer bevorzugten Methode an.
 					</CardDescription>
