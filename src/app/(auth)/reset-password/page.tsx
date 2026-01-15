@@ -58,93 +58,89 @@ function ResetPasswordContent() {
 
 	if (!token) {
 		return (
-			<div className="flex min-h-screen items-center justify-center p-8">
-				<Card className="w-full max-w-sm">
-					<CardHeader className="text-center">
-						<CardTitle className="text-2xl">Ungültiger Link</CardTitle>
-						<CardDescription>
-							Der Link zum Zurücksetzen des Passworts ist ungültig.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<Button asChild className="w-full">
-							<Link href="/login">Zur Anmeldung</Link>
-						</Button>
-					</CardContent>
-				</Card>
-			</div>
+			<Card className="w-full max-w-sm">
+				<CardHeader className="text-center">
+					<CardTitle className="font-serif text-2xl uppercase">
+						Ungültiger Link
+					</CardTitle>
+					<CardDescription>
+						Der Link zum Zurücksetzen des Passworts ist ungültig.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<Button asChild className="w-full">
+						<Link href="/login">Zur Anmeldung</Link>
+					</Button>
+				</CardContent>
+			</Card>
 		);
 	}
 
 	if (state.success) {
 		return (
-			<div className="flex min-h-screen items-center justify-center p-8">
-				<Card className="w-full max-w-sm">
-					<CardHeader className="text-center">
-						<CardTitle className="text-2xl">Passwort geändert</CardTitle>
-						<CardDescription>
-							Ihr Passwort wurde erfolgreich geändert.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="space-y-4">
-							<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
-								<p className="text-green-600 text-sm dark:text-green-400">
-									Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
-								</p>
-							</div>
-							<Button asChild className="w-full">
-								<Link href="/login">Zur Anmeldung</Link>
-							</Button>
+			<Card className="w-full max-w-sm">
+				<CardHeader className="text-center">
+					<CardTitle className="font-serif text-2xl uppercase">
+						Passwort geändert
+					</CardTitle>
+					<CardDescription>
+						Ihr Passwort wurde erfolgreich geändert.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
+							<p className="text-green-600 text-sm dark:text-green-400">
+								Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
+							</p>
 						</div>
-					</CardContent>
-				</Card>
-			</div>
+						<Button asChild className="w-full">
+							<Link href="/login">Zur Anmeldung</Link>
+						</Button>
+					</div>
+				</CardContent>
+			</Card>
 		);
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-8">
-			<Card className="w-full max-w-sm">
-				<CardHeader className="text-center">
-					<CardTitle className="text-2xl">Neues Passwort</CardTitle>
-					<CardDescription>Geben Sie Ihr neues Passwort ein.</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<Form {...form}>
-						<form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-							<FormField
-								control={form.control}
-								name="password"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Neues Passwort</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="********"
-												type="password"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							{state.error && (
-								<div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-									<p className="text-red-500 text-sm">{state.error}</p>
-								</div>
+		<Card className="w-full max-w-sm">
+			<CardHeader className="text-center">
+				<CardTitle className="font-serif text-2xl uppercase">
+					Neues Passwort
+				</CardTitle>
+				<CardDescription>Geben Sie Ihr neues Passwort ein.</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Form {...form}>
+					<form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+						<FormField
+							control={form.control}
+							name="password"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Neues Passwort</FormLabel>
+									<FormControl>
+										<Input placeholder="********" type="password" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
 							)}
+						/>
 
-							<Button className="w-full" disabled={isPending} type="submit">
-								{isPending ? "Wird gespeichert..." : "Passwort ändern"}
-							</Button>
-						</form>
-					</Form>
-				</CardContent>
-			</Card>
-		</div>
+						{state.error && (
+							<div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
+								<p className="text-red-500 text-sm">{state.error}</p>
+							</div>
+						)}
+
+						<Button className="w-full" disabled={isPending} type="submit">
+							{isPending ? "Wird gespeichert..." : "Passwort ändern"}
+						</Button>
+					</form>
+				</Form>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -152,13 +148,13 @@ export default function ResetPasswordPage() {
 	return (
 		<Suspense
 			fallback={
-				<div className="flex min-h-screen items-center justify-center p-8">
-					<Card className="w-full max-w-sm">
-						<CardHeader className="text-center">
-							<CardTitle className="text-2xl">Laden...</CardTitle>
-						</CardHeader>
-					</Card>
-				</div>
+				<Card className="w-full max-w-sm">
+					<CardHeader className="text-center">
+						<CardTitle className="font-serif text-2xl uppercase">
+							Laden...
+						</CardTitle>
+					</CardHeader>
+				</Card>
 			}
 		>
 			<ResetPasswordContent />

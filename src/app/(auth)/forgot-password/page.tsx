@@ -54,79 +54,79 @@ export default function ForgotPasswordPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-8">
-			<Card className="w-full max-w-sm">
-				<CardHeader className="text-center">
-					<CardTitle className="text-2xl">Passwort vergessen</CardTitle>
-					<CardDescription>Setzen Sie Ihr Passwort zurück.</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{state.success ? (
-						<div className="space-y-4">
-							<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
-								<p className="text-green-600 text-sm dark:text-green-400">
-									Falls ein Konto mit dieser E-Mail-Adresse existiert, haben wir
-									Ihnen einen Link zum Zurücksetzen Ihres Passworts gesendet.
-								</p>
-							</div>
-							<Button asChild className="w-full" variant="outline">
-								<Link href="/login">Zur Anmeldung</Link>
-							</Button>
-						</div>
-					) : (
-						<div className="space-y-4">
-							<p className="text-muted-foreground text-sm">
-								Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen
-								Link zum Zurücksetzen Ihres Passworts.
+		<Card className="w-full max-w-sm">
+			<CardHeader className="text-center">
+				<CardTitle className="font-serif text-2xl uppercase">
+					Passwort vergessen
+				</CardTitle>
+				<CardDescription>Setzen Sie Ihr Passwort zurück.</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{state.success ? (
+					<div className="space-y-4">
+						<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
+							<p className="text-green-600 text-sm dark:text-green-400">
+								Falls ein Konto mit dieser E-Mail-Adresse existiert, haben wir
+								Ihnen einen Link zum Zurücksetzen Ihres Passworts gesendet.
 							</p>
-
-							<Form {...form}>
-								<form
-									className="space-y-4"
-									onSubmit={form.handleSubmit(onSubmit)}
-								>
-									<FormField
-										control={form.control}
-										name="email"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>E-Mail-Adresse</FormLabel>
-												<FormControl>
-													<Input
-														placeholder="ihre@email.de"
-														type="email"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									{state.error && (
-										<div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-											<p className="text-red-500 text-sm">{state.error}</p>
-										</div>
-									)}
-
-									<Button className="w-full" disabled={isPending} type="submit">
-										{isPending ? "Wird gesendet..." : "Link senden"}
-									</Button>
-								</form>
-							</Form>
-
-							<div className="text-center text-sm">
-								<Link
-									className="text-muted-foreground transition-colors hover:text-foreground"
-									href="/login"
-								>
-									Zurück zur Anmeldung
-								</Link>
-							</div>
 						</div>
-					)}
-				</CardContent>
-			</Card>
-		</div>
+						<Button asChild className="w-full" variant="outline">
+							<Link href="/login">Zur Anmeldung</Link>
+						</Button>
+					</div>
+				) : (
+					<div className="space-y-4">
+						<p className="text-muted-foreground text-sm">
+							Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link
+							zum Zurücksetzen Ihres Passworts.
+						</p>
+
+						<Form {...form}>
+							<form
+								className="space-y-4"
+								onSubmit={form.handleSubmit(onSubmit)}
+							>
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>E-Mail-Adresse</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="ihre@email.de"
+													type="email"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								{state.error && (
+									<div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
+										<p className="text-red-500 text-sm">{state.error}</p>
+									</div>
+								)}
+
+								<Button className="w-full" disabled={isPending} type="submit">
+									{isPending ? "Wird gesendet..." : "Link senden"}
+								</Button>
+							</form>
+						</Form>
+
+						<div className="text-center text-sm">
+							<Link
+								className="text-muted-foreground transition-colors hover:text-foreground"
+								href="/login"
+							>
+								Zurück zur Anmeldung
+							</Link>
+						</div>
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }

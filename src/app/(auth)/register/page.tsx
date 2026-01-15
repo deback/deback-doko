@@ -55,113 +55,113 @@ export default function RegisterPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-8">
-			<Card className="w-full max-w-sm">
-				<CardHeader className="text-center">
-					<CardTitle className="text-2xl">Registrieren</CardTitle>
-					<CardDescription>
-						Erstellen Sie ein neues Konto mit E-Mail und Passwort.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{state.success ? (
-						<div className="space-y-4">
-							<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
-								<p className="text-green-600 text-sm dark:text-green-400">
-									Registrierung erfolgreich! Bitte überprüfen Sie Ihr
-									E-Mail-Postfach und klicken Sie auf den Bestätigungslink, um
-									Ihr Konto zu aktivieren.
-								</p>
-							</div>
-							<Button asChild className="w-full" variant="outline">
-								<Link href="/login">Zur Anmeldung</Link>
-							</Button>
+		<Card className="w-full max-w-sm">
+			<CardHeader className="text-center">
+				<CardTitle className="font-serif text-2xl uppercase">
+					Registrieren
+				</CardTitle>
+				<CardDescription>
+					Erstellen Sie ein neues Konto mit E-Mail und Passwort.
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{state.success ? (
+					<div className="space-y-4">
+						<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
+							<p className="text-green-600 text-sm dark:text-green-400">
+								Registrierung erfolgreich! Bitte überprüfen Sie Ihr
+								E-Mail-Postfach und klicken Sie auf den Bestätigungslink, um Ihr
+								Konto zu aktivieren.
+							</p>
 						</div>
-					) : (
-						<div className="space-y-4">
-							<Form {...form}>
-								<form
-									className="space-y-4"
-									onSubmit={form.handleSubmit(onSubmit)}
-								>
-									<FormField
-										control={form.control}
-										name="name"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Name</FormLabel>
-												<FormControl>
-													<Input
-														placeholder="Max Mustermann"
-														type="text"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									<FormField
-										control={form.control}
-										name="email"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>E-Mail-Adresse</FormLabel>
-												<FormControl>
-													<Input
-														placeholder="ihre@email.de"
-														type="email"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									<FormField
-										control={form.control}
-										name="password"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Passwort</FormLabel>
-												<FormControl>
-													<Input
-														placeholder="********"
-														type="password"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									{state.error && (
-										<div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-											<p className="text-red-500 text-sm">{state.error}</p>
-										</div>
+						<Button asChild className="w-full" variant="outline">
+							<Link href="/login">Zur Anmeldung</Link>
+						</Button>
+					</div>
+				) : (
+					<div className="space-y-4">
+						<Form {...form}>
+							<form
+								className="space-y-4"
+								onSubmit={form.handleSubmit(onSubmit)}
+							>
+								<FormField
+									control={form.control}
+									name="name"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Name</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="Max Mustermann"
+													type="text"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
 									)}
+								/>
 
-									<Button className="w-full" disabled={isPending} type="submit">
-										{isPending ? "Wird registriert..." : "Registrieren"}
-									</Button>
-								</form>
-							</Form>
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>E-Mail-Adresse</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="ihre@email.de"
+													type="email"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-							<div className="text-center text-sm">
-								<Link
-									className="text-muted-foreground transition-colors hover:text-foreground"
-									href="/login"
-								>
-									Bereits ein Konto? Zur Anmeldung
-								</Link>
-							</div>
+								<FormField
+									control={form.control}
+									name="password"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Passwort</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="********"
+													type="password"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								{state.error && (
+									<div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
+										<p className="text-red-500 text-sm">{state.error}</p>
+									</div>
+								)}
+
+								<Button className="w-full" disabled={isPending} type="submit">
+									{isPending ? "Wird registriert..." : "Registrieren"}
+								</Button>
+							</form>
+						</Form>
+
+						<div className="text-center text-sm">
+							<Link
+								className="text-muted-foreground transition-colors hover:text-foreground"
+								href="/login"
+							>
+								Bereits ein Konto? Zur Anmeldung
+							</Link>
 						</div>
-					)}
-				</CardContent>
-			</Card>
-		</div>
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
