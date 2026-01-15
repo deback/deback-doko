@@ -207,3 +207,29 @@
 		letter-spacing: var(--tracking-normal);
 	}
 }
+
+@utility bg-wood {
+	background-color: #a0785a;
+	background-image:
+		radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.6) 100%),
+		repeating-linear-gradient(
+			45deg,
+			rgba(0, 0, 0, 0.03) 0px,
+			rgba(0, 0, 0, 0.03) 2px,
+			transparent 2px,
+			transparent 4px
+		),
+		repeating-linear-gradient(
+			91deg,
+			transparent 0px,
+			transparent 20px,
+			rgba(60, 40, 20, 0.1) 20px,
+			rgba(60, 40, 20, 0.1) 22px,
+			transparent 22px,
+			transparent 50px,
+			rgba(60, 40, 20, 0.05) 50px,
+			rgba(60, 40, 20, 0.05) 53px
+		);
+	background-attachment: fixed;
+	background-size: cover;
+}

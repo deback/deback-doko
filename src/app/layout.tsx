@@ -28,7 +28,7 @@ export default function RootLayout({
 			lang="en"
 			suppressHydrationWarning
 		>
-			<body>{children}</body>
+			<body className="min-h-screen bg-wood">{children}</body>
 		</html>
 	);
 }
