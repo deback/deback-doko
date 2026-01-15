@@ -1,12 +1,13 @@
 {
-	"permissions": {
-		"allow": [
-			"Bash(pnpm build:*)",
-			"Bash(pnpm run check:*)",
-			"Bash(curl:*)",
-			"Bash(pnpm tsc:*)",
-			"Bash(grep:*)",
-			"Bash(find:*)"
-		]
-	}
+  "permissions": {
+    "allow": [
+      "Bash(pnpm build:*)",
+      "Bash(pnpm run check:*)",
+      "Bash(curl:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
+    ]
+  }
 }

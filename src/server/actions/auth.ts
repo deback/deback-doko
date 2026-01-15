@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import {
 	emailSchema,
 	resetPasswordSchema,
@@ -72,6 +73,8 @@ export async function signInEmailAction(
 		return { success: false, error: parsed.error.errors[0].message };
 	}
 
+	let success = false;
+
 	try {
 		const result = await auth.api.signInEmail({
 			body: {
@@ -85,7 +88,7 @@ export async function signInEmailAction(
 			return { success: false, error: "E-Mail oder Passwort ist falsch." };
 		}
 
-		return { success: true };
+		success = true;
 	} catch (error) {
 		if (error instanceof Error) {
 			if (error.message.includes("not verified")) {
@@ -107,6 +110,12 @@ export async function signInEmailAction(
 			error: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
 		};
 	}
+
+	if (success) {
+		redirect("/");
+	}
+
+	return { success: false };
 }
 
 export async function signInMagicLinkAction(

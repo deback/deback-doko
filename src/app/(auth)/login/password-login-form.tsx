@@ -2,8 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { startTransition, useActionState, useEffect } from "react";
+import { startTransition, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,6 @@ type FormValues = z.infer<typeof signInEmailSchema>;
 const initialState: ActionState = { success: false };
 
 export function PasswordLoginForm() {
-	const router = useRouter();
 	const [state, formAction, isPending] = useActionState(
 		signInEmailAction,
 		initialState,
@@ -37,12 +35,6 @@ export function PasswordLoginForm() {
 			password: "",
 		},
 	});
-
-	useEffect(() => {
-		if (state.success) {
-			router.push("/");
-		}
-	}, [state.success, router]);
 
 	function onSubmit(values: FormValues) {
 		const formData = new FormData();

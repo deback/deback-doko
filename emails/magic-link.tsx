@@ -22,9 +22,9 @@ export default function MagicLinkEmail({ url }: MagicLinkEmailProps) {
 			<Head />
 			<Preview>Ihr Anmelde-Link</Preview>
 			<Tailwind config={emailTailwindConfig}>
-				<Body className="m-0 p-0 font-sans">
-					<Container className="mx-auto max-w-[600px] bg-white px-5 py-10">
-						<Heading className="mt-0 mb-5 font-bold text-2xl text-neutral-800">
+				<Body className="m-0 bg-transparent p-0 font-sans">
+					<Container className="mx-auto max-w-[600px] bg-transparent px-5 py-10">
+						<Heading className="mt-0 mb-5 font-bold text-2xl text-foreground">
 							Anmelde-Link
 						</Heading>
 						<Text className="mb-8 text-base text-neutral-600 leading-relaxed">

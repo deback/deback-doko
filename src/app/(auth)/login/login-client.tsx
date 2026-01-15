@@ -38,16 +38,16 @@ export function LoginClient() {
 						</div>
 					</div>
 
-					<Tabs className="w-full" defaultValue="magic-link">
+					<Tabs className="w-full" defaultValue="password">
 						<TabsList className="grid w-full grid-cols-2">
-							<TabsTrigger value="magic-link">Magic Link</TabsTrigger>
 							<TabsTrigger value="password">E-Mail/Passwort</TabsTrigger>
+							<TabsTrigger value="magic-link">Magic Link</TabsTrigger>
 						</TabsList>
-						<TabsContent className="mt-4" value="magic-link">
-							<LoginForm />
-						</TabsContent>
 						<TabsContent className="mt-4" value="password">
 							<PasswordLoginForm />
+						</TabsContent>
+						<TabsContent className="mt-4" value="magic-link">
+							<LoginForm />
 						</TabsContent>
 					</Tabs>
 				</CardContent>
