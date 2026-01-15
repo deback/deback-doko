@@ -27,7 +27,7 @@ export async function signUpAction(
 
 	const parsed = signUpSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.errors[0].message };
+		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
 	}
 
 	try {
@@ -36,6 +36,7 @@ export async function signUpAction(
 				name: parsed.data.name,
 				email: parsed.data.email,
 				password: parsed.data.password,
+				callbackURL: "/welcome",
 			},
 			headers: await headers(),
 		});
@@ -70,7 +71,7 @@ export async function signInEmailAction(
 
 	const parsed = signInEmailSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.errors[0].message };
+		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
 	}
 
 	let success = false;
@@ -128,7 +129,7 @@ export async function signInMagicLinkAction(
 
 	const parsed = emailSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.errors[0].message };
+		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
 	}
 
 	try {
@@ -158,11 +159,11 @@ export async function requestPasswordResetAction(
 
 	const parsed = emailSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.errors[0].message };
+		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
 	}
 
 	try {
-		await auth.api.forgetPassword({
+		await auth.api.requestPasswordReset({
 			body: {
 				email: parsed.data.email,
 				redirectTo: "/reset-password",
@@ -171,7 +172,8 @@ export async function requestPasswordResetAction(
 		});
 
 		return { success: true };
-	} catch (_error) {
+	} catch (error) {
+		console.error("Password reset error:", error);
 		return {
 			success: false,
 			error: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
@@ -190,7 +192,7 @@ export async function resetPasswordAction(
 
 	const parsed = resetPasswordSchema.safeParse(rawData);
 	if (!parsed.success) {
-		return { success: false, error: parsed.error.errors[0].message };
+		return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
 	}
 
 	try {
