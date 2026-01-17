@@ -7,6 +7,7 @@ export const emailTailwindConfig: TailwindConfig = {
 		extend: {
 			colors: {
 				brand: "#233E91",
+				primary: "#233E91",
 			},
 		},
 	},
