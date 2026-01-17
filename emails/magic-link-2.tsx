@@ -33,7 +33,7 @@ export const LinearLoginCodeEmail = ({
 			<Body className="bg-white font-linear">
 				<Preview>Your login code for Linear</Preview>
 				<Container className="mx-auto my-0 max-w-[560px] px-0 pt-5 pb-12">
-					<div className="w-[42px] h-[42px] bg-primary p-1 text-white">
+					<div className="w-[42px] h-[42px] text-white">
 						<Logo />
 					</div>
 					<Heading className="text-[24px] tracking-[-0.5px] leading-[1.3] font-normal text-[#484848] pt-[17px] px-0 pb-0">
