@@ -84,14 +84,14 @@ function ResetPasswordContent() {
 						Passwort geändert
 					</CardTitle>
 					<CardDescription>
-						Ihr Passwort wurde erfolgreich geändert.
+						Dein Passwort wurde erfolgreich geändert.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
 						<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
 							<p className="text-green-600 text-sm dark:text-green-400">
-								Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
+								Du kannst dich jetzt mit deinem neuen Passwort anmelden.
 							</p>
 						</div>
 						<Button asChild className="w-full">
@@ -109,7 +109,7 @@ function ResetPasswordContent() {
 				<CardTitle className="font-serif text-2xl uppercase">
 					Neues Passwort
 				</CardTitle>
-				<CardDescription>Geben Sie Ihr neues Passwort ein.</CardDescription>
+				<CardDescription>Gib dein neues Passwort ein.</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<Form {...form}>

@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
 				<CardTitle className="font-serif text-2xl uppercase">
 					Passwort vergessen
 				</CardTitle>
-				<CardDescription>Setzen Sie Ihr Passwort zurück.</CardDescription>
+				<CardDescription>Setze dein Passwort zurück.</CardDescription>
 			</CardHeader>
 			<CardContent>
 				{state.success ? (
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
 						<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
 							<p className="text-green-600 text-sm dark:text-green-400">
 								Falls ein Konto mit dieser E-Mail-Adresse existiert, haben wir
-								Ihnen einen Link zum Zurücksetzen Ihres Passworts gesendet.
+								dir einen Link zum Zurücksetzen deines Passworts gesendet.
 							</p>
 						</div>
 						<Button asChild className="w-full" variant="outline">
@@ -77,8 +77,8 @@ export default function ForgotPasswordPage() {
 				) : (
 					<div className="space-y-4">
 						<p className="text-muted-foreground text-sm">
-							Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link
-							zum Zurücksetzen Ihres Passworts.
+							Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum
+							Zurücksetzen deines Passworts.
 						</p>
 
 						<Form {...form}>
@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
 											<FormLabel>E-Mail-Adresse</FormLabel>
 											<FormControl>
 												<Input
-													placeholder="ihre@email.de"
+													placeholder="deine@email.de"
 													type="email"
 													{...field}
 												/>

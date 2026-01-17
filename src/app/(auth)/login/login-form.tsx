@@ -47,8 +47,8 @@ export function LoginForm() {
 			<div className="space-y-4">
 				<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
 					<p className="text-green-600 text-sm dark:text-green-400">
-						Magic Link wurde erfolgreich gesendet! Bitte überprüfen Sie Ihr
-						E-Mail-Postfach und klicken Sie auf den Link, um sich anzumelden.
+						Magic Link wurde erfolgreich gesendet! Bitte überprüfe dein
+						E-Mail-Postfach und klicke auf den Link, um dich anzumelden.
 					</p>
 				</div>
 				<Button
@@ -72,7 +72,7 @@ export function LoginForm() {
 						<FormItem>
 							<FormLabel>E-Mail-Adresse</FormLabel>
 							<FormControl>
-								<Input placeholder="ihre@email.de" type="email" {...field} />
+								<Input placeholder="deine@email.de" type="email" {...field} />
 							</FormControl>
 							<FormMessage />
 						</FormItem>

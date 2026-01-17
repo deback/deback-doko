@@ -56,7 +56,7 @@ export function PasswordLoginForm() {
 							<FormItem>
 								<FormLabel>E-Mail-Adresse</FormLabel>
 								<FormControl>
-									<Input placeholder="ihre@email.de" type="email" {...field} />
+									<Input placeholder="deine@email.de" type="email" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>

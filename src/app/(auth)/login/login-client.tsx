@@ -21,7 +21,7 @@ export function LoginClient() {
 					Anmelden
 				</CardTitle>
 				<CardDescription>
-					Melde dich mit Ihrer bevorzugten Methode an.
+					Melde dich mit deiner bevorzugten Methode an.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-6">
