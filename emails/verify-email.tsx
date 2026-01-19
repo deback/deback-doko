@@ -28,8 +28,8 @@ export default function VerifyEmail({ url }: VerifyEmailProps) {
 							E-Mail-Adresse bestätigen
 						</Heading>
 						<Text className="mb-8 text-base text-neutral-600 leading-relaxed">
-							Vielen Dank für Ihre Registrierung! Bitte bestätigen Sie Ihre
-							E-Mail-Adresse, indem Sie auf den folgenden Link klicken:
+							Vielen Dank für Deine Registrierung! Bitte bestätige deine
+							E-Mail-Adresse, indem Du auf den folgenden Link klickst:
 						</Text>
 						<Section className="my-8">
 							<Button
@@ -40,14 +40,14 @@ export default function VerifyEmail({ url }: VerifyEmailProps) {
 							</Button>
 						</Section>
 						<Text className="mt-5 text-neutral-500 text-xs leading-normal">
-							Oder kopieren Sie diesen Link in Ihren Browser:
+							Oder kopiere diesen Link in deinen Browser:
 						</Text>
 						<Text className="mt-2 block break-all rounded bg-neutral-100 px-3 py-2 text-neutral-600 text-xs">
 							{url}
 						</Text>
 						<Text className="mt-5 text-neutral-500 text-xs leading-normal">
-							Falls Sie sich nicht registriert haben, können Sie diese E-Mail
-							ignorieren.
+							Falls Du dich nicht registriert hast, kannst du diese E-Mail
+							einfach ignorieren.
 						</Text>
 					</Container>
 				</Body>

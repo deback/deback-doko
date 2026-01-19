@@ -4,9 +4,13 @@ import { pixelBasedPreset } from "@react-email/components";
 export const emailTailwindConfig: TailwindConfig = {
 	presets: [pixelBasedPreset],
 	theme: {
+		fontFamily: {
+			sans: ["Poppins", "Helvetica", "sans-serif"],
+			serif: ["Libre Baskerville", "Georgia", "serif"],
+		},
 		extend: {
 			colors: {
-				primary: "#ff00ff",
+				primary: "#854d0e",
 			},
 		},
 	},

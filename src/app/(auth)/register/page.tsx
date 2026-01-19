@@ -70,7 +70,8 @@ export default function RegisterPage() {
 						<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
 							<p className="text-green-600 text-sm dark:text-green-400">
 								Registrierung erfolgreich! Bitte überprüfe dein E-Mail-Postfach
-								und klicke auf den Bestätigungslink, um dein Konto zu aktivieren.
+								und klicke auf den Bestätigungslink, um dein Konto zu
+								aktivieren.
 							</p>
 						</div>
 						<Button asChild className="w-full" variant="outline">

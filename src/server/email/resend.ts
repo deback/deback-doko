@@ -21,7 +21,7 @@ export async function sendMagicLinkEmail({
 		await resend.emails.send({
 			from: env.AUTH_RESEND_FROM_ADDRESS,
 			to: email,
-			subject: "Anmelde-Link",
+			subject: "Deback Doko - Anmelde-Link",
 			html,
 			text,
 		});

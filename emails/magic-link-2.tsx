@@ -1,12 +1,11 @@
 import {
 	Body,
-	Button,
 	Container,
+	Font,
 	Head,
 	Heading,
 	Hr,
 	Html,
-	Img,
 	Link,
 	Preview,
 	Section,
@@ -16,60 +15,82 @@ import {
 import Logo from "./logo";
 import { emailTailwindConfig } from "./tailwind.config";
 
-interface LinearLoginCodeEmailProps {
-	validationCode?: string;
+interface MagicLinkEmailProps {
+	url: string;
 }
 
-const baseUrl = process.env.VERCEL_URL
-	? `https://${process.env.VERCEL_URL}`
-	: "";
-
-export const LinearLoginCodeEmail = ({
-	validationCode,
-}: LinearLoginCodeEmailProps) => (
-	<Html>
-		<Head />
-		<Tailwind config={emailTailwindConfig}>
-			<Body className="bg-white font-linear">
-				<Preview>Your login code for Linear</Preview>
-				<Container className="mx-auto my-0 max-w-[560px] px-0 pt-5 pb-12">
-					<div className="w-[42px] h-[42px] text-white">
-						<Logo />
-					</div>
-					<Heading className="text-[24px] tracking-[-0.5px] leading-[1.3] font-normal text-[#484848] pt-[17px] px-0 pb-0">
-						Your login code for Linear
-					</Heading>
-					<Section className="py-[27px] px-0">
-						<Button
-							className="bg-[#5e6ad2] rounded font-semibold text-white text-[15px] no-underline text-center block py-[11px] px-[23px]"
-							href="https://linear.app"
-						>
-							Login to Linear
-						</Button>
-					</Section>
-					<Text className="mb-[15px] mx-0 mt-0 leading-[1.4] text-[15px] text-[#3c4149]">
-						This link and code will only be valid for the next 5 minutes. If the
-						link does not work, you can use the login verification code
-						directly:
-					</Text>
-					<code className="font-mono font-bold px-1 py-px bg-[#dfe1e4] text-[#3c4149] text-[21px] tracking-[-0.3px] rounded">
-						{validationCode}
-					</code>
-					<Hr className="border-[#dfe1e4] mt-[42px] mb-[26px]" />
-					<Link
-						className="text-[#b4becc] text-[14px]"
-						href="https://linear.app"
-					>
-						Linear
-					</Link>
-				</Container>
-			</Body>
-		</Tailwind>
-	</Html>
-);
-
-LinearLoginCodeEmail.PreviewProps = {
-	validationCode: "tt226-5398x",
-} as LinearLoginCodeEmailProps;
-
-export default LinearLoginCodeEmail;
+export default function MagicLinkEmail({ url }: MagicLinkEmailProps) {
+	return (
+		<Html>
+			<Head>
+				<Font
+					fallbackFontFamily="Helvetica"
+					fontFamily="Poppins"
+					fontStyle="normal"
+					fontWeight={400}
+					webFont={{
+						url: "https://fonts.gstatic.com/s/poppins/v21/pxiEyp8kv8JHgFVrJJfecg.woff2",
+						format: "woff2",
+					}}
+				/>
+				<Font
+					fallbackFontFamily="Helvetica"
+					fontFamily="Poppins"
+					fontStyle="normal"
+					fontWeight={600}
+					webFont={{
+						url: "https://fonts.gstatic.com/s/poppins/v21/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2",
+						format: "woff2",
+					}}
+				/>
+				<Font
+					fallbackFontFamily="Georgia"
+					fontFamily="Libre Baskerville"
+					fontStyle="normal"
+					fontWeight={400}
+					webFont={{
+						url: "https://fonts.gstatic.com/s/librebaskerville/v14/kmKnZrc3Hgbbcjq75U4uslyuy4kn0qNZaxM.woff2",
+						format: "woff2",
+					}}
+				/>
+			</Head>
+			<Tailwind config={emailTailwindConfig}>
+				<Body className="bg-white">
+					<Preview>Log dich mit deinem Magic Link ein.</Preview>
+					<Container className="mx-auto my-0 pt-5 px-[25px] pb-12 bg-[url('/static/raycast-bg.png')] [background-position:bottom] [background-repeat:no-repeat]">
+						<div className="w-[48px] h-[48px] text-white">
+							<Logo />
+						</div>
+						<Heading className="text-[28px] font-bold mt-12 font-serif">
+							🪄 Dein Magic Link
+						</Heading>
+						<Section className="my-6 mx-0">
+							<Text className="text-base leading-6.5">
+								<Link className="text-[#FF6363]" href={url}>
+									👉 Klicke hier, um dich einzuloggen 👈
+								</Link>
+							</Text>
+							<Text className="text-base leading-6.5">
+								If you didn't request this, please ignore this email.
+							</Text>
+						</Section>
+						<Text className="text-base leading-6.5">
+							Viele Grüße,
+							<br />- Dein Deback Doppelkopf Team
+						</Text>
+						<Hr className="border-[#dddddd] mt-12" />
+						<div className="w-[32px] h-[32px] text-white">
+							<Logo />
+						</div>
+						<Text className="text-[#8898aa] text-xs leading-6 ml-1">
+							Deback Doppelkopf
+						</Text>
+						<Text className="text-[#8898aa] text-xs leading-6 ml-1">
+							Deback Doppelkopf
+						</Text>
+					</Container>
+				</Body>
+			</Tailwind>
+		</Html>
+	);
+}
