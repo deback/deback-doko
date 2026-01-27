@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getSession } from "@/server/better-auth/server";
 import { LoginClient } from "./login-client";
 
@@ -9,5 +10,9 @@ export default async function LoginPage() {
 		redirect("/");
 	}
 
-	return <LoginClient />;
+	return (
+		<Suspense>
+			<LoginClient />
+		</Suspense>
+	);
 }

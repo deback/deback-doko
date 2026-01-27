@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import {
 	Card,
 	CardContent,
@@ -14,6 +15,9 @@ import { LoginForm } from "./login-form";
 import { PasswordLoginForm } from "./password-login-form";
 
 export function LoginClient() {
+	const searchParams = useSearchParams();
+	const error = searchParams.get("error");
+
 	return (
 		<Card className="w-full max-w-sm">
 			<CardHeader className="text-center">
@@ -23,6 +27,14 @@ export function LoginClient() {
 				<CardDescription>
 					Melde dich mit deiner bevorzugten Methode an.
 				</CardDescription>
+				{error === "INVALID_TOKEN" && (
+					<div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
+						<p className="text-red-500 text-sm">
+							Der Anmelde-Link ist ungültig oder abgelaufen. Fordere einen neuen
+							Link an.
+						</p>
+					</div>
+				)}
 			</CardHeader>
 			<CardContent className="flex flex-col gap-6">
 				<div className="flex flex-col gap-2">
