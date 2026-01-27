@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CircleCheck } from "lucide-react";
 import Link from "next/link";
 import { startTransition, useActionState } from "react";
 import { useForm } from "react-hook-form";
@@ -67,8 +68,9 @@ export default function RegisterPage() {
 			<CardContent>
 				{state.success ? (
 					<div className="space-y-4">
-						<div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
-							<p className="text-green-600 text-sm dark:text-green-400">
+						<div className="flex items-start gap-3 rounded-md border border-green-500/20 bg-green-500/10 p-4">
+							<CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+							<p className="text-sm">
 								Registrierung erfolgreich! Bitte überprüfe dein E-Mail-Postfach
 								und klicke auf den Bestätigungslink, um dein Konto zu
 								aktivieren.
