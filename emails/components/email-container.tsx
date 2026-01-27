@@ -27,7 +27,7 @@ export default function EmailContainer({
 	return (
 		<Html lang="de">
 			<Head />
-			{/*<Preview>{preview}</Preview>*/}
+			<Preview>{preview}</Preview>
 			<Tailwind config={emailTailwindConfig}>
 				<Body className="bg-transparent font-sans text-base">
 					<Container className="max-w-lg mx-auto">

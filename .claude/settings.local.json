@@ -1,19 +1,19 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(pnpm build:*)",
-      "Bash(pnpm run check:*)",
-      "Bash(curl:*)",
-      "Bash(pnpm tsc:*)",
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "Bash(pnpm run check:write:*)",
-      "Bash(git -C /Users/deback/Development/deback/deback.dev/deback-doko log --oneline -10)",
-      "Bash(head:*)",
-      "Bash(pnpm check:*)",
-      "Bash(pnpm check:write:*)",
-      "Bash(tree:*)"
-    ]
-  }
+	"permissions": {
+		"allow": [
+			"Bash(pnpm build:*)",
+			"Bash(pnpm run check:*)",
+			"Bash(curl:*)",
+			"Bash(pnpm tsc:*)",
+			"Bash(grep:*)",
+			"Bash(find:*)",
+			"Bash(ls:*)",
+			"Bash(pnpm run check:write:*)",
+			"Bash(git -C /Users/deback/Development/deback/deback.dev/deback-doko log --oneline -10)",
+			"Bash(head:*)",
+			"Bash(pnpm check:*)",
+			"Bash(pnpm check:write:*)",
+			"Bash(tree:*)"
+		]
+	}
 }

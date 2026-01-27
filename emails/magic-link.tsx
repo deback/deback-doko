@@ -1,4 +1,4 @@
-import { Link, Text } from "@react-email/components";
+import { Text } from "@react-email/components";
 import CTA from "./components/cta";
 import EmailContainer from "./components/email-container";
 
