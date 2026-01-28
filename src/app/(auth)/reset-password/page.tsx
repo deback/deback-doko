@@ -7,7 +7,6 @@ import { Suspense, startTransition, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { SuccessInfo } from "@/components/ui/success-info";
 import {
 	Card,
 	CardContent,
@@ -24,6 +23,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { SuccessInfo } from "@/components/ui/success-info";
 import { resetPasswordSchema } from "@/lib/validations/auth";
 import { type ActionState, resetPasswordAction } from "@/server/actions/auth";
 

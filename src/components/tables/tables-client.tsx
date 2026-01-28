@@ -2,6 +2,7 @@
 
 import PartySocket from "partysocket";
 import { useEffect, useRef, useState } from "react";
+import { TablesHeader } from "@/components/tables/tables-header";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -11,7 +12,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import type { Player, Table, TableEvent, TableMessage } from "@/types/tables";
 
 interface TablesClientProps {
@@ -20,10 +20,22 @@ interface TablesClientProps {
 
 export function TablesClient({ player }: TablesClientProps) {
 	const [tables, setTables] = useState<Table[]>([]);
-	const [newTableName, setNewTableName] = useState("");
 	const [isConnected, setIsConnected] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const socketRef = useRef<PartySocket | null>(null);
+
+	const getNextTableName = () => {
+		const existingNumbers = tables
+			.map((t) => {
+				const match = t.name.match(/^Tisch (\d+)$/);
+				const numberStr = match?.[1];
+				return numberStr ? Number.parseInt(numberStr, 10) : 0;
+			})
+			.filter((n) => n > 0);
+		const nextNumber =
+			existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+		return `Tisch ${nextNumber}`;
+	};
 
 	useEffect(() => {
 		// Determine Partykit host
@@ -79,16 +91,15 @@ export function TablesClient({ player }: TablesClientProps) {
 	}, []);
 
 	const createTable = () => {
-		if (!newTableName.trim() || !socketRef.current) return;
+		if (!socketRef.current) return;
 
 		const event: TableEvent = {
 			type: "create-table",
-			name: newTableName.trim(),
+			name: getNextTableName(),
 			player,
 		};
 
 		socketRef.current.send(JSON.stringify(event));
-		setNewTableName("");
 	};
 
 	const joinTable = (tableId: string) => {
@@ -136,135 +147,100 @@ export function TablesClient({ player }: TablesClientProps) {
 	};
 
 	return (
-		<div className="container mx-auto space-y-6 p-6">
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<div
-						className={`h-3 w-3 rounded-full ${
-							isConnected ? "bg-emerald-500" : "bg-red-500"
-						}`}
-					/>
-					<span className="text-muted-foreground text-sm">
-						{isConnected ? "Verbunden" : "Getrennt"}
-					</span>
-				</div>
-			</div>
+		<>
+			<TablesHeader isConnected={isConnected} onCreateTable={createTable} />
 
-			{error && (
-				<Card className="border-destructive">
-					<CardContent className="pt-6">
-						<p className="text-center text-destructive">{error}</p>
-					</CardContent>
-				</Card>
-			)}
+			<div className="container mx-auto space-y-6 p-6">
+				{error && (
+					<Card className="border-destructive">
+						<CardContent className="pt-6">
+							<p className="text-center text-destructive">{error}</p>
+						</CardContent>
+					</Card>
+				)}
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Neuen Tisch erstellen</CardTitle>
-					<CardDescription>
-						Erstelle einen neuen Tisch für ein Doppelkopf-Spiel
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="flex gap-2">
-						<Input
-							onChange={(e) => setNewTableName(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									createTable();
-								}
-							}}
-							placeholder="Tischname..."
-							value={newTableName}
-						/>
-						<Button disabled={!newTableName.trim()} onClick={createTable}>
-							Erstellen
-						</Button>
-					</div>
-				</CardContent>
-			</Card>
+				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					{tables.map((table) => {
+						const playerAtTable = isPlayerAtTable(table);
+						const full = isTableFull(table);
 
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{tables.map((table) => {
-					const playerAtTable = isPlayerAtTable(table);
-					const full = isTableFull(table);
-
-					return (
-						<Card key={table.id}>
-							<CardHeader>
-								<CardTitle>{table.name}</CardTitle>
-								<CardDescription>
-									{table.players.length} / 4 Spieler
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<div className="space-y-2">
-									<div className="font-medium text-sm">Spieler:</div>
-									<ul className="list-inside list-disc space-y-1">
-										{table.players.map((p) => (
-											<li
-												className={`text-sm ${
-													p.id === player.id ? "font-bold" : ""
-												}`}
-												key={p.id}
-											>
-												{p.name || p.email}
-											</li>
-										))}
-										{Array.from({ length: 4 - table.players.length }).map(
-											(_, i) => (
+						return (
+							<Card key={table.id}>
+								<CardHeader>
+									<CardTitle>{table.name}</CardTitle>
+									<CardDescription>
+										{table.players.length} / 4 Spieler
+									</CardDescription>
+								</CardHeader>
+								<CardContent>
+									<div className="space-y-2">
+										<div className="font-medium text-sm">Spieler:</div>
+										<ul className="list-inside list-disc space-y-1">
+											{table.players.map((p) => (
 												<li
-													className="text-muted-foreground text-sm"
-													key={`empty-${table.id}-${i}`}
+													className={`text-sm ${
+														p.id === player.id ? "font-bold" : ""
+													}`}
+													key={p.id}
 												>
-													(Leer)
+													{p.name || p.email}
 												</li>
-											),
-										)}
-									</ul>
-								</div>
-							</CardContent>
-							<CardFooter className="flex gap-2">
-								{playerAtTable ? (
-									<Button
-										className="flex-1"
-										onClick={() => leaveTable(table.id)}
-										variant="destructive"
-									>
-										Verlassen
-									</Button>
-								) : (
-									<Button
-										className="flex-1"
-										disabled={full}
-										onClick={() => joinTable(table.id)}
-									>
-										{full ? "Voll" : "Beitreten"}
-									</Button>
-								)}
-								{playerAtTable && table.players[0]?.id === player.id && (
-									<Button
-										onClick={() => deleteTable(table.id)}
-										variant="destructive"
-									>
-										Löschen
-									</Button>
-								)}
-							</CardFooter>
-						</Card>
-					);
-				})}
-			</div>
+											))}
+											{Array.from({ length: 4 - table.players.length }).map(
+												(_, i) => (
+													<li
+														className="text-muted-foreground text-sm"
+														key={`empty-${table.id}-${i}`}
+													>
+														(Leer)
+													</li>
+												),
+											)}
+										</ul>
+									</div>
+								</CardContent>
+								<CardFooter className="flex gap-2">
+									{playerAtTable ? (
+										<Button
+											className="flex-1"
+											onClick={() => leaveTable(table.id)}
+											variant="destructive"
+										>
+											Verlassen
+										</Button>
+									) : (
+										<Button
+											className="flex-1"
+											disabled={full}
+											onClick={() => joinTable(table.id)}
+										>
+											{full ? "Voll" : "Beitreten"}
+										</Button>
+									)}
+									{playerAtTable && table.players[0]?.id === player.id && (
+										<Button
+											onClick={() => deleteTable(table.id)}
+											variant="destructive"
+										>
+											Löschen
+										</Button>
+									)}
+								</CardFooter>
+							</Card>
+						);
+					})}
+				</div>
 
-			{tables.length === 0 && (
-				<Card>
-					<CardContent className="pt-6">
-						<p className="text-center text-muted-foreground">
-							Noch keine Tische vorhanden. Erstelle den ersten Tisch!
-						</p>
-					</CardContent>
-				</Card>
-			)}
-		</div>
+				{tables.length === 0 && (
+					<Card>
+						<CardContent className="pt-6">
+							<p className="text-center text-muted-foreground">
+								Noch keine Tische vorhanden. Erstelle den ersten Tisch!
+							</p>
+						</CardContent>
+					</Card>
+				)}
+			</div>
+		</>
 	);
 }

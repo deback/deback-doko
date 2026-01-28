@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SuccessInfo } from "@/components/ui/success-info";
 import {
 	Card,
 	CardContent,
@@ -8,6 +7,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { SuccessInfo } from "@/components/ui/success-info";
 
 export default function WelcomePage() {
 	return (

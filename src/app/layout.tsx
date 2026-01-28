@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Libre_Baskerville, Poppins } from "next/font/google";
 import { ModeToggle } from "@/components/mode-toggle";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const poppins = Poppins({
@@ -52,10 +53,12 @@ export default function RootLayout({
 					disableTransitionOnChange
 					enableSystem
 				>
-					{children}
-					<div className="absolute top-4 right-4">
-						<ModeToggle />
-					</div>
+					<TooltipProvider>
+						{children}
+						<div className="absolute top-4 right-4">
+							<ModeToggle />
+						</div>
+					</TooltipProvider>
 				</ThemeProvider>
 			</body>
 		</html>

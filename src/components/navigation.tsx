@@ -27,7 +27,7 @@ export function Navigation() {
 	];
 
 	return (
-		<nav className="fixed right-0 bottom-0 left-0 z-50 border-t bg-background">
+		<nav className="fixed right-0 bottom-0 left-0 z-10 shadow-sm bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
 			<div className="mx-auto flex max-w-3xl items-center justify-around px-4 py-2">
 				{navItems.map((item) => {
 					const isActive = pathname === item.href;
