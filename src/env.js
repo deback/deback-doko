@@ -16,9 +16,10 @@ export const env = createEnv({
 		BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string(),
 		BETTER_AUTH_GOOGLE_CLIENT_ID: z.string(),
 		BETTER_AUTH_GOOGLE_CLIENT_SECRET: z.string(),
-		DATABASE_URL: z.string().url(),
+		DATABASE_URL: z.url(),
 		AUTH_RESEND_KEY: z.string(),
-		AUTH_RESEND_FROM_ADDRESS: z.string().email(),
+		AUTH_RESEND_FROM_ADDRESS: z.email(),
+		PARTYKIT_API_SECRET: z.string(),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
@@ -50,6 +51,7 @@ export const env = createEnv({
 		DATABASE_URL: process.env.DATABASE_URL,
 		AUTH_RESEND_KEY: process.env.AUTH_RESEND_KEY,
 		AUTH_RESEND_FROM_ADDRESS: process.env.AUTH_RESEND_FROM_ADDRESS,
+		PARTYKIT_API_SECRET: process.env.PARTYKIT_API_SECRET,
 		NODE_ENV: process.env.NODE_ENV,
 
 		NEXT_PUBLIC_PARTYKIT_HOST: process.env.NEXT_PUBLIC_PARTYKIT_HOST,

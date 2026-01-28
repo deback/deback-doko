@@ -40,6 +40,8 @@ export const user = createTable("user", {
 		.notNull(),
 	image: text("image"),
 	balance: integer("balance").default(5000).notNull(),
+	gamesPlayed: integer("games_played").default(0).notNull(),
+	gamesWon: integer("games_won").default(0).notNull(),
 	createdAt: timestamp("created_at")
 		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.notNull(),
@@ -92,9 +94,41 @@ export const verification = createTable("verification", {
 	),
 });
 
+export const gameResult = createTable("game_result", {
+	id: text("id").primaryKey(),
+	tableId: text("table_id").notNull(),
+	createdAt: timestamp("created_at")
+		.$defaultFn(() => new Date())
+		.notNull(),
+});
+
+export const playerGameResult = createTable(
+	"player_game_result",
+	(d) => ({
+		id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+		gameResultId: d
+			.text("game_result_id")
+			.notNull()
+			.references(() => gameResult.id),
+		userId: d
+			.text("user_id")
+			.notNull()
+			.references(() => user.id),
+		score: d.integer().notNull(),
+		team: d.text().notNull(), // "re" | "kontra"
+		won: d.boolean().notNull(),
+		balanceChange: d.integer("balance_change").notNull(),
+	}),
+	(t) => [
+		index("player_game_result_user_idx").on(t.userId),
+		index("player_game_result_game_idx").on(t.gameResultId),
+	],
+);
+
 export const userRelations = relations(user, ({ many }) => ({
 	account: many(account),
 	session: many(session),
+	playerGameResults: many(playerGameResult),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -104,3 +138,21 @@ export const accountRelations = relations(account, ({ one }) => ({
 export const sessionRelations = relations(session, ({ one }) => ({
 	user: one(user, { fields: [session.userId], references: [user.id] }),
 }));
+
+export const gameResultRelations = relations(gameResult, ({ many }) => ({
+	playerResults: many(playerGameResult),
+}));
+
+export const playerGameResultRelations = relations(
+	playerGameResult,
+	({ one }) => ({
+		gameResult: one(gameResult, {
+			fields: [playerGameResult.gameResultId],
+			references: [gameResult.id],
+		}),
+		user: one(user, {
+			fields: [playerGameResult.userId],
+			references: [user.id],
+		}),
+	}),
+);

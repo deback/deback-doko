@@ -52,6 +52,7 @@ export interface GameState {
 	round: number;
 	scores: Record<string, number>; // playerId -> Gesamtpunkte
 	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
+	teams: Record<string, "re" | "kontra">; // playerId -> Team-Zuordnung
 }
 
 export type GameEvent =

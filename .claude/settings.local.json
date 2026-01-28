@@ -15,7 +15,8 @@
       "Bash(pnpm check:write:*)",
       "Bash(tree:*)",
       "Bash(pnpm db:push:*)",
-      "Bash(pnpm db:migrate:*)"
+      "Bash(pnpm db:migrate:*)",
+      "Bash(npx tsx:*)"
     ]
   }
 }

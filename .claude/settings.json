@@ -3,7 +3,8 @@
     "allow": [
       "Bash(pnpm biome:*)",
       "Bash(pnpm typecheck:*)",
-      "Bash(pnpm db:generate:*)"
+      "Bash(pnpm db:generate:*)",
+      "Bash(test:*)"
     ]
   }
 }

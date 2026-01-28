@@ -1,4 +1,5 @@
 import type * as Party from "partykit/server";
+import { env } from "@/env";
 
 interface Player {
 	id: string;
@@ -67,6 +68,7 @@ interface GameState {
 	round: number;
 	scores: Record<string, number>;
 	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
+	teams: Record<string, "re" | "kontra">; // playerId -> Team-Zuordnung
 }
 
 type GameEvent =
@@ -400,6 +402,18 @@ export default class Server implements Party.Server {
 			scores[player.id] = 0;
 		}
 
+		// Bestimme Re/Kontra-Teams: Spieler mit Kreuz-Dame = Re
+		const teams: Record<string, "re" | "kontra"> = {};
+		for (const player of players) {
+			const hand = hands[player.id];
+			if (hand) {
+				const hasClubsQueen = hand.some(
+					(card) => card.suit === "clubs" && card.rank === "queen",
+				);
+				teams[player.id] = hasClubsQueen ? "re" : "kontra";
+			}
+		}
+
 		const gameState: GameState = {
 			id: gameId,
 			tableId,
@@ -417,6 +431,7 @@ export default class Server implements Party.Server {
 			round: 1,
 			scores,
 			schweinereiPlayers,
+			teams,
 		};
 
 		this.games.set(gameId, gameState);
@@ -514,6 +529,54 @@ export default class Server implements Party.Server {
 
 		if (gameState.completedTricks.length >= 12) {
 			gameState.gameEnded = true;
+			this.saveGameResults(gameState);
+		}
+	}
+
+	async saveGameResults(gameState: GameState) {
+		// Berechne Re-Team-Punkte
+		let reScore = 0;
+		for (const player of gameState.players) {
+			if (gameState.teams[player.id] === "re") {
+				reScore += gameState.scores[player.id] || 0;
+			}
+		}
+		const reWins = reScore >= 121;
+
+		// Balance-Änderung: Gewinner bekommen 50 Cents (0,50 $), Verlierer verlieren 50 Cents
+		const balanceChange = 50;
+
+		const playerResults = gameState.players.map((player) => {
+			const team = gameState.teams[player.id] || "kontra";
+			const won = team === "re" ? reWins : !reWins;
+			return {
+				id: player.id,
+				name: player.name,
+				score: gameState.scores[player.id] || 0,
+				team,
+				won,
+				balanceChange: won ? balanceChange : -balanceChange,
+			};
+		});
+
+		const apiUrl = env.BETTER_AUTH_URL || "http://localhost:3000";
+		const apiSecret = env.PARTYKIT_API_SECRET || "";
+
+		try {
+			await fetch(`${apiUrl}/api/game-results`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${apiSecret}`,
+				},
+				body: JSON.stringify({
+					gameId: gameState.id,
+					tableId: gameState.tableId,
+					players: playerResults,
+				}),
+			});
+		} catch (error) {
+			console.error("Failed to save game results:", error);
 		}
 	}
 

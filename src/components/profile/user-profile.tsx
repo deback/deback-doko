@@ -6,7 +6,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { formatBalance } from "@/lib/utils";
+import { StarRating } from "@/components/ui/star-rating";
+import { calculateRating, formatBalance } from "@/lib/utils";
 
 interface UserProfileProps {
 	user: {
@@ -15,6 +16,8 @@ interface UserProfileProps {
 		email: string;
 		image: string | null;
 		balance: number;
+		gamesPlayed: number;
+		gamesWon: number;
 		emailVerified: boolean;
 		createdAt: Date;
 	};
@@ -52,6 +55,28 @@ export function UserProfile({ user }: UserProfileProps) {
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				<div className="space-y-2">
+					<p className="font-medium text-muted-foreground text-sm">
+						Spielstärke
+					</p>
+					<StarRating
+						rating={calculateRating(user.gamesPlayed, user.gamesWon)}
+					/>
+				</div>
+
+				<div className="space-y-2">
+					<p className="font-medium text-muted-foreground text-sm">Statistik</p>
+					<p className="text-sm">
+						{user.gamesPlayed} Spiele, {user.gamesWon} Siege
+						{user.gamesPlayed > 0 && (
+							<span className="text-muted-foreground">
+								{" "}
+								({Math.round((user.gamesWon / user.gamesPlayed) * 100)}%)
+							</span>
+						)}
+					</p>
+				</div>
+
 				<div className="space-y-2">
 					<p className="font-medium text-muted-foreground text-sm">Guthaben</p>
 					<p className="text-sm">{formatBalance(user.balance)}</p>

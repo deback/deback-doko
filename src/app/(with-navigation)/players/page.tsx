@@ -3,7 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAllUsers } from "@/app/actions";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatBalance } from "@/lib/utils";
+import { StarRating } from "@/components/ui/star-rating";
+import { calculateRating, formatBalance } from "@/lib/utils";
 import { getSession } from "@/server/better-auth/server";
 
 export default async function PlayersPage() {
@@ -43,11 +44,19 @@ export default async function PlayersPage() {
 												{user.name.charAt(0).toUpperCase()}
 											</div>
 										)}
-										<div>
+										<div className="flex-1">
 											<p className="font-medium">{user.name}</p>
-											<p className="text-muted-foreground text-sm">
-												{formatBalance(user.balance)}
-											</p>
+											<div className="flex items-center gap-2">
+												<StarRating
+													rating={calculateRating(
+														user.gamesPlayed,
+														user.gamesWon,
+													)}
+												/>
+												<span className="text-muted-foreground text-sm">
+													{formatBalance(user.balance)}
+												</span>
+											</div>
 										</div>
 									</CardContent>
 								</Card>

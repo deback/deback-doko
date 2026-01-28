@@ -13,6 +13,8 @@ export async function getUserById(userId: string) {
 				email: user.email,
 				image: user.image,
 				balance: user.balance,
+				gamesPlayed: user.gamesPlayed,
+				gamesWon: user.gamesWon,
 				emailVerified: user.emailVerified,
 				createdAt: user.createdAt,
 			})
