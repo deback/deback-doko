@@ -138,7 +138,6 @@ export function TablesClient({ player }: TablesClientProps) {
 	return (
 		<div className="container mx-auto space-y-6 p-6">
 			<div className="flex items-center justify-between">
-				<h1 className="font-bold text-3xl">Doppelkopf Tische</h1>
 				<div className="flex items-center gap-2">
 					<div
 						className={`h-3 w-3 rounded-full ${
@@ -184,7 +183,6 @@ export function TablesClient({ player }: TablesClientProps) {
 					</div>
 				</CardContent>
 			</Card>
-			<Button>Test</Button>
 
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{tables.map((table) => {

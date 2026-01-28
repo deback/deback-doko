@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Table2, User, Users } from "lucide-react";
+import { Table2, User, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -9,11 +9,6 @@ export function Navigation() {
 	const pathname = usePathname();
 
 	const navItems = [
-		{
-			href: "/",
-			icon: Home,
-			label: "Startseite",
-		},
 		{
 			href: "/tables",
 			icon: Table2,
@@ -33,7 +28,7 @@ export function Navigation() {
 
 	return (
 		<nav className="fixed right-0 bottom-0 left-0 z-50 border-t bg-background">
-			<div className="mx-auto flex max-w-screen-md items-center justify-around px-4 py-2">
+			<div className="mx-auto flex max-w-3xl items-center justify-around px-4 py-2">
 				{navItems.map((item) => {
 					const isActive = pathname === item.href;
 					const Icon = item.icon;
