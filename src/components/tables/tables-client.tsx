@@ -2,6 +2,7 @@
 
 import PartySocket from "partysocket";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { TablesHeader } from "@/components/tables/tables-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import type { Player, Table, TableEvent, TableMessage } from "@/types/tables";
-import { InfoBox } from "../ui/success-info";
 
 interface TablesClientProps {
 	player: Player;
@@ -22,7 +22,6 @@ interface TablesClientProps {
 export function TablesClient({ player }: TablesClientProps) {
 	const [tables, setTables] = useState<Table[]>([]);
 	const [isConnected, setIsConnected] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const [lastCreatedTableId, setLastCreatedTableId] = useState<string | null>(
 		null,
 	);
@@ -70,7 +69,6 @@ export function TablesClient({ player }: TablesClientProps) {
 
 				if (message.type === "state") {
 					setTables(message.state.tables);
-					setError(null); // Clear error on successful state update
 
 					// Check if we just created a table and scroll to it
 					if (pendingTableName.current) {
@@ -83,7 +81,7 @@ export function TablesClient({ player }: TablesClientProps) {
 						}
 					}
 				} else if (message.type === "error") {
-					setError(message.message);
+					toast.error(message.message);
 					console.error("Error from server:", message.message);
 				} else if (message.type === "game-started") {
 					// Store game info in sessionStorage for game client
@@ -188,8 +186,6 @@ export function TablesClient({ player }: TablesClientProps) {
 			/>
 
 			<div className="container mx-auto space-y-6 p-6">
-				{error && <InfoBox variant="error">{error}</InfoBox>}
-
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{tables.map((table) => {
 						const playerAtTable = isPlayerAtTable(table);

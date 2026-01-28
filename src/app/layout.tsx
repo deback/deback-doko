@@ -3,8 +3,8 @@ import "@/styles/globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Libre_Baskerville, Poppins } from "next/font/google";
-import { ModeToggle } from "@/components/mode-toggle";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,10 @@ export default function RootLayout({
 					disableTransitionOnChange
 					enableSystem
 				>
-					<TooltipProvider>{children}</TooltipProvider>
+					<TooltipProvider>
+						{children}
+						<Toaster position="top-center" />
+					</TooltipProvider>
 				</ThemeProvider>
 			</body>
 		</html>
