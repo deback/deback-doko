@@ -14,7 +14,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { SuccessInfo } from "@/components/ui/success-info";
+import { InfoBox } from "@/components/ui/success-info";
 import { emailSchema } from "@/lib/validations/auth";
 import { type ActionState, signInMagicLinkAction } from "@/server/actions/auth";
 
@@ -46,10 +46,10 @@ export function LoginForm() {
 	if (state.success) {
 		return (
 			<div className="space-y-4">
-				<SuccessInfo>
+				<InfoBox>
 					Magic Link wurde erfolgreich gesendet! Bitte überprüfe dein
 					E-Mail-Postfach und klicke auf den Link, um dich anzumelden.
-				</SuccessInfo>
+				</InfoBox>
 				<Button
 					className="w-full"
 					onClick={() => window.location.reload()}

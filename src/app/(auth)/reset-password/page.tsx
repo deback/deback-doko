@@ -23,7 +23,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { SuccessInfo } from "@/components/ui/success-info";
+import { InfoBox } from "@/components/ui/success-info";
 import { resetPasswordSchema } from "@/lib/validations/auth";
 import { type ActionState, resetPasswordAction } from "@/server/actions/auth";
 
@@ -90,9 +90,9 @@ function ResetPasswordContent() {
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						<SuccessInfo>
+						<InfoBox>
 							Du kannst dich jetzt mit deinem neuen Passwort anmelden.
-						</SuccessInfo>
+						</InfoBox>
 						<Button asChild className="w-full">
 							<Link href="/login">Zur Anmeldung</Link>
 						</Button>

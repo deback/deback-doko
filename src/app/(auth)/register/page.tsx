@@ -22,7 +22,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { SuccessInfo } from "@/components/ui/success-info";
+import { InfoBox } from "@/components/ui/success-info";
 import { signUpSchema } from "@/lib/validations/auth";
 import { type ActionState, signUpAction } from "@/server/actions/auth";
 
@@ -68,10 +68,10 @@ export default function RegisterPage() {
 			<CardContent>
 				{state.success ? (
 					<div className="space-y-4">
-						<SuccessInfo>
+						<InfoBox>
 							Registrierung erfolgreich! Bitte überprüfe dein E-Mail-Postfach
 							und klicke auf den Bestätigungslink, um dein Konto zu aktivieren.
-						</SuccessInfo>
+						</InfoBox>
 						<Button asChild className="w-full" variant="outline">
 							<Link href="/login">Zur Anmeldung</Link>
 						</Button>

@@ -22,7 +22,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { SuccessInfo } from "@/components/ui/success-info";
+import { InfoBox } from "@/components/ui/success-info";
 import { emailSchema } from "@/lib/validations/auth";
 import {
 	type ActionState,
@@ -65,10 +65,10 @@ export default function ForgotPasswordPage() {
 			<CardContent>
 				{state.success ? (
 					<div className="space-y-4">
-						<SuccessInfo>
+						<InfoBox>
 							Falls ein Konto mit dieser E-Mail-Adresse existiert, haben wir dir
 							einen Link zum Zurücksetzen deines Passworts gesendet.
-						</SuccessInfo>
+						</InfoBox>
 						<Button asChild className="w-full" variant="outline">
 							<Link href="/login">Zur Anmeldung</Link>
 						</Button>

@@ -47,8 +47,3 @@ export function InfoBox({ children, variant = "success" }: InfoBoxProps) {
 		</div>
 	);
 }
-
-/** @deprecated Use InfoBox instead */
-export function SuccessInfo({ children }: { children: React.ReactNode }) {
-	return <InfoBox variant="success">{children}</InfoBox>;
-}

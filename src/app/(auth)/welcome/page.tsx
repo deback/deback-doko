@@ -7,7 +7,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { SuccessInfo } from "@/components/ui/success-info";
+import { InfoBox } from "@/components/ui/success-info";
 
 export default function WelcomePage() {
 	return (
@@ -20,9 +20,9 @@ export default function WelcomePage() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<SuccessInfo>
+					<InfoBox>
 						Dein Konto ist jetzt aktiv und du bist angemeldet.
-					</SuccessInfo>
+					</InfoBox>
 					<Button asChild className="w-full">
 						<Link href="/">Zur Startseite</Link>
 					</Button>
