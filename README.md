@@ -84,14 +84,10 @@ NEXT_PUBLIC_PARTYKIT_HOST="localhost:1999"
 Run database migrations:
 
 ```bash
-pnpm db:push
-```
-
-Or use migrations:
-
-```bash
 pnpm db:migrate
 ```
+
+> **Important:** Always use `pnpm db:migrate` instead of `pnpm db:push`. This project shares a database with other projects, and `db:push` can accidentally delete tables from other projects.
 
 ### 5. Run the development server
 
@@ -125,8 +121,7 @@ pnpm dev:partykit
 - `pnpm check` - Run Biome linter
 - `pnpm check:write` - Run Biome linter and fix issues
 - `pnpm db:generate` - Generate Drizzle migrations
-- `pnpm db:migrate` - Run database migrations
-- `pnpm db:push` - Push schema changes to database
+- `pnpm db:migrate` - Run database migrations (use this!)
 - `pnpm db:studio` - Open Drizzle Studio
 - `pnpm deploy:partykit` - Deploy PartyKit server
 
@@ -205,6 +200,8 @@ pnpm deploy:partykit
 ### Database
 
 Set up a PostgreSQL database (e.g., using Vercel Postgres, Supabase, or Railway) and update the `DATABASE_URL` environment variable.
+
+> **Note:** This project uses a shared database with table prefix `deback-doko_`. The `tablesFilter` in `drizzle.config.ts` ensures only tables with this prefix are managed. Always use `pnpm db:migrate` to apply schema changes safely.
 
 ## Learn More
 

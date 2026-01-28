@@ -16,7 +16,11 @@
       "Bash(tree:*)",
       "Bash(pnpm db:push:*)",
       "Bash(pnpm db:migrate:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(source .env)",
+      "Bash(psql:*)",
+      "Bash(npx dotenv-cli:*)",
+      "Bash(gtimeout 30 pnpm db:push:*)"
     ]
   }
 }

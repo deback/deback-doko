@@ -33,8 +33,7 @@ pnpm check:write      # Biome with auto-fix
 
 # Database
 pnpm db:generate      # Generate migrations
-pnpm db:migrate       # Run migrations
-pnpm db:push          # Push schema directly
+pnpm db:migrate       # Run migrations (USE THIS, not db:push!)
 pnpm db:studio        # Open Drizzle Studio
 
 # Build & Deploy
@@ -102,7 +101,16 @@ Session access: `getSession()` from `@/server/better-auth/server`
 
 Drizzle ORM schema in `/src/server/db/schema.ts`:
 - `user`, `session`, `account`, `verification` (Better Auth)
+- `gameResult`, `playerGameResult` (game history)
 - `post` (example table)
+
+**IMPORTANT: Shared Database**
+This project shares a PostgreSQL database with other projects (aireal, reservation, deback_dev). The `tablesFilter: ["deback-doko_*"]` in `drizzle.config.ts` ensures only our tables are managed.
+
+**Always use `pnpm db:migrate` instead of `pnpm db:push`!**
+- `db:push` tries to delete tables from other projects in the shared database
+- `db:push` also has issues with sequences from other projects
+- `db:migrate` only applies migration files and is safe for shared databases
 
 ## CI/CD
 

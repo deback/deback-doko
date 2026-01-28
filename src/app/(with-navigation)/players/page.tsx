@@ -46,18 +46,16 @@ export default async function PlayersPage() {
 										)}
 										<div className="flex-1">
 											<p className="font-medium">{user.name}</p>
-											<div className="flex items-center gap-2">
-												<StarRating
-													rating={calculateRating(
-														user.gamesPlayed,
-														user.gamesWon,
-													)}
-												/>
-												<span className="text-muted-foreground text-sm">
-													{formatBalance(user.balance)}
-												</span>
-											</div>
+											<p className="text-muted-foreground text-sm">
+												{formatBalance(user.balance)}
+											</p>
 										</div>
+										<StarRating
+											rating={calculateRating(
+												user.gamesPlayed,
+												user.gamesWon,
+											)}
+										/>
 									</CardContent>
 								</Card>
 							</Link>

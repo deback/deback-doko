@@ -9,4 +9,6 @@ export default {
 		url: env.DATABASE_URL,
 	},
 	tablesFilter: ["deback-doko_*"],
+	extensionsFilters: ["postgis"],
+	schemaFilter: ["public"],
 } satisfies Config;

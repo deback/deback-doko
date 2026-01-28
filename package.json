@@ -10,7 +10,6 @@
 		"check:write": "biome check --write .",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"dev": "concurrently \"pnpm run dev:partykit\" \"pnpm run dev:next\" --kill-others",
 		"dev:next": "next dev --turbo",

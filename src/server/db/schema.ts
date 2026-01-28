@@ -4,6 +4,7 @@ import {
 	index,
 	integer,
 	pgTableCreator,
+	primaryKey,
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
@@ -13,7 +14,7 @@ export const createTable = pgTableCreator((name) => `deback-doko_${name}`);
 export const posts = createTable(
 	"post",
 	(d) => ({
-		id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+		id: d.text().primaryKey(),
 		name: d.varchar({ length: 256 }),
 		createdById: d
 			.varchar({ length: 255 })
@@ -105,7 +106,6 @@ export const gameResult = createTable("game_result", {
 export const playerGameResult = createTable(
 	"player_game_result",
 	(d) => ({
-		id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
 		gameResultId: d
 			.text("game_result_id")
 			.notNull()
@@ -120,6 +120,7 @@ export const playerGameResult = createTable(
 		balanceChange: d.integer("balance_change").notNull(),
 	}),
 	(t) => [
+		primaryKey({ columns: [t.gameResultId, t.userId] }),
 		index("player_game_result_user_idx").on(t.userId),
 		index("player_game_result_game_idx").on(t.gameResultId),
 	],
