@@ -117,12 +117,12 @@ export function UsernameForm({ currentName, userId }: UsernameFormProps) {
 							<div
 								className={`flex items-center gap-3 rounded-md p-3 text-sm ${
 									submitMessage.type === "success"
-										? "bg-green-50 dark:bg-green-900/20"
+										? "bg-emerald-50 dark:bg-emerald-900/20"
 										: "bg-red-50 dark:bg-red-900/20"
 								}`}
 							>
 								{submitMessage.type === "success" ? (
-									<CircleCheck className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+									<CircleCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
 								) : (
 									<CircleX className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
 								)}

@@ -1,13 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleCheck } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, startTransition, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { SuccessInfo } from "@/components/ui/success-info";
 import {
 	Card,
 	CardContent,
@@ -90,12 +90,9 @@ function ResetPasswordContent() {
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						<div className="flex items-start gap-3 rounded-md border border-green-500/20 bg-green-500/10 p-4">
-							<CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
-							<p className="text-sm">
-								Du kannst dich jetzt mit deinem neuen Passwort anmelden.
-							</p>
-						</div>
+						<SuccessInfo>
+							Du kannst dich jetzt mit deinem neuen Passwort anmelden.
+						</SuccessInfo>
 						<Button asChild className="w-full">
 							<Link href="/login">Zur Anmeldung</Link>
 						</Button>

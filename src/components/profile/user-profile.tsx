@@ -56,7 +56,7 @@ export function UserProfile({ user }: UserProfileProps) {
 					</p>
 					<p className="text-sm">
 						{user.emailVerified ? (
-							<span className="text-green-600 dark:text-green-400">
+							<span className="text-emerald-600 dark:text-emerald-400">
 								✓ Verifiziert
 							</span>
 						) : (

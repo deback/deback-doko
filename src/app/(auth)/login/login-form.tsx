@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleCheck } from "lucide-react";
 import { startTransition, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -15,6 +14,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { SuccessInfo } from "@/components/ui/success-info";
 import { emailSchema } from "@/lib/validations/auth";
 import { type ActionState, signInMagicLinkAction } from "@/server/actions/auth";
 
@@ -46,13 +46,10 @@ export function LoginForm() {
 	if (state.success) {
 		return (
 			<div className="space-y-4">
-				<div className="flex items-start gap-3 rounded-md border border-green-500/20 bg-green-500/10 p-4">
-					<CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
-					<p className="text-sm">
-						Magic Link wurde erfolgreich gesendet! Bitte überprüfe dein
-						E-Mail-Postfach und klicke auf den Link, um dich anzumelden.
-					</p>
-				</div>
+				<SuccessInfo>
+					Magic Link wurde erfolgreich gesendet! Bitte überprüfe dein
+					E-Mail-Postfach und klicke auf den Link, um dich anzumelden.
+				</SuccessInfo>
 				<Button
 					className="w-full"
 					onClick={() => window.location.reload()}

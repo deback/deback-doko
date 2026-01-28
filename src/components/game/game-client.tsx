@@ -345,7 +345,7 @@ export function GameClient({ player, gameId }: GameClientProps) {
 				<div className="flex items-center gap-2">
 					<div
 						className={`h-3 w-3 rounded-full ${
-							isConnected ? "bg-green-500" : "bg-red-500"
+							isConnected ? "bg-emerald-500" : "bg-red-500"
 						}`}
 					/>
 					<span className="text-muted-foreground text-sm">
@@ -488,7 +488,7 @@ export function GameClient({ player, gameId }: GameClientProps) {
 													: "bg-white dark:bg-gray-800"
 										} ${
 											isMyTurn() && isPlayable
-												? "ring-2 ring-green-500 ring-offset-2"
+												? "ring-2 ring-emerald-500 ring-offset-2"
 												: ""
 										} ${
 											isMyTurn() && !isPlayable
@@ -632,9 +632,9 @@ export function GameClient({ player, gameId }: GameClientProps) {
 			)}
 
 			{gameState.gameEnded && (
-				<Card className="border-green-500">
+				<Card className="border-emerald-500">
 					<CardContent className="pt-6">
-						<p className="text-center font-bold text-green-600 text-lg">
+						<p className="text-center font-bold text-emerald-600 text-lg">
 							Spiel beendet!
 						</p>
 					</CardContent>

@@ -98,7 +98,7 @@ export function CardImage({
 			<button
 				className={cn(
 					"relative aspect-5/7 w-full cursor-pointer",
-					playable && "ring-2 ring-green-500 ring-offset-2",
+					playable && "ring-2 ring-emerald-500 ring-offset-2",
 					selected && "ring-2 ring-primary ring-offset-2",
 					className,
 				)}
@@ -220,7 +220,7 @@ function CardText({
 			<button
 				className={cn(
 					"relative aspect-5/7 w-full cursor-pointer rounded-lg border-2 border-slate-300 bg-white shadow-md transition-transform hover:scale-105",
-					playable && "ring-2 ring-green-500 ring-offset-2",
+					playable && "ring-2 ring-emerald-500 ring-offset-2",
 					selected && "ring-2 ring-primary ring-offset-2",
 					className,
 				)}
