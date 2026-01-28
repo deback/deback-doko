@@ -10,11 +10,13 @@ import {
 
 interface TablesHeaderProps {
 	isConnected: boolean;
+	isPlayerAtAnyTable: boolean;
 	onCreateTable: () => void;
 }
 
 export function TablesHeader({
 	isConnected,
+	isPlayerAtAnyTable,
 	onCreateTable,
 }: TablesHeaderProps) {
 	return (
@@ -35,19 +37,21 @@ export function TablesHeader({
 					</TooltipContent>
 				</Tooltip>
 
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							disabled={!isConnected}
-							onClick={onCreateTable}
-							size="icon"
-							variant="outline"
-						>
-							<Plus />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Neuen Tisch erstellen</TooltipContent>
-				</Tooltip>
+				{!isPlayerAtAnyTable && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								disabled={!isConnected}
+								onClick={onCreateTable}
+								size="icon"
+								variant="outline"
+							>
+								<Plus />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Neuen Tisch erstellen</TooltipContent>
+					</Tooltip>
+				)}
 			</div>
 		</div>
 	);

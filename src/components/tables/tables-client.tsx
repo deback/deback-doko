@@ -13,6 +13,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import type { Player, Table, TableEvent, TableMessage } from "@/types/tables";
+import { InfoBox } from "../ui/success-info";
 
 interface TablesClientProps {
 	player: Player;
@@ -22,7 +23,12 @@ export function TablesClient({ player }: TablesClientProps) {
 	const [tables, setTables] = useState<Table[]>([]);
 	const [isConnected, setIsConnected] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [lastCreatedTableId, setLastCreatedTableId] = useState<string | null>(
+		null,
+	);
 	const socketRef = useRef<PartySocket | null>(null);
+	const pendingTableName = useRef<string | null>(null);
+	const tableRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
 	const getNextTableName = () => {
 		const existingNumbers = tables
@@ -65,6 +71,17 @@ export function TablesClient({ player }: TablesClientProps) {
 				if (message.type === "state") {
 					setTables(message.state.tables);
 					setError(null); // Clear error on successful state update
+
+					// Check if we just created a table and scroll to it
+					if (pendingTableName.current) {
+						const createdTable = message.state.tables.find(
+							(t) => t.name === pendingTableName.current,
+						);
+						if (createdTable) {
+							setLastCreatedTableId(createdTable.id);
+							pendingTableName.current = null;
+						}
+					}
 				} else if (message.type === "error") {
 					setError(message.message);
 					console.error("Error from server:", message.message);
@@ -93,9 +110,12 @@ export function TablesClient({ player }: TablesClientProps) {
 	const createTable = () => {
 		if (!socketRef.current) return;
 
+		const tableName = getNextTableName();
+		pendingTableName.current = tableName;
+
 		const event: TableEvent = {
 			type: "create-table",
-			name: getNextTableName(),
+			name: tableName,
 			player,
 		};
 
@@ -146,18 +166,29 @@ export function TablesClient({ player }: TablesClientProps) {
 		return table.players.length >= 4;
 	};
 
+	const isPlayerAtAnyTable = tables.some((table) =>
+		table.players.some((p) => p.id === player.id),
+	);
+
+	// Scroll to newly created table
+	useEffect(() => {
+		if (lastCreatedTableId) {
+			const element = tableRefs.current.get(lastCreatedTableId);
+			element?.scrollIntoView({ behavior: "smooth", block: "center" });
+			setLastCreatedTableId(null);
+		}
+	}, [lastCreatedTableId]);
+
 	return (
 		<>
-			<TablesHeader isConnected={isConnected} onCreateTable={createTable} />
+			<TablesHeader
+				isConnected={isConnected}
+				isPlayerAtAnyTable={isPlayerAtAnyTable}
+				onCreateTable={createTable}
+			/>
 
 			<div className="container mx-auto space-y-6 p-6">
-				{error && (
-					<Card className="border-destructive">
-						<CardContent className="pt-6">
-							<p className="text-center text-destructive">{error}</p>
-						</CardContent>
-					</Card>
-				)}
+				{error && <InfoBox variant="error">{error}</InfoBox>}
 
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{tables.map((table) => {
@@ -165,7 +196,13 @@ export function TablesClient({ player }: TablesClientProps) {
 						const full = isTableFull(table);
 
 						return (
-							<Card key={table.id}>
+							<Card
+								key={table.id}
+								ref={(el) => {
+									if (el) tableRefs.current.set(table.id, el);
+									else tableRefs.current.delete(table.id);
+								}}
+							>
 								<CardHeader>
 									<CardTitle>{table.name}</CardTitle>
 									<CardDescription>
