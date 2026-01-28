@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Table2, User } from "lucide-react";
+import { Home, Table2, User, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,11 @@ export function Navigation() {
 			href: "/tables",
 			icon: Table2,
 			label: "Tische",
+		},
+		{
+			href: "/players",
+			icon: Users,
+			label: "Spieler",
 		},
 		{
 			href: "/profile/me",

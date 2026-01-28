@@ -1,11 +1,8 @@
 import { CircleAlert } from "lucide-react";
 import { headers } from "next/headers";
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getAllUsers } from "@/app/actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { auth } from "@/server/better-auth";
 import { getSession } from "@/server/better-auth/server";
 
@@ -23,9 +20,6 @@ export default async function Home({
 		}
 		redirect("/login");
 	}
-
-	const usersResult = await getAllUsers();
-	const users = usersResult.success ? usersResult.data : [];
 
 	return (
 		<main className="mx-auto min-h-screen max-w-3xl overflow-hidden border-x px-4">
@@ -57,45 +51,6 @@ export default async function Home({
 						Abmelden
 					</Button>
 				</form>
-
-				<div className="space-y-4">
-					<h2 className="font-semibold text-xl">Alle User</h2>
-					{users.length === 0 ? (
-						<p className="text-muted-foreground text-sm">
-							Keine User gefunden.
-						</p>
-					) : (
-						<div className="space-y-2">
-							{users.map((user) => (
-								<Link href={`/profile/${user.id}`} key={user.id}>
-									<Card className="transition-colors hover:bg-accent">
-										<CardContent className="flex items-center gap-4 p-4">
-											{user.image ? (
-												<Image
-													alt={user.name}
-													className="rounded-full"
-													height={48}
-													src={user.image}
-													width={48}
-												/>
-											) : (
-												<div className="flex size-12 items-center justify-center rounded-full bg-muted font-bold text-lg">
-													{user.name.charAt(0).toUpperCase()}
-												</div>
-											)}
-											<div className="flex-1">
-												<p className="font-medium">{user.name}</p>
-												<p className="text-muted-foreground text-sm">
-													{user.email}
-												</p>
-											</div>
-										</CardContent>
-									</Card>
-								</Link>
-							))}
-						</div>
-					)}
-				</div>
 			</div>
 		</main>
 	);

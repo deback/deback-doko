@@ -1,0 +1,1 @@
+ALTER TABLE "deback-doko_user" ADD COLUMN "balance" integer DEFAULT 5000 NOT NULL;

@@ -6,6 +6,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { formatBalance } from "@/lib/utils";
 
 interface UserProfileProps {
 	user: {
@@ -13,6 +14,7 @@ interface UserProfileProps {
 		name: string;
 		email: string;
 		image: string | null;
+		balance: number;
 		emailVerified: boolean;
 		createdAt: Date;
 	};
@@ -50,6 +52,11 @@ export function UserProfile({ user }: UserProfileProps) {
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				<div className="space-y-2">
+					<p className="font-medium text-muted-foreground text-sm">Guthaben</p>
+					<p className="text-sm">{formatBalance(user.balance)}</p>
+				</div>
+
 				<div className="space-y-2">
 					<p className="font-medium text-muted-foreground text-sm">
 						Email-Verifizierung

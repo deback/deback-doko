@@ -12,6 +12,7 @@ export async function getAllUsers() {
 				name: user.name,
 				email: user.email,
 				image: user.image,
+				balance: user.balance,
 			})
 			.from(user)
 			.orderBy(desc(user.createdAt));

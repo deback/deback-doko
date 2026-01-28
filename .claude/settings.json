@@ -1,5 +1,9 @@
 {
-	"permissions": {
-		"allow": ["Bash(pnpm biome:*)", "Bash(pnpm typecheck:*)"]
-	}
+  "permissions": {
+    "allow": [
+      "Bash(pnpm biome:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm db:generate:*)"
+    ]
+  }
 }

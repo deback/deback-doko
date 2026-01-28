@@ -184,6 +184,7 @@ export function TablesClient({ player }: TablesClientProps) {
 					</div>
 				</CardContent>
 			</Card>
+			<Button>Test</Button>
 
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{tables.map((table) => {

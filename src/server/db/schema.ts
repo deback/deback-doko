@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
 	boolean,
 	index,
+	integer,
 	pgTableCreator,
 	text,
 	timestamp,
@@ -38,6 +39,7 @@ export const user = createTable("user", {
 		.$defaultFn(() => false)
 		.notNull(),
 	image: text("image"),
+	balance: integer("balance").default(5000).notNull(),
 	createdAt: timestamp("created_at")
 		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.notNull(),
