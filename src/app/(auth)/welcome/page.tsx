@@ -20,9 +20,7 @@ export default function WelcomePage() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<InfoBox>
-						Dein Konto ist jetzt aktiv und du bist angemeldet.
-					</InfoBox>
+					<InfoBox>Dein Konto ist jetzt aktiv und du bist angemeldet.</InfoBox>
 					<Button asChild className="w-full">
 						<Link href="/">Zur Startseite</Link>
 					</Button>
