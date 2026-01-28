@@ -53,12 +53,7 @@ export default function RootLayout({
 					disableTransitionOnChange
 					enableSystem
 				>
-					<TooltipProvider>
-						{children}
-						<div className="absolute top-4 right-4">
-							<ModeToggle />
-						</div>
-					</TooltipProvider>
+					<TooltipProvider>{children}</TooltipProvider>
 				</ThemeProvider>
 			</body>
 		</html>
