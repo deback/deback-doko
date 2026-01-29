@@ -7,7 +7,12 @@ import { TablesHeader } from "@/components/tables/tables-header";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StarRating } from "@/components/ui/star-rating";
-import { calculateAverageRating, calculateRating, cn } from "@/lib/utils";
+import {
+	calculateAverageRating,
+	calculateRating,
+	cn,
+	formatBalance,
+} from "@/lib/utils";
 import type { Player, Table, TableEvent, TableMessage } from "@/types/tables";
 
 interface TablesClientProps {
@@ -183,11 +188,12 @@ export function TablesClient({ player }: TablesClientProps) {
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{tables.map((table) => {
 						const joinable = canJoinTable(table);
+						const isMyTable = table.players.some((p) => p.id === player.id);
 						return (
 							<Card
 								className={cn(
-									"cursor-pointer hover:border-primary transition-colors",
-									joinable ? "" : "opacity-50 cursor-not-allowed",
+									joinable && "cursor-pointer hover:border-primary transition-colors",
+									!joinable && !isMyTable && "opacity-50 cursor-not-allowed",
 								)}
 								key={table.id}
 								onClick={() => joinTable(table.id)}
@@ -224,13 +230,18 @@ export function TablesClient({ player }: TablesClientProps) {
 													size="sm"
 													src={p.image}
 												/>
-												<span
-													className={`flex-1 truncate text-sm ${
-														p.id === player.id ? "font-bold" : ""
-													}`}
-												>
-													{p.name || p.email}
-												</span>
+												<div className="min-w-0 flex-1">
+													<p
+														className={`truncate text-sm ${
+															p.id === player.id ? "font-bold" : ""
+														}`}
+													>
+														{p.name || p.email}
+													</p>
+													<p className="text-muted-foreground text-xs">
+														{formatBalance(p.balance)}
+													</p>
+												</div>
 												<StarRating
 													className="shrink-0"
 													rating={calculateRating(p.gamesPlayed, p.gamesWon)}

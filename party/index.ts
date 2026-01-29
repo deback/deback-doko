@@ -8,6 +8,7 @@ interface Player {
 	image?: string | null;
 	gamesPlayed: number;
 	gamesWon: number;
+	balance: number;
 }
 
 interface Table {

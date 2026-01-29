@@ -5,6 +5,7 @@ export interface Player {
 	image?: string | null;
 	gamesPlayed: number;
 	gamesWon: number;
+	balance: number;
 }
 
 export interface Table {

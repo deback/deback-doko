@@ -26,6 +26,7 @@ export default async function TablesPage() {
 		image: userData.image,
 		gamesPlayed: userData.gamesPlayed,
 		gamesWon: userData.gamesWon,
+		balance: userData.balance,
 	};
 
 	return (

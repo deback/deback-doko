@@ -22,7 +22,7 @@ export function StarRating({ rating, className }: StarRatingProps) {
 			// Half star - show outline star as background and filled star clipped to half
 			stars.push(
 				<div key={i} className="relative size-5">
-					<Star className="absolute size-5 text-muted-foreground/30 fill-muted-foreground/10" />
+					<Star className="absolute size-5 text-muted-foreground/20 fill-muted-foreground/10" />
 					<div className="absolute size-5 overflow-hidden" style={{ clipPath: "inset(0 50% 0 0)" }}>
 						<Star className="size-5 fill-yellow-600 text-yellow-600" />
 					</div>
@@ -31,7 +31,7 @@ export function StarRating({ rating, className }: StarRatingProps) {
 		} else {
 			// Empty star
 			stars.push(
-				<Star key={i} className="size-5 text-muted-foreground/30 fill-muted-foreground/10" />,
+				<Star key={i} className="size-5 text-muted-foreground/20 fill-muted-foreground/10" />,
 			);
 		}
 	}

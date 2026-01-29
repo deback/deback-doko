@@ -31,6 +31,7 @@ export default async function GamePage({ params }: GamePageProps) {
 		image: userData.image,
 		gamesPlayed: userData.gamesPlayed,
 		gamesWon: userData.gamesWon,
+		balance: userData.balance,
 	};
 
 	return (
