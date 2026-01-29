@@ -5,16 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TablesHeader } from "@/components/tables/tables-header";
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StarRating } from "@/components/ui/star-rating";
-import { calculateAverageRating, calculateRating } from "@/lib/utils";
+import { calculateAverageRating, calculateRating, cn } from "@/lib/utils";
 import type { Player, Table, TableEvent, TableMessage } from "@/types/tables";
 
 interface TablesClientProps {
@@ -125,6 +118,13 @@ export function TablesClient({ player }: TablesClientProps) {
 	const joinTable = (tableId: string) => {
 		if (!socketRef.current) return;
 
+		if (isPlayerAtAnyTable) {
+			toast.error(
+				"Du sitzt bereits an einem Tisch. Verlasse zuerst den anderen Tisch.",
+			);
+			return;
+		}
+
 		const event: TableEvent = {
 			type: "join-table",
 			tableId,
@@ -134,41 +134,32 @@ export function TablesClient({ player }: TablesClientProps) {
 		socketRef.current.send(JSON.stringify(event));
 	};
 
-	const leaveTable = (tableId: string) => {
+	const leaveCurrentTable = () => {
 		if (!socketRef.current) return;
+
+		const currentTable = tables.find((t) =>
+			t.players.some((p) => p.id === player.id),
+		);
+		if (!currentTable) return;
 
 		const event: TableEvent = {
 			type: "leave-table",
-			tableId,
+			tableId: currentTable.id,
 			playerId: player.id,
 		};
 
 		socketRef.current.send(JSON.stringify(event));
-	};
-
-	const deleteTable = (tableId: string) => {
-		if (!socketRef.current) return;
-
-		const event: TableEvent = {
-			type: "delete-table",
-			tableId,
-			playerId: player.id,
-		};
-
-		socketRef.current.send(JSON.stringify(event));
-	};
-
-	const isPlayerAtTable = (table: Table) => {
-		return table.players.some((p) => p.id === player.id);
-	};
-
-	const isTableFull = (table: Table) => {
-		return table.players.length >= 4;
 	};
 
 	const isPlayerAtAnyTable = tables.some((table) =>
 		table.players.some((p) => p.id === player.id),
 	);
+
+	const canJoinTable = (table: Table) => {
+		const isAtThisTable = table.players.some((p) => p.id === player.id);
+		const isFull = table.players.length >= 4;
+		return !isAtThisTable && !isFull && !isPlayerAtAnyTable;
+	};
 
 	// Scroll to newly created table
 	useEffect(() => {
@@ -185,17 +176,21 @@ export function TablesClient({ player }: TablesClientProps) {
 				isConnected={isConnected}
 				isPlayerAtAnyTable={isPlayerAtAnyTable}
 				onCreateTable={createTable}
+				onLeaveTable={leaveCurrentTable}
 			/>
 
 			<div className="container mx-auto space-y-6 p-6">
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{tables.map((table) => {
-						const playerAtTable = isPlayerAtTable(table);
-						const full = isTableFull(table);
-
+						const joinable = canJoinTable(table);
 						return (
 							<Card
+								className={cn(
+									"cursor-pointer hover:border-primary transition-colors",
+									joinable ? "" : "opacity-50 cursor-not-allowed",
+								)}
 								key={table.id}
+								onClick={() => joinTable(table.id)}
 								ref={(el) => {
 									if (el) tableRefs.current.set(table.id, el);
 									else tableRefs.current.delete(table.id);
@@ -257,33 +252,6 @@ export function TablesClient({ player }: TablesClientProps) {
 										)}
 									</div>
 								</CardContent>
-								<CardFooter className="flex gap-2">
-									{playerAtTable ? (
-										<Button
-											className="flex-1"
-											onClick={() => leaveTable(table.id)}
-											variant="destructive"
-										>
-											Verlassen
-										</Button>
-									) : (
-										<Button
-											className="flex-1"
-											disabled={full}
-											onClick={() => joinTable(table.id)}
-										>
-											{full ? "Voll" : "Beitreten"}
-										</Button>
-									)}
-									{playerAtTable && table.players[0]?.id === player.id && (
-										<Button
-											onClick={() => deleteTable(table.id)}
-											variant="destructive"
-										>
-											Löschen
-										</Button>
-									)}
-								</CardFooter>
 							</Card>
 						);
 					})}

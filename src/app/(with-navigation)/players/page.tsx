@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAllUsers } from "@/app/actions";
+import { Avatar } from "@/components/ui/avatar";
 import { StarRating } from "@/components/ui/star-rating";
 import { calculateRating, formatBalance } from "@/lib/utils";
 import { getSession } from "@/server/better-auth/server";
@@ -29,20 +29,13 @@ export default async function PlayersPage() {
 						href={`/profile/${user.id}`}
 						key={user.id}
 					>
-						{user.image ? (
-							<Image
-								alt={user.name}
-								className="rounded-full"
-								height={48}
-								src={user.image}
-								width={48}
-							/>
-						) : (
-							<div className="flex size-12 items-center justify-center rounded-full bg-muted font-bold text-lg">
-								{user.name.charAt(0).toUpperCase()}
-							</div>
-						)}
-						<div className="flex-1">
+						<Avatar
+							alt={user.name}
+							fallback={user.name.charAt(0).toUpperCase()}
+							size="lg"
+							src={user.image}
+						/>
+						<div className="min-w-0 flex-1">
 							<p className="font-medium text-lg truncate">{user.name}</p>
 							<p className="text-muted-foreground text-sm">
 								{formatBalance(user.balance)}
