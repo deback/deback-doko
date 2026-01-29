@@ -33,7 +33,7 @@ export function SettingsDialog({ user }: SettingsDialogProps) {
 					<span className="text-xs">Optionen</span>
 				</button>
 			</DialogTrigger>
-			<DialogContent className="max-w-md">
+			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Einstellungen</DialogTitle>
 				</DialogHeader>
