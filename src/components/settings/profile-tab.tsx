@@ -3,8 +3,8 @@
 import { upload } from "@vercel/blob/client";
 import { useCallback, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { InfoBox } from "@/components/ui/info-box";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateProfile } from "@/server/actions/profile";
@@ -68,10 +68,6 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 	const [currentImage, setCurrentImage] = useState<string | null>(user.image);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
-	const [message, setMessage] = useState<{
-		type: "success" | "error";
-		text: string;
-	} | null>(null);
 
 	// Cropping state
 	const [imageSrc, setImageSrc] = useState<string>("");
@@ -97,7 +93,6 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 		if (!croppedAreaPixels || !imageSrc) return;
 
 		setIsUploading(true);
-		setMessage(null);
 
 		try {
 			const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
@@ -116,16 +111,10 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 
 			setCurrentImage(blob.url);
 			setImageSrc(""); // Clear cropping view
-			setMessage({
-				type: "success",
-				text: "Bild erfolgreich hochgeladen!",
-			});
+			toast.success("Bild erfolgreich hochgeladen!");
 		} catch (error) {
 			console.error("Upload error:", error);
-			setMessage({
-				type: "error",
-				text: "Fehler beim Hochladen des Bildes",
-			});
+			toast.error("Fehler beim Hochladen des Bildes");
 		} finally {
 			setIsUploading(false);
 		}
@@ -151,7 +140,6 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 		}
 
 		setIsSaving(true);
-		setMessage(null);
 
 		try {
 			const result = await updateProfile({
@@ -160,21 +148,13 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 			});
 
 			if (result.success) {
-				setMessage({
-					type: "success",
-					text: "Profil erfolgreich aktualisiert!",
-				});
+				toast.success("Profil erfolgreich aktualisiert!");
+				onClose?.();
 			} else {
-				setMessage({
-					type: "error",
-					text: result.error ?? "Fehler beim Speichern",
-				});
+				toast.error(result.error ?? "Fehler beim Speichern");
 			}
 		} catch {
-			setMessage({
-				type: "error",
-				text: "Ein unerwarteter Fehler ist aufgetreten.",
-			});
+			toast.error("Ein unerwarteter Fehler ist aufgetreten.");
 		} finally {
 			setIsSaving(false);
 		}
@@ -264,13 +244,6 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 					Der Name muss zwischen 2 und 50 Zeichen lang sein.
 				</p>
 			</div>
-
-			{/* Feedback Message */}
-			{message && (
-				<InfoBox variant={message.type === "success" ? "success" : "error"}>
-					{message.text}
-				</InfoBox>
-			)}
 
 			{/* Save Button */}
 			<Button

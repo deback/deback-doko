@@ -36,7 +36,7 @@ export function SettingsDialog({ user }: SettingsDialogProps) {
 					<span className="text-xs">Optionen</span>
 				</button>
 			</DialogTrigger>
-			<DialogContent>
+			<DialogContent className="min-h-130 content-start">
 				<DialogHeader>
 					<DialogTitle>Einstellungen</DialogTitle>
 				</DialogHeader>
