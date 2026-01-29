@@ -1,6 +1,7 @@
 "use client";
 
 import { Settings } from "lucide-react";
+import { useState } from "react";
 import {
 	Dialog,
 	DialogContent,
@@ -21,8 +22,10 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ user }: SettingsDialogProps) {
+	const [open, setOpen] = useState(false);
+
 	return (
-		<Dialog>
+		<Dialog onOpenChange={setOpen} open={open}>
 			<DialogTrigger asChild>
 				<button
 					aria-label="Einstellungen"
@@ -49,7 +52,7 @@ export function SettingsDialog({ user }: SettingsDialogProps) {
 							</TabsTrigger>
 						</TabsList>
 						<TabsContent className="mt-4" value="profile">
-							<ProfileTab user={user} />
+							<ProfileTab onClose={() => setOpen(false)} user={user} />
 						</TabsContent>
 						<TabsContent className="mt-4" value="appearance">
 							<AppearanceTab />

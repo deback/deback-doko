@@ -1,14 +1,8 @@
 "use client";
 
 import { upload } from "@vercel/blob/client";
-import { useCallback, useRef, useState } from "react";
-import ReactCrop, {
-	type Crop,
-	centerCrop,
-	makeAspectCrop,
-	type PixelCrop,
-} from "react-image-crop";
-import "react-image-crop/dist/ReactCrop.css";
+import { useCallback, useState } from "react";
+import Cropper, { type Area } from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { InfoBox } from "@/components/ui/info-box";
 import { Input } from "@/components/ui/input";
@@ -22,29 +16,54 @@ interface ProfileTabProps {
 		name: string;
 		image: string | null;
 	};
+	onClose?: () => void;
 }
 
-function centerAspectCrop(
-	mediaWidth: number,
-	mediaHeight: number,
-	aspect: number,
-): Crop {
-	return centerCrop(
-		makeAspectCrop(
-			{
-				unit: "%",
-				width: 90,
-			},
-			aspect,
-			mediaWidth,
-			mediaHeight,
-		),
-		mediaWidth,
-		mediaHeight,
+async function getCroppedImg(
+	imageSrc: string,
+	pixelCrop: Area,
+): Promise<Blob | null> {
+	const image = new Image();
+	image.src = imageSrc;
+
+	await new Promise((resolve) => {
+		image.onload = resolve;
+	});
+
+	const canvas = document.createElement("canvas");
+	const ctx = canvas.getContext("2d");
+	if (!ctx) {
+		return null;
+	}
+
+	const outputSize = 256;
+	canvas.width = outputSize;
+	canvas.height = outputSize;
+
+	ctx.drawImage(
+		image,
+		pixelCrop.x,
+		pixelCrop.y,
+		pixelCrop.width,
+		pixelCrop.height,
+		0,
+		0,
+		outputSize,
+		outputSize,
 	);
+
+	return new Promise((resolve) => {
+		canvas.toBlob(
+			(blob) => {
+				resolve(blob);
+			},
+			"image/webp",
+			0.9,
+		);
+	});
 }
 
-export function ProfileTab({ user }: ProfileTabProps) {
+export function ProfileTab({ user, onClose }: ProfileTabProps) {
 	const [name, setName] = useState(user.name);
 	const [currentImage, setCurrentImage] = useState<string | null>(user.image);
 	const [isUploading, setIsUploading] = useState(false);
@@ -56,76 +75,36 @@ export function ProfileTab({ user }: ProfileTabProps) {
 
 	// Cropping state
 	const [imageSrc, setImageSrc] = useState<string>("");
-	const [crop, setCrop] = useState<Crop>();
-	const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-	const imgRef = useRef<HTMLImageElement>(null);
+	const [crop, setCrop] = useState({ x: 0, y: 0 });
+	const [zoom, setZoom] = useState(1);
+	const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
 	const handleImageSelected = useCallback((file: File) => {
 		const reader = new FileReader();
 		reader.onload = () => {
 			setImageSrc(reader.result as string);
+			setCrop({ x: 0, y: 0 });
+			setZoom(1);
 		};
 		reader.readAsDataURL(file);
 	}, []);
 
-	const onImageLoad = useCallback(
-		(e: React.SyntheticEvent<HTMLImageElement>) => {
-			const { width, height } = e.currentTarget;
-			setCrop(centerAspectCrop(width, height, 1));
-		},
-		[],
-	);
-
-	const getCroppedImg = useCallback(async (): Promise<Blob | null> => {
-		const image = imgRef.current;
-		if (!image || !completedCrop) {
-			return null;
-		}
-
-		const canvas = document.createElement("canvas");
-		const ctx = canvas.getContext("2d");
-		if (!ctx) {
-			return null;
-		}
-
-		const scaleX = image.naturalWidth / image.width;
-		const scaleY = image.naturalHeight / image.height;
-
-		const outputSize = 256;
-		canvas.width = outputSize;
-		canvas.height = outputSize;
-
-		ctx.drawImage(
-			image,
-			completedCrop.x * scaleX,
-			completedCrop.y * scaleY,
-			completedCrop.width * scaleX,
-			completedCrop.height * scaleY,
-			0,
-			0,
-			outputSize,
-			outputSize,
-		);
-
-		return new Promise((resolve) => {
-			canvas.toBlob(
-				(blob) => {
-					resolve(blob);
-				},
-				"image/webp",
-				0.9,
-			);
-		});
-	}, [completedCrop]);
+	const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+		setCroppedAreaPixels(croppedAreaPixels);
+	}, []);
 
 	const handleCropAndUpload = useCallback(async () => {
-		const croppedBlob = await getCroppedImg();
-		if (!croppedBlob) return;
+		if (!croppedAreaPixels || !imageSrc) return;
 
 		setIsUploading(true);
 		setMessage(null);
 
 		try {
+			const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+			if (!croppedBlob) {
+				throw new Error("Failed to crop image");
+			}
+
 			const file = new File([croppedBlob], "avatar.webp", {
 				type: "image/webp",
 			});
@@ -150,19 +129,27 @@ export function ProfileTab({ user }: ProfileTabProps) {
 		} finally {
 			setIsUploading(false);
 		}
-	}, [getCroppedImg]);
+	}, [croppedAreaPixels, imageSrc]);
 
 	const handleCropCancel = useCallback(() => {
 		setImageSrc("");
-		setCrop(undefined);
-		setCompletedCrop(undefined);
+		setCrop({ x: 0, y: 0 });
+		setZoom(1);
+		setCroppedAreaPixels(null);
 	}, []);
 
 	const handleImageDelete = useCallback(() => {
 		setCurrentImage(null);
 	}, []);
 
+	const hasChanges = name !== user.name || currentImage !== user.image;
+
 	const handleSave = useCallback(async () => {
+		if (!hasChanges) {
+			onClose?.();
+			return;
+		}
+
 		setIsSaving(true);
 		setMessage(null);
 
@@ -177,9 +164,6 @@ export function ProfileTab({ user }: ProfileTabProps) {
 					type: "success",
 					text: "Profil erfolgreich aktualisiert!",
 				});
-				setTimeout(() => {
-					window.location.reload();
-				}, 1500);
 			} else {
 				setMessage({
 					type: "error",
@@ -194,9 +178,8 @@ export function ProfileTab({ user }: ProfileTabProps) {
 		} finally {
 			setIsSaving(false);
 		}
-	}, [name, currentImage]);
+	}, [name, currentImage, hasChanges, onClose]);
 
-	const hasChanges = name !== user.name || currentImage !== user.image;
 	const isCropping = !!imageSrc;
 
 	// Show cropping view
@@ -205,24 +188,33 @@ export function ProfileTab({ user }: ProfileTabProps) {
 			<div className="flex flex-col gap-4">
 				<p className="text-sm font-medium">Bild zuschneiden</p>
 
-				<div className="flex justify-center">
-					<ReactCrop
+				<div className="relative h-[300px] w-full">
+					<Cropper
 						aspect={1}
-						circularCrop
-						className="max-h-[300px]"
 						crop={crop}
-						onChange={(_, percentCrop) => setCrop(percentCrop)}
-						onComplete={(c) => setCompletedCrop(c)}
-					>
-						{/* biome-ignore lint/a11y/useAltText: Cropper image */}
-						{/* biome-ignore lint/performance/noImgElement: ReactCrop requires img element */}
-						<img
-							className="max-h-[300px] w-auto"
-							onLoad={onImageLoad}
-							ref={imgRef}
-							src={imageSrc}
-						/>
-					</ReactCrop>
+						cropShape="round"
+						image={imageSrc}
+						onCropChange={setCrop}
+						onCropComplete={onCropComplete}
+						onZoomChange={setZoom}
+						zoom={zoom}
+					/>
+				</div>
+
+				<div className="flex items-center gap-2">
+					<Label className="text-xs text-muted-foreground" htmlFor="zoom">
+						Zoom
+					</Label>
+					<input
+						className="h-1 flex-1 cursor-pointer appearance-none rounded-lg bg-border accent-primary"
+						id="zoom"
+						max={3}
+						min={1}
+						onChange={(e) => setZoom(Number(e.target.value))}
+						step={0.1}
+						type="range"
+						value={zoom}
+					/>
 				</div>
 
 				<div className="flex gap-2">
@@ -235,10 +227,10 @@ export function ProfileTab({ user }: ProfileTabProps) {
 					</Button>
 					<Button
 						className="flex-1"
-						disabled={!completedCrop || isUploading}
+						disabled={!croppedAreaPixels || isUploading}
 						onClick={handleCropAndUpload}
 					>
-						{isUploading ? "Wird hochgeladen..." : "Zuschneiden & Hochladen"}
+						{isUploading ? "Wird übernommen..." : "Übernehmen"}
 					</Button>
 				</div>
 			</div>
@@ -283,7 +275,7 @@ export function ProfileTab({ user }: ProfileTabProps) {
 			{/* Save Button */}
 			<Button
 				className="w-full"
-				disabled={isSaving || isUploading || !hasChanges || name.length < 2}
+				disabled={isSaving || isUploading || name.length < 2}
 				onClick={handleSave}
 			>
 				{isSaving ? "Wird gespeichert..." : "Speichern"}
