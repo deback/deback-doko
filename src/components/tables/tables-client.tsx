@@ -192,7 +192,9 @@ export function TablesClient({ player }: TablesClientProps) {
 						return (
 							<Card
 								className={cn(
-									joinable && "cursor-pointer hover:border-primary transition-colors",
+									"pt-4 ",
+									joinable &&
+										"cursor-pointer hover:border-primary transition-colors",
 									!joinable && !isMyTable && "opacity-50 cursor-not-allowed",
 								)}
 								key={table.id}
@@ -202,7 +204,7 @@ export function TablesClient({ player }: TablesClientProps) {
 									else tableRefs.current.delete(table.id);
 								}}
 							>
-								<CardHeader>
+								<CardHeader className="px-4 [.border-b]:pb-0 border-b">
 									<div className="flex items-start justify-between gap-2">
 										<div>
 											<CardTitle>{table.name}</CardTitle>
