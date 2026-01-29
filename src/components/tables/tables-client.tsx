@@ -4,15 +4,17 @@ import PartySocket from "partysocket";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TablesHeader } from "@/components/tables/tables-header";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
-	CardDescription,
 	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { StarRating } from "@/components/ui/star-rating";
+import { calculateAverageRating, calculateRating } from "@/lib/utils";
 import type { Player, Table, TableEvent, TableMessage } from "@/types/tables";
 
 interface TablesClientProps {
@@ -200,36 +202,59 @@ export function TablesClient({ player }: TablesClientProps) {
 								}}
 							>
 								<CardHeader>
-									<CardTitle>{table.name}</CardTitle>
-									<CardDescription>
-										{table.players.length} / 4 Spieler
-									</CardDescription>
+									<div className="flex items-start justify-between gap-2">
+										<div>
+											<CardTitle>{table.name}</CardTitle>
+											<p className="text-muted-foreground text-sm">
+												{table.players.length} / 4 Spieler
+											</p>
+										</div>
+										{table.players.length > 0 && (
+											<StarRating
+												className="shrink-0"
+												rating={calculateAverageRating(table.players)}
+											/>
+										)}
+									</div>
 								</CardHeader>
 								<CardContent>
-									<div className="space-y-2">
-										<div className="font-medium text-sm">Spieler:</div>
-										<ul className="list-inside list-disc space-y-1">
-											{table.players.map((p) => (
-												<li
-													className={`text-sm ${
+									<div className="space-y-3">
+										{table.players.map((p) => (
+											<div className="flex items-center gap-3" key={p.id}>
+												<Avatar
+													alt={p.name || "Spieler"}
+													fallback={(p.name || p.email || "?")
+														.charAt(0)
+														.toUpperCase()}
+													size="sm"
+													src={p.image}
+												/>
+												<span
+													className={`flex-1 truncate text-sm ${
 														p.id === player.id ? "font-bold" : ""
 													}`}
-													key={p.id}
 												>
 													{p.name || p.email}
-												</li>
-											))}
-											{Array.from({ length: 4 - table.players.length }).map(
-												(_, i) => (
-													<li
-														className="text-muted-foreground text-sm"
-														key={`empty-${table.id}-${i}`}
-													>
-														(Leer)
-													</li>
-												),
-											)}
-										</ul>
+												</span>
+												<StarRating
+													className="shrink-0"
+													rating={calculateRating(p.gamesPlayed, p.gamesWon)}
+												/>
+											</div>
+										))}
+										{Array.from({ length: 4 - table.players.length }).map(
+											(_, i) => (
+												<div
+													className="flex items-center gap-3"
+													key={`empty-${table.id}-${i}`}
+												>
+													<div className="size-8 rounded-full border-2 border-dashed border-muted-foreground/30" />
+													<span className="text-muted-foreground text-sm">
+														(Frei)
+													</span>
+												</div>
+											),
+										)}
 									</div>
 								</CardContent>
 								<CardFooter className="flex gap-2">

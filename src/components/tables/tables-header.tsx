@@ -44,7 +44,6 @@ export function TablesHeader({
 								disabled={!isConnected}
 								onClick={onCreateTable}
 								size="icon"
-								variant="outline"
 							>
 								<Plus />
 							</Button>

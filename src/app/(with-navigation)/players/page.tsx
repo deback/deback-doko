@@ -43,7 +43,7 @@ export default async function PlayersPage() {
 							</div>
 						)}
 						<div className="flex-1">
-							<p className="font-medium text-lg">{user.name}</p>
+							<p className="font-medium text-lg truncate">{user.name}</p>
 							<p className="text-muted-foreground text-sm">
 								{formatBalance(user.balance)}
 							</p>

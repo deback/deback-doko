@@ -16,3 +16,15 @@ export function calculateRating(gamesPlayed: number, gamesWon: number): number {
 	const raw = winRate * 3 + (Math.min(gamesPlayed, 100) / 100) * 2;
 	return Math.min(5, Math.round(raw * 2) / 2);
 }
+
+export function calculateAverageRating(
+	players: Array<{ gamesPlayed: number; gamesWon: number }>,
+): number {
+	if (players.length === 0) return 0;
+
+	const totalRating = players.reduce((sum, player) => {
+		return sum + calculateRating(player.gamesPlayed, player.gamesWon);
+	}, 0);
+
+	return Math.round((totalRating / players.length) * 2) / 2;
+}

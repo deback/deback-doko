@@ -5,6 +5,9 @@ interface Player {
 	id: string;
 	name: string;
 	email?: string;
+	image?: string | null;
+	gamesPlayed: number;
+	gamesWon: number;
 }
 
 interface Table {

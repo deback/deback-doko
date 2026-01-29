@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getUserById } from "@/app/profile/[userId]/actions";
 import { TablesClient } from "@/components/tables/tables-client";
 import { getSession } from "@/server/better-auth/server";
 import type { Player } from "@/types/tables";
@@ -10,11 +11,21 @@ export default async function TablesPage() {
 		redirect("/login");
 	}
 
-	// Create player object from session
+	const result = await getUserById(session.user.id);
+
+	if (!result.success || !result.data) {
+		redirect("/login");
+	}
+
+	const userData = result.data;
+
 	const player: Player = {
-		id: session.user.id,
-		name: session.user.name ?? session.user.email ?? "Unbekannt",
-		email: session.user.email,
+		id: userData.id,
+		name: userData.name ?? userData.email ?? "Unbekannt",
+		email: userData.email,
+		image: userData.image,
+		gamesPlayed: userData.gamesPlayed,
+		gamesWon: userData.gamesWon,
 	};
 
 	return (

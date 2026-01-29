@@ -12,6 +12,7 @@ import {
 } from "@/server/email/resend";
 
 export const auth = betterAuth({
+	//trustedOrigins: [env.BETTER_AUTH_URL],
 	database: drizzleAdapter(db, {
 		provider: "pg",
 	}),
