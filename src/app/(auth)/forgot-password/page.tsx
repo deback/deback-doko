@@ -21,8 +21,8 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { InfoBox } from "@/components/ui/info-box";
+import { Input } from "@/components/ui/input";
 import { emailSchema } from "@/lib/validations/auth";
 import {
 	type ActionState,

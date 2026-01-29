@@ -22,8 +22,8 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { InfoBox } from "@/components/ui/info-box";
+import { Input } from "@/components/ui/input";
 import { resetPasswordSchema } from "@/lib/validations/auth";
 import { type ActionState, resetPasswordAction } from "@/server/actions/auth";
 

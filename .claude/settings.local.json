@@ -21,7 +21,8 @@
 			"Bash(psql:*)",
 			"Bash(npx dotenv-cli:*)",
 			"Bash(gtimeout 30 pnpm db:push:*)",
-			"Bash(pnpm dlx:*)"
+			"Bash(pnpm dlx:*)",
+			"Bash(pnpm add:*)"
 		]
 	}
 }
