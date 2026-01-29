@@ -23,7 +23,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { InfoBox } from "@/components/ui/success-info";
+import { InfoBox } from "@/components/ui/info-box";
 import { resetPasswordSchema } from "@/lib/validations/auth";
 import { type ActionState, resetPasswordAction } from "@/server/actions/auth";
 

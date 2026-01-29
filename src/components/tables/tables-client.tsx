@@ -14,6 +14,7 @@ import {
 	formatBalance,
 } from "@/lib/utils";
 import type { Player, Table, TableEvent, TableMessage } from "@/types/tables";
+import { InfoBox } from "../ui/info-box";
 
 interface TablesClientProps {
 	player: Player;
@@ -272,13 +273,9 @@ export function TablesClient({ player }: TablesClientProps) {
 				</div>
 
 				{tables.length === 0 && (
-					<Card>
-						<CardContent className="pt-6">
-							<p className="text-center text-muted-foreground">
-								Noch keine Tische vorhanden. Erstelle den ersten Tisch!
-							</p>
-						</CardContent>
-					</Card>
+					<InfoBox variant="info">
+						Noch keine Tische vorhanden. Erstelle den ersten Tisch!
+					</InfoBox>
 				)}
 			</div>
 		</>

@@ -7,7 +7,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { InfoBox } from "@/components/ui/success-info";
+import { InfoBox } from "@/components/ui/info-box";
 
 export default function WelcomePage() {
 	return (

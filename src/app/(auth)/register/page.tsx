@@ -22,7 +22,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { InfoBox } from "@/components/ui/success-info";
+import { InfoBox } from "@/components/ui/info-box";
 import { signUpSchema } from "@/lib/validations/auth";
 import { type ActionState, signUpAction } from "@/server/actions/auth";
 

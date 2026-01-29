@@ -1,7 +1,7 @@
-import { CircleAlert, CircleCheck, TriangleAlert } from "lucide-react";
+import { CircleAlert, CircleCheck, Info, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type InfoVariant = "success" | "warning" | "error";
+type InfoVariant = "info" |"success" | "warning" | "error";
 
 interface InfoBoxProps {
 	children: React.ReactNode;
@@ -28,6 +28,11 @@ const variantStyles: Record<
 		container: "border-red-600 bg-red-100 dark:border-red-400 dark:bg-red-900",
 		icon: "text-red-600 dark:text-red-400",
 		Icon: CircleAlert,
+	},
+	info: {
+		container: "border bg-background ",
+		icon: "text-foreground",
+		Icon: Info,
 	},
 };
 
