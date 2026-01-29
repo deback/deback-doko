@@ -204,8 +204,8 @@ export function TablesClient({ player }: TablesClientProps) {
 									else tableRefs.current.delete(table.id);
 								}}
 							>
-								<CardHeader className="px-4 [.border-b]:pb-0 border-b">
-									<div className="flex items-start justify-between gap-2">
+								<CardHeader className="px-4 [.border-b]:pb-1 border-b">
+									<div className="flex items-center justify-between gap-2">
 										<div>
 											<CardTitle>{table.name}</CardTitle>
 											<p className="text-muted-foreground text-sm">
@@ -214,7 +214,7 @@ export function TablesClient({ player }: TablesClientProps) {
 										</div>
 										{table.players.length > 0 && (
 											<StarRating
-												className="shrink-0"
+												className="shrink-0 mb-1"
 												rating={calculateAverageRating(table.players)}
 											/>
 										)}
@@ -247,6 +247,7 @@ export function TablesClient({ player }: TablesClientProps) {
 												<StarRating
 													className="shrink-0"
 													rating={calculateRating(p.gamesPlayed, p.gamesWon)}
+													size="sm"
 												/>
 											</div>
 										))}
