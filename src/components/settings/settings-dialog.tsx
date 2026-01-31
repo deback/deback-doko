@@ -36,7 +36,7 @@ export function SettingsDialog({ user }: SettingsDialogProps) {
 					<span className="text-xs">Optionen</span>
 				</button>
 			</DialogTrigger>
-			<DialogContent className="min-h-130 content-start">
+			<DialogContent className="content-start">
 				<DialogHeader>
 					<DialogTitle>Einstellungen</DialogTitle>
 				</DialogHeader>
@@ -51,12 +51,14 @@ export function SettingsDialog({ user }: SettingsDialogProps) {
 								Erscheinungsbild
 							</TabsTrigger>
 						</TabsList>
-						<TabsContent className="mt-4" value="profile">
-							<ProfileTab onClose={() => setOpen(false)} user={user} />
-						</TabsContent>
-						<TabsContent className="mt-4" value="appearance">
-							<AppearanceTab />
-						</TabsContent>
+						<div className="relative mt-4">
+							<TabsContent className="data-[state=inactive]:pointer-events-none data-[state=inactive]:opacity-0" forceMount value="profile">
+								<ProfileTab onClose={() => setOpen(false)} user={user} />
+							</TabsContent>
+							<TabsContent className="absolute inset-0 data-[state=inactive]:pointer-events-none data-[state=inactive]:opacity-0" forceMount value="appearance">
+								<AppearanceTab />
+							</TabsContent>
+						</div>
 					</Tabs>
 				) : (
 					<AppearanceTab />
