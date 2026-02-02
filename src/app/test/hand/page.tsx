@@ -1,3 +1,5 @@
+"use client";
+
 import { CardImage } from "@/components/cards";
 import type { Rank, Suit } from "@/types/game";
 
@@ -40,17 +42,16 @@ export default function HandTestPage() {
 					offsetFromCenter > 0 ? offsetFromCenter * translateYStep : 0;
 
 				return (
-					<CardImage
-						className="absolute w-1/5"
+					<div
+						className="absolute w-1/5 transition-transform duration-200 hover:-translate-y-[10%]"
 						key={`${card.suit}-${card.rank}-${index}`}
-						rank={card.rank}
 						style={{
 							transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
 							zIndex: index,
-							bottom: 0,
 						}}
-						suit={card.suit}
-					/>
+					>
+						<CardImage className="w-full" rank={card.rank} suit={card.suit} />
+					</div>
 				);
 			})}
 		</div>
