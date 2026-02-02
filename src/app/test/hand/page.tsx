@@ -29,31 +29,38 @@ export default function HandTestPage() {
 	const selectedTranslateY = 12;
 
 	return (
-		<div className="fixed bottom-0 max-w-[1200px] mx-auto left-0 right-0 flex items-center justify-center">
-			{CARDS.map((card, index) => {
-				const centerIndex = (cardCount - 1) / 2;
-				const offsetFromCenter = index - centerIndex;
-				const rotation = offsetFromCenter * rotationStep;
-				const translateX = offsetFromCenter * translateXStep;
-				const translateY =
-					offsetFromCenter > 0 ? offsetFromCenter * translateYStep : 0;
+		<>
+			<div className="fixed bottom-0 max-w-[1200px] mx-auto left-0 right-0 flex items-center justify-center">
+				{CARDS.map((card, index) => {
+					const centerIndex = (cardCount - 1) / 2;
+					const offsetFromCenter = index - centerIndex;
+					const rotation = offsetFromCenter * rotationStep;
+					const translateX = offsetFromCenter * translateXStep;
+					const translateY =
+						offsetFromCenter > 0 ? offsetFromCenter * translateYStep : 0;
 
-				const isSelected = selectedIndex === index;
+					const isSelected = selectedIndex === index;
 
-				return (
-					<CardImage
-						className={`absolute w-1/5 transition-transform duration-200 ${!isSelected ? "hover:-translate-y-[8%]" : ""}`}
-						key={`${card.suit}-${card.rank}-${index}`}
-						onClick={() => setSelectedIndex(isSelected ? null : index)}
-						rank={card.rank}
-						selected={isSelected}
-						style={{
-							transform: `translateX(${translateX}%) translateY(${translateY - (isSelected ? selectedTranslateY : 0)}%) rotate(${rotation}deg)`,
-						}}
-						suit={card.suit}
-					/>
-				);
-			})}
-		</div>
+					return (
+						<CardImage
+							className={`absolute w-1/5 transition-transform duration-200 ${!isSelected ? "hover:-translate-y-[8%]" : ""}`}
+							key={`${card.suit}-${card.rank}-${index}`}
+							onClick={() => setSelectedIndex(isSelected ? null : index)}
+							rank={card.rank}
+							selected={isSelected}
+							style={{
+								transform: `translateX(${translateX}%) translateY(${translateY - (isSelected ? selectedTranslateY : 0)}%) rotate(${rotation}deg)`,
+							}}
+							suit={card.suit}
+						/>
+					);
+				})}
+			</div>
+			<div className="fixed top-0 left-0 max-w-[1200px] right-0 flex items-center justify-center gap-4">
+				{Array.from({ length: CARDS.length }).map((_, index) => (
+					<CardImage key={`back-${index}`} showBack />
+				))}
+			</div>
+		</>
 	);
 }
