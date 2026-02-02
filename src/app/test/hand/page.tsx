@@ -42,8 +42,7 @@ export default function HandTestPage() {
 
 				return (
 					<button
-						className="card-hand-item absolute w-1/5 cursor-pointer"
-						data-selected={isSelected}
+						className={`absolute w-1/5 cursor-pointer transition-transform duration-200 ${!isSelected ? "hover:-translate-y-[8%]" : ""}`}
 						key={`${card.suit}-${card.rank}-${index}`}
 						onClick={() => setSelectedIndex(isSelected ? null : index)}
 						style={{
