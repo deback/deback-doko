@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CardImage } from "@/components/cards";
 import type { Rank, Suit } from "@/types/game";
 
@@ -19,39 +20,39 @@ const CARDS: { rank: Rank; suit: Suit }[] = [
 ];
 
 export default function HandTestPage() {
+	const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
 	const cardCount = CARDS.length;
-	const rotationStep = 2; // 2 degrees per card
-	const translateXStep = 25; // 25% per card
-	const translateYStep = 2; // 2% per card (only for right side)
+	const rotationStep = 2;
+	const translateXStep = 25;
+	const translateYStep = 2;
+	const selectedTranslateY = 12;
 
 	return (
 		<div className="fixed bottom-0 max-w-[1200px] mx-auto left-0 right-0 flex items-center justify-center">
 			{CARDS.map((card, index) => {
-				// Center index (middle card)
 				const centerIndex = (cardCount - 1) / 2;
 				const offsetFromCenter = index - centerIndex;
-
-				// Rotation: symmetric around center
 				const rotation = offsetFromCenter * rotationStep;
-
-				// Horizontal translation
 				const translateX = offsetFromCenter * translateXStep;
-
-				// Vertical translation: only for cards right of center (like original)
 				const translateY =
 					offsetFromCenter > 0 ? offsetFromCenter * translateYStep : 0;
 
+				const isSelected = selectedIndex === index;
+
 				return (
-					<div
-						className="absolute w-1/5 transition-transform duration-200 hover:-translate-y-[10%]"
+					<button
+						className="card-hand-item absolute w-1/5 cursor-pointer"
+						data-selected={isSelected}
 						key={`${card.suit}-${card.rank}-${index}`}
+						onClick={() => setSelectedIndex(isSelected ? null : index)}
 						style={{
-							transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
-							zIndex: index,
+							transform: `translateX(${translateX}%) translateY(${translateY - (isSelected ? selectedTranslateY : 0)}%) rotate(${rotation}deg)`,
 						}}
+						type="button"
 					>
 						<CardImage className="w-full" rank={card.rank} suit={card.suit} />
-					</div>
+					</button>
 				);
 			})}
 		</div>
