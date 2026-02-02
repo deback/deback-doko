@@ -1,64 +1,58 @@
 import { CardImage } from "@/components/cards";
+import type { Rank, Suit } from "@/types/game";
+
+const CARDS: { rank: Rank; suit: Suit }[] = [
+	{ rank: "9", suit: "hearts" },
+	{ rank: "10", suit: "hearts" },
+	{ rank: "jack", suit: "hearts" },
+	{ rank: "queen", suit: "hearts" },
+	{ rank: "king", suit: "hearts" },
+	{ rank: "ace", suit: "hearts" },
+	{ rank: "9", suit: "diamonds" },
+	{ rank: "10", suit: "diamonds" },
+	{ rank: "jack", suit: "diamonds" },
+	{ rank: "queen", suit: "diamonds" },
+	{ rank: "king", suit: "diamonds" },
+	{ rank: "ace", suit: "diamonds" },
+];
 
 export default function HandTestPage() {
+	const cardCount = CARDS.length;
+	const rotationStep = 2; // 2 degrees per card
+	const translateXStep = 25; // 25% per card
+	const translateYStep = 2; // 2% per card (only for right side)
+
 	return (
-		<div className="fixed bottom-0 max-w-[1200px] mx-auto left-0 right-0 bg-black flex items-center justify-center">
-			<CardImage
-				className=" absolute w-1/5 -translate-x-[125%] -rotate-10"
-				rank="2"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 -translate-x-[100%] -rotate-8"
-				rank="3"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 -translate-x-[75%] -rotate-6"
-				rank="4"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 -translate-x-[50%] -rotate-4"
-				rank="5"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 -translate-x-[25%] -rotate-2"
-				rank="6"
-				suit="hearts"
-			/>
-			<CardImage className="w-1/5" rank="ace" suit="hearts" />
-			<CardImage
-				className=" absolute w-1/5 translate-x-[25%] rotate-2 translate-y-[2%]"
-				rank="7"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 translate-x-[50%] rotate-4 translate-y-[4%]"
-				rank="8"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 translate-x-[75%] rotate-6 translate-y-[6%]"
-				rank="9"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 translate-x-[100%] rotate-8 translate-y-[8%]"
-				rank="10"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 translate-x-[125%] rotate-10 translate-y-[10%]"
-				rank="jack"
-				suit="hearts"
-			/>
-			<CardImage
-				className=" absolute w-1/5 translate-x-[150%] rotate-12 translate-y-[12%]"
-				rank="queen"
-				suit="hearts"
-			/>
+		<div className="fixed bottom-0 max-w-[1200px] mx-auto left-0 right-0 flex items-center justify-center">
+			{CARDS.map((card, index) => {
+				// Center index (middle card)
+				const centerIndex = (cardCount - 1) / 2;
+				const offsetFromCenter = index - centerIndex;
+
+				// Rotation: symmetric around center
+				const rotation = offsetFromCenter * rotationStep;
+
+				// Horizontal translation
+				const translateX = offsetFromCenter * translateXStep;
+
+				// Vertical translation: only for cards right of center (like original)
+				const translateY =
+					offsetFromCenter > 0 ? offsetFromCenter * translateYStep : 0;
+
+				return (
+					<CardImage
+						className="absolute w-1/5"
+						key={`${card.suit}-${card.rank}-${index}`}
+						rank={card.rank}
+						style={{
+							transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
+							zIndex: index,
+							bottom: 0,
+						}}
+						suit={card.suit}
+					/>
+				);
+			})}
 		</div>
 	);
 }
