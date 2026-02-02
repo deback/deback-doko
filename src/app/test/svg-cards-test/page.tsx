@@ -10,7 +10,7 @@ export default function SvgCardsTestPage() {
 	const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
 	return (
-		<div className="p-8">
+		<div className="p-4">
 			<div className="mx-auto max-w-7xl">
 				<h1 className="mb-4 font-bold text-3xl">SVG Karten Test</h1>
 
