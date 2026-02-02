@@ -1,7 +1,4 @@
-"use client";
-
-import { useState } from "react";
-import { CardImage } from "@/components/cards";
+import { Hand } from "@/components/cards";
 import type { Rank, Suit } from "@/types/game";
 
 const CARDS: { rank: Rank; suit: Suit }[] = [
@@ -20,63 +17,32 @@ const CARDS: { rank: Rank; suit: Suit }[] = [
 ];
 
 export default function HandTestPage() {
-	const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-
-	const cardCount = CARDS.length;
-	const rotationStep = 2;
-	const translateXStep = 25;
-	const translateYStep = 2;
-	const selectedTranslateY = 12;
-
 	return (
 		<>
-			<div className="fixed bottom-0 max-w-[1200px] mx-auto left-0 right-0 flex items-center justify-center">
-				{CARDS.map((card, index) => {
-					const centerIndex = (cardCount - 1) / 2;
-					const offsetFromCenter = index - centerIndex;
-					const rotation = offsetFromCenter * rotationStep;
-					const translateX = offsetFromCenter * translateXStep;
-					const translateY =
-						offsetFromCenter > 0 ? offsetFromCenter * translateYStep : 0;
-
-					const isSelected = selectedIndex === index;
-
-					return (
-						<CardImage
-							className={`absolute w-1/5 transition-transform duration-200 ${!isSelected ? "hover:-translate-y-[8%]" : ""}`}
-							key={`${card.suit}-${card.rank}-${index}`}
-							onClick={() => setSelectedIndex(isSelected ? null : index)}
-							rank={card.rank}
-							selected={isSelected}
-							style={{
-								transform: `translateX(${translateX}%) translateY(${translateY - (isSelected ? selectedTranslateY : 0)}%) rotate(${rotation}deg)`,
-							}}
-							suit={card.suit}
-						/>
-					);
-				})}
-			</div>
-			<div className="fixed top-0 max-w-[1200px] mx-auto left-0 right-0 flex items-center justify-center rotate-180">
-				{CARDS.map((card, index) => {
-					const centerIndex = (cardCount - 1) / 2;
-					const offsetFromCenter = index - centerIndex;
-					const rotation = offsetFromCenter * rotationStep;
-					const translateX = offsetFromCenter * translateXStep;
-					const translateY =
-						offsetFromCenter > 0 ? offsetFromCenter * translateYStep : 0;
-
-					return (
-						<CardImage
-							className="absolute w-1/5"
-							key={`back-${card.suit}-${card.rank}`}
-							showBack
-							style={{
-								transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
-							}}
-						/>
-					);
-				})}
-			</div>
+			{/* Unten - eigene Hand */}
+			<Hand
+				cards={CARDS}
+				className="fixed bottom-0 max-w-[1200px] mx-auto left-0 right-0"
+				selectable
+			/>
+			{/* Oben - Gegner */}
+			<Hand
+				cards={CARDS}
+				className="fixed top-0 max-w-[1200px] mx-auto left-0 right-0 rotate-180"
+				showBack
+			/>
+			{/* Links - Gegner */}
+			<Hand
+				cards={CARDS}
+				className="fixed top-1/2 left-0 -translate-y-1/2 max-w-[min(100vw,)1200px] w-full rotate-90 origin-center -translate-x-1/2"
+				showBack
+			/>
+			{/* Rechts - Gegner */}
+			<Hand
+				cards={CARDS}
+				className="fixed top-1/2 right-0 -translate-y-1/2 max-w-[min(100vw,)1200px] w-full -rotate-90 origin-center translate-x-1/2"
+				showBack
+			/>
 		</>
 	);
 }
