@@ -56,6 +56,8 @@
 		1px 1px 16px -2px oklch(0.28 0.09 24.83 / 0.12),
 		1px 8px 10px -3px oklch(0.28 0.09 24.83 / 0.12);
 	--shadow-2xl: 1px 1px 16px -2px oklch(0.28 0.09 24.83 / 0.3);
+
+	--wood-pattern-background: oklch(0.76 0.0696 63.54);
 }
 
 .dark {
@@ -103,6 +105,7 @@
 	--shadow-xl:
 		0 1px 3px 0px oklch(0 0 0 / 0.1), 0 8px 10px -1px oklch(0 0 0 / 0.1);
 	--shadow-2xl: 0 1px 3px 0px oklch(0 0 0 / 0.25);
+	--wood-pattern-background: oklch(0.38 0.0484 58.23);
 }
 
 @theme inline {
@@ -137,6 +140,7 @@
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
+	--color-wood-pattern-background: var(--wood-pattern-background);
 
 	--font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 	--font-serif: var(--font-libre-baskerville), ui-serif, Georgia, serif;
@@ -162,8 +166,27 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground;
 		letter-spacing: var(--tracking-normal);
+	}
+	.bg-wood-pattern {
+		@apply bg-wood-pattern-background bg-auto bg-repeat;
+		background-image:
+			radial-gradient(
+				circle at center,
+				transparent 0%,
+				oklch(0.35 0.08 55 / 0.6) 100%
+			),
+			url("/wood-pattern.png");
+		background-size: cover, auto;
+		background-attachment: fixed, scroll;
+	}
+	.dark .bg-wood-pattern {
+		background-image:
+			radial-gradient(circle at center, transparent 0%, oklch(0 0 0 / 0.6) 100%),
+			linear-gradient(oklch(0.35 0.08 55 / 0.7), oklch(0.35 0.08 55 / 0.7)),
+			url("/wood-pattern.png");
+		background-size: cover, auto, auto;
+		background-attachment: fixed, scroll, scroll;
 	}
 }
 

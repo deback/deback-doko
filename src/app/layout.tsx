@@ -46,7 +46,7 @@ export default function RootLayout({
 			lang="de"
 			suppressHydrationWarning
 		>
-			<body className="min-h-screen bg-wood">
+			<body className="min-h-screen bg-wood-pattern">
 				<ThemeProvider
 					attribute="class"
 					defaultTheme="system"
