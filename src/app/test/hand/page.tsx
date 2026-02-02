@@ -56,10 +56,26 @@ export default function HandTestPage() {
 					);
 				})}
 			</div>
-			<div className="fixed top-0 left-0 max-w-[1200px] right-0 flex items-center justify-center gap-4">
-				{Array.from({ length: CARDS.length }).map((_, index) => (
-					<CardImage key={`back-${index}`} showBack />
-				))}
+			<div className="fixed top-0 max-w-[1200px] mx-auto left-0 right-0 flex items-center justify-center rotate-180">
+				{CARDS.map((card, index) => {
+					const centerIndex = (cardCount - 1) / 2;
+					const offsetFromCenter = index - centerIndex;
+					const rotation = offsetFromCenter * rotationStep;
+					const translateX = offsetFromCenter * translateXStep;
+					const translateY =
+						offsetFromCenter > 0 ? offsetFromCenter * translateYStep : 0;
+
+					return (
+						<CardImage
+							className="absolute w-1/5"
+							key={`back-${card.suit}-${card.rank}`}
+							showBack
+							style={{
+								transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
+							}}
+						/>
+					);
+				})}
 			</div>
 		</>
 	);
