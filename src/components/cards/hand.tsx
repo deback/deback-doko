@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import type { Rank, Suit } from "@/types/game";
 import { CardImage } from "./card-image";
 
@@ -31,7 +32,9 @@ export function Hand({
 	const selectedTranslateY = 12;
 
 	return (
-		<div className={`flex items-center justify-center  ${className ?? ""}`}>
+		<div
+			className={cn("@container flex items-center justify-center", className)}
+		>
 			{cards.map((card, index) => {
 				const centerIndex = (cardCount - 1) / 2;
 				const offsetFromCenter = index - centerIndex;
@@ -46,7 +49,9 @@ export function Hand({
 
 				return (
 					<CardImage
-						className={`absolute w-1/5 transition-transform duration-200 ${selectable && !isSelected ? "hover:-translate-y-[8%]" : ""}`}
+						className={cn("absolute w-1/5 transition-transform duration-200", {
+							"hover:-translate-y-[8%]": selectable && !isSelected,
+						})}
 						key={`${card.suit}-${card.rank}-${index}`}
 						onClick={
 							selectable

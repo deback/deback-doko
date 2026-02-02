@@ -28,19 +28,19 @@ export default function HandTestPage() {
 			{/* Oben - Gegner */}
 			<Hand
 				cards={CARDS}
-				className="fixed top-0 max-w-[1200px] mx-auto left-0 right-0 rotate-180"
+				className="fixed translate-y-1/2 top-0 max-w-[1200px] mx-auto left-0 right-0 rotate-180 sm:-translate-y-[50px]"
 				showBack
 			/>
 			{/* Links - Gegner */}
 			<Hand
 				cards={CARDS}
-				className="fixed top-1/2 left-0 -translate-y-1/2 w-[min(100vw,1200px)] rotate-90 origin-center -translate-x-1/2"
+				className="fixed top-1/2 left-0 -translate-y-1/2 w-[min(100vw,1200px)] rotate-90 origin-center -translate-x-1/2 sm:-translate-x-[calc(50%+50px)]"
 				showBack
 			/>
 			{/* Rechts - Gegner */}
 			<Hand
 				cards={CARDS}
-				className="fixed top-1/2 right-0 -translate-y-1/2 w-[min(100vw,1200px)] -rotate-90 origin-center translate-x-1/2"
+				className="fixed top-1/2 right-0 -translate-y-1/2 w-[min(100vw,1200px)] -rotate-90 origin-center translate-x-1/2 sm:translate-x-[calc(50%+50px)]"
 				showBack
 			/>
 		</>

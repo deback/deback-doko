@@ -97,9 +97,10 @@ export function CardImage({
 		return (
 			<button
 				className={cn(
-					"relative aspect-5/7 w-full cursor-pointer rounded-[0.9cqi] @container",
-					playable && "ring-2 ring-emerald-500 ",
-					selected && "ring-2 ring-primary",
+					"relative aspect-5/7 w-full cursor-pointer rounded-[1cqw]",
+					{ "ring-2 ring-emerald-500": playable },
+					{ "ring-2 ring-primary": selected },
+					{ "cursor-not-allowed opacity-50": disabled },
 					className,
 				)}
 				onClick={onClick}
