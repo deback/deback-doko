@@ -41,17 +41,17 @@ export default function HandTestPage() {
 				const isSelected = selectedIndex === index;
 
 				return (
-					<button
-						className={`absolute w-1/5 cursor-pointer transition-transform duration-200 ${!isSelected ? "hover:-translate-y-[8%]" : ""}`}
+					<CardImage
+						className={`absolute w-1/5 transition-transform duration-200 ${!isSelected ? "hover:-translate-y-[8%]" : ""}`}
 						key={`${card.suit}-${card.rank}-${index}`}
 						onClick={() => setSelectedIndex(isSelected ? null : index)}
+						rank={card.rank}
+						selected={isSelected}
 						style={{
 							transform: `translateX(${translateX}%) translateY(${translateY - (isSelected ? selectedTranslateY : 0)}%) rotate(${rotation}deg)`,
 						}}
-						type="button"
-					>
-						<CardImage className="w-full" rank={card.rank} suit={card.suit} />
-					</button>
+						suit={card.suit}
+					/>
 				);
 			})}
 		</div>
