@@ -44,6 +44,7 @@ function getCardPosition(
 	playerIndex: number,
 	currentPlayerIndex: number,
 	totalPlayers: number,
+	isLandscape: boolean,
 ): { x: number; y: number; rotation: number } {
 	// Berechne relative Position zum aktuellen Spieler
 	const relativePosition =
@@ -51,14 +52,16 @@ function getCardPosition(
 
 	// Positionen: 0 = unten (aktueller Spieler), 1 = links, 2 = oben, 3 = rechts
 	// Werte in % relativ zur Kartengröße
+	// Bei Landscape: obere und untere Karte enger zusammen (y: 40 statt 60)
+	const yOffset = isLandscape ? 20 : 60;
 	const positions: { x: number; y: number; rotation: number }[] = [
-		{ x: 0, y: 60, rotation: 0 }, // Unten (Spieler)
+		{ x: 0, y: yOffset, rotation: 0 }, // Unten (Spieler)
 		{ x: -80, y: 0, rotation: -8 }, // Links
-		{ x: 0, y: -60, rotation: 4 }, // Oben
+		{ x: 0, y: -yOffset, rotation: 4 }, // Oben
 		{ x: 80, y: 0, rotation: 12 }, // Rechts
 	];
 
-	const defaultPosition = { x: 0, y: 60, rotation: 0 };
+	const defaultPosition = { x: 0, y: yOffset, rotation: 0 };
 	return positions[relativePosition] ?? defaultPosition;
 }
 
@@ -76,10 +79,9 @@ export function TrickArea({
 	const currentPlayerIndex = players.findIndex((p) => p.id === currentPlayerId);
 	const isLandscape = useIsLandscape();
 
-	// Kartenbreite: 1/5 von max 1200px = max 240px = 20vw (bei 1200px viewport)
-	// Bei einem 1200px viewport: 1200 * 0.2 = 240px
-	// Wir verwenden die gleiche Berechnung wie die Hand: min(20vw, 240px)
-	const cardWidth = "min(20vw, 240px)";
+	// Kartenbreite: Portrait 20%, Landscape 15%
+	// Gleiche Größe wie die Handkarten
+	const cardWidth = isLandscape ? "min(15vw, 180px)" : "min(20vw, 240px)";
 
 	// Bei Landscape werden alle Karten um 90° gedreht
 	const landscapeRotation = isLandscape ? 90 : 0;
@@ -112,6 +114,7 @@ export function TrickArea({
 					playerIndex,
 					currentPlayerIndex,
 					players.length,
+					isLandscape,
 				);
 
 				// Gesamtrotation: Position-Rotation + Landscape-Rotation

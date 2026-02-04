@@ -123,7 +123,7 @@ export function PlayerHand({
 					<DraggableCard
 						card={card}
 						className={cn(
-							"absolute w-1/5 transition-transform duration-200",
+							"absolute w-[20%] landscape:w-[15%] transition-transform duration-200",
 							isSelectable && !isSelected && "hover:-translate-y-[8%]",
 						)}
 						isDisabled={isDisabled}

@@ -28,7 +28,7 @@ export function OpponentHand({ cardCount, className }: OpponentHandProps) {
 				return (
 					<CardImage
 						backDesign="blue"
-						className="absolute w-1/5 transition-transform duration-200"
+						className="absolute w-[20%] landscape:w-[15%] transition-transform duration-200"
 						key={`opponent-card-${index}`}
 						showBack
 						style={{

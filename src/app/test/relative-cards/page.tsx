@@ -18,13 +18,18 @@ export default function RelativeCardsPage() {
 		<div className="">
 			<div className="w-screen absolute bottom-0 left-0 right-0 bg-red-500 flex justify-center items-center">
 				{cards.map((card, index) => (
-					<CardImage
-						className="bottom-0 left-0 w-[calc(100vw/12)"
+					<button
+						className="bottom-0 left-0 w-[calc(100vw/12)] bg-transparent border-none p-0"
 						key={`${card.rank}-${card.suit}-${index}`}
 						onClick={() => setSelectedIndex(index)}
-						rank={card.rank}
-						suit={card.suit}
-					/>
+						type="button"
+					>
+						<CardImage
+							rank={card.rank}
+							selected={selectedIndex === index}
+							suit={card.suit}
+						/>
+					</button>
 				))}
 			</div>
 		</div>

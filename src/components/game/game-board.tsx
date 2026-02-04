@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import {
 	DndContext,
 	type DragEndEvent,
@@ -160,6 +161,8 @@ export function GameBoard({
 	currentPlayer,
 	playCard,
 }: GameBoardProps) {
+	const dndContextId = useId();
+
 	const mouseSensor = useSensor(MouseSensor, {
 		activationConstraint: {
 			distance: 10,
@@ -241,7 +244,7 @@ export function GameBoard({
 	};
 
 	return (
-		<DndContext onDragEnd={handleDragEnd} sensors={sensors}>
+		<DndContext id={dndContextId} onDragEnd={handleDragEnd} sensors={sensors}>
 			{/* Oberer Gegner - wie in /test/hand */}
 			{topPlayer && (
 				<>
@@ -326,7 +329,7 @@ export function GameBoard({
 			{/* Unterer Spieler (aktueller Benutzer) */}
 			{bottomPlayer && (
 				<>
-					<div className="fixed bottom-[25%] left-1/2 z-10 -translate-x-1/2">
+					<div className="fixed bottom-[25%] left-1/2 z-10 -translate-x-1/2 landscape:bottom-[20%]">
 						<PlayerInfo
 							cardCount={sortedHand.length}
 							isCurrentPlayer
@@ -339,7 +342,7 @@ export function GameBoard({
 					</div>
 					<PlayerHand
 						cards={sortedHand}
-						className="fixed bottom-0 left-0 right-0 mx-auto max-w-[1200px]"
+						className="fixed bottom-0 left-0 right-0 mx-auto max-w-[1200px] landscape:-bottom-[8%]"
 						hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
 						isMyTurn={isMyTurn}
 						onPlayCard={handlePlayCard}

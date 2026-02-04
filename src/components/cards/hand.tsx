@@ -47,19 +47,35 @@ export function Hand({
 				const translateY =
 					baseTranslateY - (isSelected && selectable ? selectedTranslateY : 0);
 
+				if (selectable) {
+					return (
+						<button
+							className={cn(
+								"absolute w-[20%] landscape:w-[15%] transition-transform duration-200 bg-transparent border-none p-0",
+								!isSelected && "hover:-translate-y-[8%]",
+							)}
+							key={`${card.suit}-${card.rank}-${index}`}
+							onClick={() => setSelectedIndex(isSelected ? null : index)}
+							style={{
+								transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
+							}}
+							type="button"
+						>
+							<CardImage
+								rank={card.rank}
+								selected={isSelected}
+								showBack={showBack}
+								suit={card.suit}
+							/>
+						</button>
+					);
+				}
+
 				return (
 					<CardImage
-						className={cn("absolute w-1/5 transition-transform duration-200", {
-							"hover:-translate-y-[8%]": selectable && !isSelected,
-						})}
+						className="absolute w-[20%] landscape:w-[15%] transition-transform duration-200"
 						key={`${card.suit}-${card.rank}-${index}`}
-						onClick={
-							selectable
-								? () => setSelectedIndex(isSelected ? null : index)
-								: undefined
-						}
 						rank={card.rank}
-						selected={selectable ? isSelected : undefined}
 						showBack={showBack}
 						style={{
 							transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
