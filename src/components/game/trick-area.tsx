@@ -7,24 +7,30 @@ import { cn } from "@/lib/utils";
 import type { Card } from "@/types/game";
 import type { Player } from "@/types/tables";
 
-// Hook to detect landscape orientation
-function useIsLandscape() {
-	const [isLandscape, setIsLandscape] = useState(false);
+// Hook to detect landscape orientation and screen size
+function useScreenLayout() {
+	const [layout, setLayout] = useState<{
+		isLandscape: boolean;
+		isLargeScreen: boolean;
+	}>({ isLandscape: false, isLargeScreen: false });
 
 	useEffect(() => {
-		const checkOrientation = () => {
-			setIsLandscape(window.innerWidth > window.innerHeight);
+		const checkLayout = () => {
+			const isLandscape = window.innerWidth > window.innerHeight;
+			// lg breakpoint = 1024px
+			const isLargeScreen = window.innerWidth >= 1024;
+			setLayout({ isLandscape, isLargeScreen });
 		};
 
 		// Initial check
-		checkOrientation();
+		checkLayout();
 
 		// Listen to resize events
-		window.addEventListener("resize", checkOrientation);
-		return () => window.removeEventListener("resize", checkOrientation);
+		window.addEventListener("resize", checkLayout);
+		return () => window.removeEventListener("resize", checkLayout);
 	}, []);
 
-	return isLandscape;
+	return layout;
 }
 
 interface TrickCard {
@@ -45,6 +51,7 @@ function getCardPosition(
 	currentPlayerIndex: number,
 	totalPlayers: number,
 	isLandscape: boolean,
+	isLargeScreen: boolean,
 ): { x: number; y: number; rotation: number } {
 	// Berechne relative Position zum aktuellen Spieler
 	const relativePosition =
@@ -52,8 +59,8 @@ function getCardPosition(
 
 	// Positionen: 0 = unten (aktueller Spieler), 1 = links, 2 = oben, 3 = rechts
 	// Werte in % relativ zur Kartengröße
-	// Bei Landscape: obere und untere Karte enger zusammen (y: 40 statt 60)
-	const yOffset = isLandscape ? 20 : 60;
+	// Portrait: 60%, Landscape klein: 20%, Landscape groß: 40%
+	const yOffset = isLandscape ? (isLargeScreen ? 40 : 20) : 60;
 	const positions: { x: number; y: number; rotation: number }[] = [
 		{ x: 0, y: yOffset, rotation: 0 }, // Unten (Spieler)
 		{ x: -80, y: 0, rotation: -8 }, // Links
@@ -77,7 +84,7 @@ export function TrickArea({
 
 	const canDrop = active?.data?.current?.type === "card";
 	const currentPlayerIndex = players.findIndex((p) => p.id === currentPlayerId);
-	const isLandscape = useIsLandscape();
+	const { isLandscape, isLargeScreen } = useScreenLayout();
 
 	// Kartenbreite: Portrait 20%, Landscape 15%
 	// Gleiche Größe wie die Handkarten
@@ -115,6 +122,7 @@ export function TrickArea({
 					currentPlayerIndex,
 					players.length,
 					isLandscape,
+					isLargeScreen,
 				);
 
 				// Gesamtrotation: Position-Rotation + Landscape-Rotation

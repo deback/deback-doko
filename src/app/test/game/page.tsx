@@ -48,7 +48,10 @@ const GAME_STATE: GameState = {
 	currentTrick: {
 		cards: [
 			{ card: { id: "trick-1", suit: "hearts", rank: "ace" }, playerId: "p1" },
-			{ card: { id: "trick-2", suit: "diamonds", rank: "king" }, playerId: "p2" },
+			{
+				card: { id: "trick-2", suit: "diamonds", rank: "king" },
+				playerId: "p2",
+			},
 			{ card: { id: "trick-3", suit: "clubs", rank: "queen" }, playerId: "p3" },
 			{ card: { id: "trick-4", suit: "spades", rank: "jack" }, playerId: "p4" },
 		],
@@ -72,12 +75,10 @@ export default function GameTestPage() {
 	if (!CURRENT_PLAYER) return null;
 
 	return (
-		<div className="h-dvh w-screen bg-wood">
-			<GameBoard
-				currentPlayer={CURRENT_PLAYER}
-				gameState={GAME_STATE}
-				playCard={() => {}}
-			/>
-		</div>
+		<GameBoard
+			currentPlayer={CURRENT_PLAYER}
+			gameState={GAME_STATE}
+			playCard={() => {}}
+		/>
 	);
 }

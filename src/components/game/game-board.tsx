@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import {
 	DndContext,
 	type DragEndEvent,
@@ -10,6 +9,7 @@ import {
 	useSensors,
 } from "@dnd-kit/core";
 import { Eye } from "lucide-react";
+import { useId } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Card, GameState, Suit } from "@/types/game";
@@ -342,7 +342,7 @@ export function GameBoard({
 					</div>
 					<PlayerHand
 						cards={sortedHand}
-						className="fixed bottom-0 left-0 right-0 mx-auto max-w-[1200px] landscape:-bottom-[8%]"
+						className="fixed bottom-0 left-0 right-0 mx-auto max-w-[1200px] landscape:-bottom-[8%] landscape:lg:-bottom-[4%] landscape:xl:bottom-0"
 						hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
 						isMyTurn={isMyTurn}
 						onPlayCard={handlePlayCard}
