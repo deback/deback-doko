@@ -52,10 +52,18 @@ export function SettingsDialog({ user }: SettingsDialogProps) {
 							</TabsTrigger>
 						</TabsList>
 						<div className="relative mt-4">
-							<TabsContent className="data-[state=inactive]:pointer-events-none data-[state=inactive]:opacity-0" forceMount value="profile">
+							<TabsContent
+								className="data-[state=inactive]:pointer-events-none data-[state=inactive]:opacity-0"
+								forceMount
+								value="profile"
+							>
 								<ProfileTab onClose={() => setOpen(false)} user={user} />
 							</TabsContent>
-							<TabsContent className="absolute inset-0 data-[state=inactive]:pointer-events-none data-[state=inactive]:opacity-0" forceMount value="appearance">
+							<TabsContent
+								className="absolute inset-0 data-[state=inactive]:pointer-events-none data-[state=inactive]:opacity-0"
+								forceMount
+								value="appearance"
+							>
 								<AppearanceTab />
 							</TabsContent>
 						</div>
