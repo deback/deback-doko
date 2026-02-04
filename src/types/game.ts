@@ -44,6 +44,7 @@ export interface GameState {
 	players: Player[];
 	currentPlayerIndex: number;
 	hands: Record<string, Card[]>; // playerId -> cards
+	handCounts: Record<string, number>; // playerId -> card count (for spectators)
 	currentTrick: Trick;
 	completedTricks: Trick[];
 	trump: Suit | "jacks" | "queens"; // In Doppelkopf: Buben oder Damen sind Trumpf
@@ -53,6 +54,8 @@ export interface GameState {
 	scores: Record<string, number>; // playerId -> Gesamtpunkte
 	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
 	teams: Record<string, "re" | "kontra">; // playerId -> Team-Zuordnung
+	spectatorCount: number; // Number of spectators watching the game
+	spectators: Array<{ id: string; name: string; image?: string | null }>; // List of spectators
 }
 
 export type GameEvent =
@@ -62,9 +65,17 @@ export type GameEvent =
 			type: "start-game";
 			players: Array<{ id: string; name: string }>;
 			tableId: string;
+	  }
+	| {
+			type: "spectate-game";
+			gameId: string;
+			spectatorId: string;
+			spectatorName: string;
+			spectatorImage?: string | null;
 	  };
 
 export type GameMessage =
-	| { type: "state"; state: GameState }
+	| { type: "state"; state: GameState; isSpectator?: boolean }
 	| { type: "error"; message: string }
-	| { type: "game-started"; gameId: string };
+	| { type: "game-started"; gameId: string }
+	| { type: "spectator-count"; gameId: string; count: number };

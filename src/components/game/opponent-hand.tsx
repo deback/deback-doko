@@ -5,14 +5,14 @@ import { cn } from "@/lib/utils";
 
 interface OpponentHandProps {
 	cardCount: number;
-	position: "top" | "left" | "right";
+	position: "top" | "left" | "right" | "bottom";
 	className?: string;
 }
 
 function calculateOpponentCardTransform(
 	index: number,
 	totalCards: number,
-	position: "top" | "left" | "right",
+	position: "top" | "left" | "right" | "bottom",
 ) {
 	const centerIndex = (totalCards - 1) / 2;
 	const offsetFromCenter = index - centerIndex;
@@ -48,6 +48,9 @@ function calculateOpponentCardTransform(
 		horizontalSpread = -verticalOffset;
 		verticalOffset = temp;
 		rotation -= 90;
+	} else if (position === "bottom") {
+		// Unten: Normale Ausrichtung (wie Spieler, aber Kartenrücken)
+		// Keine Änderung nötig
 	}
 
 	return {
@@ -62,12 +65,13 @@ export function OpponentHand({
 	className,
 }: OpponentHandProps) {
 	const isVertical = position === "left" || position === "right";
+	const isBottom = position === "bottom";
 
 	return (
 		<div
 			className={cn(
 				"relative flex items-center justify-center",
-				isVertical ? "h-48 w-16" : "h-20 w-48",
+				isVertical ? "h-48 w-16" : isBottom ? "h-24 w-64" : "h-20 w-48",
 				className,
 			)}
 		>

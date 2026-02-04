@@ -15,6 +15,7 @@ export interface Table {
 	createdAt: number;
 	gameId?: string;
 	gameStarted: boolean;
+	spectatorCount?: number;
 }
 
 export interface TablesState {

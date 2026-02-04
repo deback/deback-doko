@@ -8,6 +8,8 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
+import { Eye } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Card, GameState, Suit } from "@/types/game";
 import type { Player } from "@/types/tables";
@@ -349,15 +351,42 @@ export function GameBoard({
 					</div>
 				)}
 
-				{/* Verbindungsstatus */}
-				<div className="absolute top-4 right-4 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
-					<div
-						className={cn(
-							"h-2 w-2 rounded-full",
-							"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
-						)}
-					/>
-					<span className="text-white/70 text-xs">Verbunden</span>
+				{/* Verbindungsstatus & Zuschauer */}
+				<div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+					<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+						<div
+							className={cn(
+								"h-2 w-2 rounded-full",
+								"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
+							)}
+						/>
+						<span className="text-white/70 text-xs">Verbunden</span>
+					</div>
+
+					{/* Zuschauer-Liste */}
+					{gameState.spectators && gameState.spectators.length > 0 && (
+						<div className="rounded-lg bg-black/40 px-3 py-2 backdrop-blur-sm">
+							<div className="mb-1.5 flex items-center gap-1.5 text-white/50 text-xs">
+								<Eye className="h-3 w-3" />
+								Zuschauer ({gameState.spectators.length})
+							</div>
+							<div className="flex flex-col gap-1.5">
+								{gameState.spectators.map((spectator) => (
+									<div className="flex items-center gap-2" key={spectator.id}>
+										<Avatar
+											alt={spectator.name}
+											fallback={spectator.name.charAt(0).toUpperCase()}
+											size="xs"
+											src={spectator.image}
+										/>
+										<span className="text-white/70 text-xs">
+											{spectator.name}
+										</span>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
 				</div>
 
 				{/* Spielende */}

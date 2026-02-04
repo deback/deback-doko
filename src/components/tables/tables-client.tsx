@@ -1,10 +1,14 @@
 "use client";
 
+import { Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
 import PartySocket from "partysocket";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TablesHeader } from "@/components/tables/tables-header";
 import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StarRating } from "@/components/ui/star-rating";
 import {
@@ -21,6 +25,7 @@ interface TablesClientProps {
 }
 
 export function TablesClient({ player }: TablesClientProps) {
+	const router = useRouter();
 	const [tables, setTables] = useState<Table[]>([]);
 	const [isConnected, setIsConnected] = useState(false);
 	const [lastCreatedTableId, setLastCreatedTableId] = useState<string | null>(
@@ -85,16 +90,20 @@ export function TablesClient({ player }: TablesClientProps) {
 					toast.error(message.message);
 					console.error("Error from server:", message.message);
 				} else if (message.type === "game-started") {
-					// Store game info in sessionStorage for game client
-					sessionStorage.setItem(
-						`game-${message.gameId}`,
-						JSON.stringify({
-							players: message.players,
-							tableId: message.tableId,
-						}),
-					);
-					// Redirect to game page
-					window.location.href = `/game/${message.gameId}`;
+					// Only redirect if current player is part of the game
+					const isPlayerInGame = message.players.some((p) => p.id === player.id);
+					if (isPlayerInGame) {
+						// Store game info in sessionStorage for game client
+						sessionStorage.setItem(
+							`game-${message.gameId}`,
+							JSON.stringify({
+								players: message.players,
+								tableId: message.tableId,
+							}),
+						);
+						// Redirect to game page
+						window.location.href = `/game/${message.gameId}`;
+					}
 				}
 			} catch (error) {
 				console.error("Error parsing message:", error);
@@ -104,7 +113,7 @@ export function TablesClient({ player }: TablesClientProps) {
 		return () => {
 			socket.close();
 		};
-	}, []);
+	}, [player.id]);
 
 	const createTable = () => {
 		if (!socketRef.current) return;
@@ -157,14 +166,29 @@ export function TablesClient({ player }: TablesClientProps) {
 		socketRef.current.send(JSON.stringify(event));
 	};
 
-	const isPlayerAtAnyTable = tables.some((table) =>
+	const currentPlayerTable = tables.find((table) =>
 		table.players.some((p) => p.id === player.id),
 	);
+	const isPlayerAtAnyTable = !!currentPlayerTable;
+	const isGameStarted = currentPlayerTable?.gameStarted ?? false;
 
 	const canJoinTable = (table: Table) => {
 		const isAtThisTable = table.players.some((p) => p.id === player.id);
 		const isFull = table.players.length >= 4;
-		return !isAtThisTable && !isFull && !isPlayerAtAnyTable;
+		// Cannot join a table that has already started a game
+		return !isAtThisTable && !isFull && !isPlayerAtAnyTable && !table.gameStarted;
+	};
+
+	const canSpectateTable = (table: Table) => {
+		// Only allow spectating if game started AND user is NOT a player at this table
+		const isPlayerAtThisTable = table.players.some((p) => p.id === player.id);
+		return table.gameStarted && table.gameId && !isPlayerAtThisTable;
+	};
+
+	const spectateGame = (table: Table) => {
+		if (table.gameId) {
+			router.push(`/game/${table.gameId}?spectate=true`);
+		}
 	};
 
 	// Scroll to newly created table
@@ -180,6 +204,7 @@ export function TablesClient({ player }: TablesClientProps) {
 		<>
 			<TablesHeader
 				isConnected={isConnected}
+				isGameStarted={isGameStarted}
 				isPlayerAtAnyTable={isPlayerAtAnyTable}
 				onCreateTable={createTable}
 				onLeaveTable={leaveCurrentTable}
@@ -190,16 +215,35 @@ export function TablesClient({ player }: TablesClientProps) {
 					{tables.map((table) => {
 						const joinable = canJoinTable(table);
 						const isMyTable = table.players.some((p) => p.id === player.id);
+						const canSpectate = canSpectateTable(table);
+						const canRejoinGame = isMyTable && table.gameStarted && table.gameId;
+						const isClickable = joinable || canSpectate || canRejoinGame;
+
+						const handleTableClick = () => {
+							if (canRejoinGame && table.gameId) {
+								// Player is at this table and game is running - rejoin game
+								router.push(`/game/${table.gameId}`);
+							} else if (canSpectate) {
+								// Spectate game (won't happen since canSpectate excludes own tables)
+								spectateGame(table);
+							} else if (joinable) {
+								// Join the table
+								joinTable(table.id);
+							}
+						};
+
 						return (
 							<Card
 								className={cn(
 									"pt-4 ",
-									joinable &&
+									isClickable &&
 										"cursor-pointer hover:border-primary transition-colors",
-									!joinable && !isMyTable && "opacity-50 cursor-not-allowed",
+									!isClickable && "opacity-50 cursor-not-allowed",
+									canSpectate && "border-amber-500/50",
+									canRejoinGame && "border-emerald-500/50",
 								)}
 								key={table.id}
-								onClick={() => joinTable(table.id)}
+								onClick={handleTableClick}
 								ref={(el) => {
 									if (el) tableRefs.current.set(table.id, el);
 									else tableRefs.current.delete(table.id);
@@ -208,9 +252,18 @@ export function TablesClient({ player }: TablesClientProps) {
 								<CardHeader className="px-4 [.border-b]:pb-1 border-b">
 									<div className="flex items-center justify-between gap-2">
 										<div>
-											<CardTitle>{table.name}</CardTitle>
+											<div className="flex items-center gap-2">
+												<CardTitle>{table.name}</CardTitle>
+												{table.gameStarted && (
+													<Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400" variant="secondary">
+														Live
+													</Badge>
+												)}
+											</div>
 											<p className="text-muted-foreground text-sm">
-												{table.players.length} / 4 Spieler
+												{table.gameStarted
+													? "Spiel läuft"
+													: `${table.players.length} / 4 Spieler`}
 											</p>
 										</div>
 										{table.players.length > 0 && (
@@ -252,18 +305,33 @@ export function TablesClient({ player }: TablesClientProps) {
 												/>
 											</div>
 										))}
-										{Array.from({ length: 4 - table.players.length }).map(
-											(_, i) => (
-												<div
-													className="flex items-center gap-3"
-													key={`empty-${table.id}-${i}`}
-												>
-													<div className="size-8 rounded-full border-2 border-dashed border-muted-foreground/30" />
-													<span className="text-muted-foreground text-sm">
-														(Frei)
-													</span>
-												</div>
-											),
+										{!table.gameStarted &&
+											Array.from({ length: 4 - table.players.length }).map(
+												(_, i) => (
+													<div
+														className="flex items-center gap-3"
+														key={`empty-${table.id}-${i}`}
+													>
+														<div className="size-8 rounded-full border-2 border-dashed border-muted-foreground/30" />
+														<span className="text-muted-foreground text-sm">
+															(Frei)
+														</span>
+													</div>
+												),
+											)}
+										{canSpectate && (
+											<Button
+												className="w-full mt-2"
+												onClick={(e) => {
+													e.stopPropagation();
+													spectateGame(table);
+												}}
+												variant="outline"
+											>
+												<Eye className="mr-2 h-4 w-4" />
+												Zuschauen
+												{table.spectatorCount ? ` (${table.spectatorCount})` : ""}
+											</Button>
 										)}
 									</div>
 								</CardContent>

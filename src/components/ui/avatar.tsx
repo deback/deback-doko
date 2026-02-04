@@ -5,11 +5,12 @@ interface AvatarProps {
 	src?: string | null;
 	alt: string;
 	fallback: string;
-	size?: "sm" | "md" | "lg";
+	size?: "xs" | "sm" | "md" | "lg";
 	className?: string;
 }
 
 const sizeMap = {
+	xs: { container: "size-6", text: "text-xs", image: 24 },
 	sm: { container: "size-8", text: "text-sm", image: 32 },
 	md: { container: "size-10", text: "text-base", image: 40 },
 	lg: { container: "size-12", text: "text-lg", image: 48 },

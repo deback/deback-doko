@@ -1,0 +1,206 @@
+"use client";
+
+import { Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { GameState } from "@/types/game";
+import type { Player } from "@/types/tables";
+import { Badge } from "../ui/badge";
+import { OpponentHand } from "./opponent-hand";
+import { PlayerInfo } from "./player-info";
+import { TrickArea } from "./trick-area";
+
+interface SpectatorBoardProps {
+	gameState: GameState;
+	className?: string;
+}
+
+export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
+	// For spectators, we show all players as "opponents" (card backs)
+	// We'll use the first player as the "bottom" position for consistent viewing
+
+	const getPlayerAtPosition = (
+		relativePosition: number,
+	): Player | undefined => {
+		const index = relativePosition % gameState.players.length;
+		return gameState.players[index];
+	};
+
+	const bottomPlayer = getPlayerAtPosition(0);
+	const leftPlayer = getPlayerAtPosition(1);
+	const topPlayer = getPlayerAtPosition(2);
+	const rightPlayer = getPlayerAtPosition(3);
+
+	// Use handCounts for spectator view (since hands are empty for spectators)
+	const getCardCount = (playerId: string) => {
+		return gameState.handCounts[playerId] ?? gameState.hands[playerId]?.length ?? 0;
+	};
+
+	return (
+		<div className={cn("relative h-dvh w-screen overflow-hidden bg-wood", className)}>
+			{/* Spectator Badge */}
+			<div className="absolute top-4 left-1/2 z-50 -translate-x-1/2">
+				<Badge className="gap-2 bg-amber-500/20 px-4 py-2 text-amber-700 dark:text-amber-400" variant="secondary">
+					<Eye className="h-4 w-4" />
+					Zuschauer-Modus
+				</Badge>
+			</div>
+
+			{/* Top Player */}
+			{topPlayer && (
+				<div className="absolute top-16 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
+					<PlayerInfo
+						cardCount={getCardCount(topPlayer.id)}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							topPlayer.id
+						}
+						player={topPlayer}
+						position="top"
+						score={gameState.scores[topPlayer.id] || 0}
+						team={gameState.teams[topPlayer.id]}
+					/>
+					<OpponentHand
+						cardCount={getCardCount(topPlayer.id)}
+						position="top"
+					/>
+				</div>
+			)}
+
+			{/* Left Player */}
+			{leftPlayer && (
+				<div className="absolute top-1/2 left-4 flex -translate-y-1/2 flex-col items-center gap-2">
+					<PlayerInfo
+						cardCount={getCardCount(leftPlayer.id)}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							leftPlayer.id
+						}
+						player={leftPlayer}
+						position="left"
+						score={gameState.scores[leftPlayer.id] || 0}
+						team={gameState.teams[leftPlayer.id]}
+					/>
+					<OpponentHand
+						cardCount={getCardCount(leftPlayer.id)}
+						position="left"
+					/>
+				</div>
+			)}
+
+			{/* Right Player */}
+			{rightPlayer && (
+				<div className="absolute top-1/2 right-4 flex -translate-y-1/2 flex-col items-center gap-2">
+					<PlayerInfo
+						cardCount={getCardCount(rightPlayer.id)}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							rightPlayer.id
+						}
+						player={rightPlayer}
+						position="right"
+						score={gameState.scores[rightPlayer.id] || 0}
+						team={gameState.teams[rightPlayer.id]}
+					/>
+					<OpponentHand
+						cardCount={getCardCount(rightPlayer.id)}
+						position="right"
+					/>
+				</div>
+			)}
+
+			{/* Trick Area (Center) */}
+			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+				<TrickArea
+					currentPlayerId={gameState.players[0]?.id || ""}
+					players={gameState.players}
+					trickCards={gameState.currentTrick.cards}
+				/>
+			</div>
+
+			{/* Bottom Player */}
+			{bottomPlayer && (
+				<div className="absolute bottom-4 left-1/2 flex w-full max-w-3xl -translate-x-1/2 flex-col items-center gap-2 px-4">
+					<PlayerInfo
+						cardCount={getCardCount(bottomPlayer.id)}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							bottomPlayer.id
+						}
+						player={bottomPlayer}
+						position="bottom"
+						score={gameState.scores[bottomPlayer.id] || 0}
+						team={gameState.teams[bottomPlayer.id]}
+					/>
+					<OpponentHand
+						cardCount={getCardCount(bottomPlayer.id)}
+						position="bottom"
+					/>
+				</div>
+			)}
+
+			{/* Turn Indicator */}
+			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-24">
+				<div className="rounded-full bg-black/60 px-4 py-2 text-white/80 text-sm backdrop-blur-sm">
+					{gameState.players[gameState.currentPlayerIndex]?.name} ist am Zug
+				</div>
+			</div>
+
+			{/* Connection Status */}
+			<div className="absolute top-4 right-4 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+				<div className={cn("h-2 w-2 rounded-full", "bg-emerald-500")} />
+				<span className="text-white/70 text-xs">Verbunden</span>
+			</div>
+
+			{/* Spectator Count */}
+			{gameState.spectatorCount > 0 && (
+				<div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+					<Eye className="h-3 w-3 text-white/70" />
+					<span className="text-white/70 text-xs">
+						{gameState.spectatorCount} Zuschauer
+					</span>
+				</div>
+			)}
+
+			{/* Game End Overlay */}
+			{gameState.gameEnded && (
+				<div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+					<div className="rounded-xl bg-white/90 p-8 text-center shadow-2xl">
+						<h2 className="mb-4 font-bold text-2xl text-emerald-600">
+							Spiel beendet!
+						</h2>
+						<div className="space-y-2">
+							{gameState.players
+								.sort(
+									(a, b) =>
+										(gameState.scores[b.id] || 0) -
+										(gameState.scores[a.id] || 0),
+								)
+								.map((player, index) => (
+									<div
+										className="flex items-center justify-between gap-4"
+										key={player.id}
+									>
+										<span
+											className={cn(
+												"font-medium",
+												index === 0 && "text-yellow-600",
+											)}
+										>
+											{index + 1}. {player.name}
+										</span>
+										<span className="font-bold">
+											{gameState.scores[player.id] || 0} Pkt.
+										</span>
+									</div>
+								))}
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}

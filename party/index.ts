@@ -18,6 +18,7 @@ interface Table {
 	createdAt: number;
 	gameId?: string;
 	gameStarted: boolean;
+	spectatorCount?: number;
 }
 
 interface TablesState {
@@ -64,6 +65,7 @@ interface GameState {
 	players: Player[];
 	currentPlayerIndex: number;
 	hands: Record<string, Card[]>;
+	handCounts: Record<string, number>; // For spectators: card count per player
 	currentTrick: Trick;
 	completedTricks: Trick[];
 	trump: Suit | "jacks" | "queens";
@@ -73,20 +75,28 @@ interface GameState {
 	scores: Record<string, number>;
 	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
 	teams: Record<string, "re" | "kontra">; // playerId -> Team-Zuordnung
+	spectatorCount: number;
+	spectators: Array<{ id: string; name: string; image?: string | null }>; // List of spectators
 }
 
 type GameEvent =
 	| { type: "get-state" }
 	| { type: "play-card"; cardId: string; playerId: string }
-	| { type: "start-game"; players: Player[]; tableId: string };
+	| { type: "start-game"; players: Player[]; tableId: string }
+	| { type: "spectate-game"; gameId: string; spectatorId: string; spectatorName: string; spectatorImage?: string | null };
 
 type GameMessage =
-	| { type: "state"; state: GameState }
-	| { type: "error"; message: string };
+	| { type: "state"; state: GameState; isSpectator?: boolean }
+	| { type: "error"; message: string }
+	| { type: "spectator-count"; gameId: string; count: number };
 
 export default class Server implements Party.Server {
 	tables: Map<string, Table> = new Map();
 	games: Map<string, GameState> = new Map();
+	// Track spectators per game: gameId -> Set of spectator connection IDs
+	spectatorConnections: Map<string, Set<string>> = new Map();
+	// Map connection ID to spectator info (including name and image)
+	connectionToSpectator: Map<string, { gameId: string; spectatorId: string; spectatorName: string; spectatorImage?: string | null }> = new Map();
 
 	constructor(readonly room: Party.Room) {}
 
@@ -99,11 +109,20 @@ export default class Server implements Party.Server {
 			// Send current state to newly connected client
 			this.sendState(conn);
 		} else if (this.room.id.startsWith("game-")) {
-			// Handle game room
+			// Handle game room - don't send state immediately, wait for get-state or spectate-game event
 			const gameState = this.games.get(this.room.id);
 			if (gameState) {
 				this.sendGameState(conn, gameState);
 			}
+		}
+	}
+
+	onClose(conn: Party.Connection) {
+		// Handle spectator disconnect
+		const spectatorInfo = this.connectionToSpectator.get(conn.id);
+		if (spectatorInfo) {
+			this.removeSpectator(spectatorInfo.gameId, conn.id);
+			this.connectionToSpectator.delete(conn.id);
 		}
 	}
 
@@ -323,6 +342,124 @@ export default class Server implements Party.Server {
 			case "play-card":
 				this.playCard(event.cardId, event.playerId, sender);
 				break;
+
+			case "spectate-game":
+				this.addSpectator(event.gameId, event.spectatorId, event.spectatorName, event.spectatorImage, sender);
+				break;
+		}
+	}
+
+	// Spectator management
+	addSpectator(gameId: string, spectatorId: string, spectatorName: string, spectatorImage: string | null | undefined, conn: Party.Connection) {
+		// Track connection as spectator
+		if (!this.spectatorConnections.has(gameId)) {
+			this.spectatorConnections.set(gameId, new Set());
+		}
+		const spectators = this.spectatorConnections.get(gameId);
+		if (spectators) {
+			spectators.add(conn.id);
+		}
+		this.connectionToSpectator.set(conn.id, { gameId, spectatorId, spectatorName, spectatorImage });
+
+		// Update spectator count and list in game state
+		const gameState = this.games.get(gameId);
+		if (gameState) {
+			gameState.spectatorCount = this.spectatorConnections.get(gameId)?.size || 0;
+			gameState.spectators = this.getSpectatorList(gameId);
+
+			// Send spectator view (without hands) to the new spectator
+			this.sendSpectatorState(conn, gameState);
+
+			// Broadcast updated state to players (so they see new spectator)
+			this.broadcastGameState(gameState);
+
+			// Update table with spectator count
+			this.updateTableSpectatorCount(gameState.tableId, gameState.spectatorCount);
+		}
+	}
+
+	getSpectatorList(gameId: string): Array<{ id: string; name: string; image?: string | null }> {
+		const spectatorList: Array<{ id: string; name: string; image?: string | null }> = [];
+		const spectatorConnIds = this.spectatorConnections.get(gameId);
+		if (spectatorConnIds) {
+			for (const connId of spectatorConnIds) {
+				const info = this.connectionToSpectator.get(connId);
+				if (info) {
+					spectatorList.push({ id: info.spectatorId, name: info.spectatorName, image: info.spectatorImage });
+				}
+			}
+		}
+		return spectatorList;
+	}
+
+	removeSpectator(gameId: string, connectionId: string) {
+		const spectators = this.spectatorConnections.get(gameId);
+		if (spectators) {
+			spectators.delete(connectionId);
+
+			// Update spectator count and list in game state
+			const gameState = this.games.get(gameId);
+			if (gameState) {
+				gameState.spectatorCount = spectators.size;
+				gameState.spectators = this.getSpectatorList(gameId);
+
+				// Broadcast updated state to players (so they see spectator left)
+				this.broadcastGameState(gameState);
+
+				// Update table with spectator count
+				this.updateTableSpectatorCount(gameState.tableId, gameState.spectatorCount);
+			}
+		}
+	}
+
+	updateTableSpectatorCount(tableId: string, count: number) {
+		const table = this.tables.get(tableId);
+		if (table) {
+			table.spectatorCount = count;
+			this.broadcastState();
+		}
+	}
+
+	createSpectatorView(gameState: GameState): GameState {
+		// Create hand counts from hands
+		const handCounts: Record<string, number> = {};
+		for (const [playerId, hand] of Object.entries(gameState.hands)) {
+			handCounts[playerId] = hand.length;
+		}
+
+		return {
+			...gameState,
+			hands: {}, // Don't send actual cards to spectators
+			handCounts, // Send card counts instead
+		};
+	}
+
+	sendSpectatorState(conn: Party.Connection, gameState: GameState) {
+		const spectatorView = this.createSpectatorView(gameState);
+		const message: GameMessage = {
+			type: "state",
+			state: spectatorView,
+			isSpectator: true,
+		};
+		conn.send(JSON.stringify(message));
+	}
+
+	broadcastToSpectators(gameState: GameState) {
+		const spectators = this.spectatorConnections.get(gameState.id);
+		if (!spectators || spectators.size === 0) return;
+
+		const spectatorView = this.createSpectatorView(gameState);
+		const message: GameMessage = {
+			type: "state",
+			state: spectatorView,
+			isSpectator: true,
+		};
+		const messageStr = JSON.stringify(message);
+
+		for (const conn of this.room.getConnections()) {
+			if (spectators.has(conn.id)) {
+				conn.send(messageStr);
+			}
 		}
 	}
 
@@ -418,12 +555,19 @@ export default class Server implements Party.Server {
 			}
 		}
 
+		// Create hand counts for spectators
+		const handCounts: Record<string, number> = {};
+		for (const player of players) {
+			handCounts[player.id] = hands[player.id]?.length || 0;
+		}
+
 		const gameState: GameState = {
 			id: gameId,
 			tableId,
 			players,
 			currentPlayerIndex: 0,
 			hands,
+			handCounts,
 			currentTrick: {
 				cards: [],
 				completed: false,
@@ -436,6 +580,8 @@ export default class Server implements Party.Server {
 			scores,
 			schweinereiPlayers,
 			teams,
+			spectatorCount: 0,
+			spectators: [],
 		};
 
 		this.games.set(gameId, gameState);
@@ -483,6 +629,9 @@ export default class Server implements Party.Server {
 
 		hand.splice(cardIndex, 1);
 
+		// Update hand counts for spectators
+		gameState.handCounts[currentPlayer.id] = hand.length;
+
 		gameState.currentTrick.cards.push({
 			card,
 			playerId: currentPlayer.id,
@@ -495,6 +644,7 @@ export default class Server implements Party.Server {
 		}
 
 		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
 	}
 
 	completeTrick(gameState: GameState) {

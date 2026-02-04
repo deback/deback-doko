@@ -4,16 +4,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Player } from "@/types/tables";
 import { GameBoard } from "./game-board";
 import { useGameConnection } from "./hooks/use-game-connection";
+import { SpectatorBoard } from "./spectator-board";
 
 interface GameClientProps {
 	player: Player;
 	gameId: string;
+	isSpectator?: boolean;
 }
 
-export function GameClient({ player, gameId }: GameClientProps) {
-	const { gameState, error, isConnected, playCard } = useGameConnection({
+export function GameClient({ player, gameId, isSpectator = false }: GameClientProps) {
+	const { gameState, error, isConnected, isSpectator: spectatorMode, playCard } = useGameConnection({
 		gameId,
 		player,
+		isSpectator,
 	});
 
 	if (!gameState) {
@@ -43,6 +46,11 @@ export function GameClient({ player, gameId }: GameClientProps) {
 				</Card>
 			</div>
 		);
+	}
+
+	// Render spectator view if in spectator mode
+	if (spectatorMode) {
+		return <SpectatorBoard gameState={gameState} />;
 	}
 
 	return (
