@@ -203,10 +203,23 @@ export function GameBoard({
 		schweinereiPlayerId,
 		currentPlayer.id,
 	);
-	const playableCards = isMyTurn
-		? getPlayableCards(sortedHand, gameState.currentTrick, gameState.trump)
-		: [];
+
+	// Berechne spielbare Karten immer (auch wenn nicht am Zug),
+	// damit der Spieler sehen kann welche Karten er spielen könnte
+	const playableCards = getPlayableCards(
+		sortedHand,
+		gameState.currentTrick,
+		gameState.trump,
+	);
 	const playableCardIds = playableCards.map((c) => c.id);
+
+	// Prüfe ob bereits eine Karte im Stich liegt
+	const hasTrickStarted = gameState.currentTrick.cards.length > 0;
+
+	// Prüfe ob der Spieler bereits im aktuellen Stich gespielt hat
+	const hasPlayerPlayedInTrick = gameState.currentTrick.cards.some(
+		(tc) => tc.playerId === currentPlayer.id,
+	);
 
 	const handleDragEnd = (event: DragEndEvent) => {
 		const { over, active } = event;
@@ -219,11 +232,7 @@ export function GameBoard({
 		}
 	};
 
-	const handleCardClick = (_cardId: string) => {
-		// Nur visuelles Feedback bei einfachem Klick
-	};
-
-	const handleCardDoubleClick = (cardId: string) => {
+	const handlePlayCard = (cardId: string) => {
 		if (playableCardIds.includes(cardId)) {
 			playCard(cardId);
 		}
@@ -322,9 +331,9 @@ export function GameBoard({
 						<PlayerHand
 							cards={sortedHand}
 							className="w-full"
+							hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
 							isMyTurn={isMyTurn}
-							onCardClick={handleCardClick}
-							onCardDoubleClick={handleCardDoubleClick}
+							onPlayCard={handlePlayCard}
 							playableCardIds={playableCardIds}
 						/>
 					</div>

@@ -9,7 +9,9 @@ import type { Card } from "@/types/game";
 interface DraggableCardProps {
 	card: Card;
 	isPlayable?: boolean;
+	isSelectable?: boolean;
 	isSelected?: boolean;
+	isDisabled?: boolean;
 	isDraggingDisabled?: boolean;
 	onClick?: () => void;
 	onMouseEnter?: () => void;
@@ -21,7 +23,9 @@ interface DraggableCardProps {
 export function DraggableCard({
 	card,
 	isPlayable = false,
+	isSelectable = true,
 	isSelected = false,
+	isDisabled = false,
 	isDraggingDisabled = false,
 	onClick,
 	onMouseEnter,
@@ -46,15 +50,19 @@ export function DraggableCard({
 		? `${CSS.Translate.toString(transform)} ${style?.transform || ""}`.trim()
 		: style?.transform;
 
+	// Karte ist interaktiv wenn spielbar ODER selektierbar (und nicht deaktiviert)
+	const isInteractive = (isPlayable || isSelectable) && !isDisabled;
+
 	return (
 		<button
 			className={cn(
 				"touch-none bg-transparent p-0 border-none",
 				isDragging && "z-[100] scale-105 opacity-90 transition-none!",
+				isDisabled && "opacity-40",
 				className,
 			)}
-			disabled={!isPlayable}
-			onClick={isPlayable ? onClick : undefined}
+			disabled={!isInteractive}
+			onClick={isInteractive ? onClick : undefined}
 			onMouseEnter={onMouseEnter}
 			onMouseLeave={onMouseLeave}
 			ref={setNodeRef}
@@ -72,9 +80,10 @@ export function DraggableCard({
 					"w-full transition-transform duration-200",
 					isPlayable && !isDragging && "cursor-grab hover:scale-105",
 					isDragging && "cursor-grabbing",
-					!isPlayable && "cursor-not-allowed opacity-60",
+					isDisabled && "cursor-not-allowed grayscale",
+					!isPlayable && !isDisabled && isSelectable && "cursor-pointer",
 				)}
-				disabled={!isPlayable}
+				disabled={isDisabled}
 				playable={isPlayable && !isDragging}
 				rank={card.rank}
 				selected={isSelected}

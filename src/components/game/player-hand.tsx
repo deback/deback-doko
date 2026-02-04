@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Card } from "@/types/game";
 import { DraggableCard } from "./draggable-card";
@@ -9,8 +9,8 @@ interface PlayerHandProps {
 	cards: Card[];
 	playableCardIds: string[];
 	isMyTurn: boolean;
-	onCardClick: (cardId: string) => void;
-	onCardDoubleClick: (cardId: string) => void;
+	hasTrickStarted: boolean;
+	onPlayCard: (cardId: string) => void;
 	className?: string;
 }
 
@@ -52,26 +52,59 @@ export function PlayerHand({
 	cards,
 	playableCardIds,
 	isMyTurn,
-	onCardClick,
-	onCardDoubleClick,
+	hasTrickStarted,
+	onPlayCard,
 	className,
 }: PlayerHandProps) {
 	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 	const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
-	const handleCardClick = (cardId: string) => {
-		if (!isMyTurn) return;
-		if (!playableCardIds.includes(cardId)) return;
-
-		if (selectedCardId === cardId) {
-			// Doppelklick/zweiter Klick spielt die Karte
-			onCardDoubleClick(cardId);
+	// Wenn der Spieler am Zug ist und eine vorher ausgewählte Karte spielbar ist,
+	// spiele sie automatisch
+	useEffect(() => {
+		if (isMyTurn && selectedCardId && playableCardIds.includes(selectedCardId)) {
+			onPlayCard(selectedCardId);
 			setSelectedCardId(null);
-		} else {
-			// Erster Klick wählt die Karte aus
-			setSelectedCardId(cardId);
-			onCardClick(cardId);
 		}
+	}, [isMyTurn, selectedCardId, playableCardIds, onPlayCard]);
+
+	// Wenn sich die spielbaren Karten ändern und die ausgewählte Karte nicht mehr spielbar ist,
+	// deselektiere sie
+	useEffect(() => {
+		if (hasTrickStarted && selectedCardId && !playableCardIds.includes(selectedCardId)) {
+			setSelectedCardId(null);
+		}
+	}, [hasTrickStarted, selectedCardId, playableCardIds]);
+
+	const handleCardClick = (cardId: string) => {
+		const isCardPlayable = playableCardIds.includes(cardId);
+
+		// Wenn Stich begonnen hat und Karte nicht spielbar: ignorieren
+		if (hasTrickStarted && !isCardPlayable) {
+			return;
+		}
+
+		// Wenn bereits selektiert: deselektieren
+		if (selectedCardId === cardId) {
+			setSelectedCardId(null);
+			return;
+		}
+
+		if (!isMyTurn) {
+			// Nicht am Zug: Karte vormerken für später (nur wenn spielbar oder Stich noch nicht begonnen)
+			setSelectedCardId(cardId);
+			return;
+		}
+
+		if (!isCardPlayable) {
+			// Karte nicht spielbar: nur auswählen
+			setSelectedCardId(cardId);
+			return;
+		}
+
+		// Karte ist spielbar: sofort spielen
+		onPlayCard(cardId);
+		setSelectedCardId(null);
 	};
 
 	return (
@@ -81,14 +114,20 @@ export function PlayerHand({
 				style={{ height: "180px", width: "100%" }}
 			>
 				{cards.map((card, index) => {
-					const isPlayable = isMyTurn && playableCardIds.includes(card.id);
+					const isCardPlayable = playableCardIds.includes(card.id);
+					// Karte ist nur dann wirklich "playable" (grün markiert) wenn am Zug
+					const isPlayable = isMyTurn && isCardPlayable;
+					// Karte ist deaktiviert wenn Stich begonnen hat und nicht spielbar
+					const isDisabled = hasTrickStarted && !isCardPlayable;
+					// Karte ist selektierbar wenn nicht deaktiviert
+					const isSelectable = !isDisabled;
 					const isSelected = selectedCardId === card.id;
-					const isHovered = hoveredCardId === card.id;
+					const isHovered = hoveredCardId === card.id && isSelectable;
 
 					const { transform, zIndex } = calculateCardTransform(
 						index,
 						cards.length,
-						isHovered && isPlayable,
+						isHovered,
 						isSelected,
 					);
 
@@ -96,12 +135,14 @@ export function PlayerHand({
 						<DraggableCard
 							card={card}
 							className="absolute bottom-0 left-1/2 w-20 transition-all duration-200 sm:w-24 md:w-28"
-							isDraggingDisabled={!isMyTurn}
+							isDisabled={isDisabled}
+							isDraggingDisabled={!isMyTurn || isDisabled}
 							isPlayable={isPlayable}
+							isSelectable={isSelectable}
 							isSelected={isSelected}
 							key={card.id}
-							onClick={() => handleCardClick(card.id)}
-							onMouseEnter={() => setHoveredCardId(card.id)}
+							onClick={isSelectable ? () => handleCardClick(card.id) : undefined}
+							onMouseEnter={isSelectable ? () => setHoveredCardId(card.id) : undefined}
 							onMouseLeave={() => setHoveredCardId(null)}
 							style={{
 								transform,
