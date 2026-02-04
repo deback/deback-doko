@@ -12,8 +12,18 @@ interface GameClientProps {
 	isSpectator?: boolean;
 }
 
-export function GameClient({ player, gameId, isSpectator = false }: GameClientProps) {
-	const { gameState, error, isConnected, isSpectator: spectatorMode, playCard } = useGameConnection({
+export function GameClient({
+	player,
+	gameId,
+	isSpectator = false,
+}: GameClientProps) {
+	const {
+		gameState,
+		error,
+		isConnected,
+		isSpectator: spectatorMode,
+		playCard,
+	} = useGameConnection({
 		gameId,
 		player,
 		isSpectator,
@@ -21,7 +31,7 @@ export function GameClient({ player, gameId, isSpectator = false }: GameClientPr
 
 	if (!gameState) {
 		return (
-			<div className="flex h-dvh w-screen items-center justify-center bg-wood">
+			<div className="flex h-dvh w-screen items-center justify-center">
 				<Card className="border-none bg-black/40 text-white backdrop-blur-sm">
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-3">
@@ -38,7 +48,7 @@ export function GameClient({ player, gameId, isSpectator = false }: GameClientPr
 
 	if (error) {
 		return (
-			<div className="flex h-dvh w-screen items-center justify-center bg-wood">
+			<div className="flex h-dvh w-screen items-center justify-center">
 				<Card className="border-destructive bg-black/40 text-white backdrop-blur-sm">
 					<CardContent className="pt-6">
 						<p className="text-center text-red-400">{error}</p>

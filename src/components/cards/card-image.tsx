@@ -110,6 +110,7 @@ export function CardImage({
 				<Image
 					alt={altText}
 					className="object-contain"
+					draggable={false}
 					fill
 					priority={false}
 					src={imagePath}
@@ -130,6 +131,7 @@ export function CardImage({
 			<Image
 				alt={altText}
 				className="object-contain"
+				draggable={false}
 				fill
 				priority={false}
 				src={imagePath}

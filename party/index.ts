@@ -100,6 +100,33 @@ export default class Server implements Party.Server {
 
 	constructor(readonly room: Party.Room) {}
 
+	// Load persisted state from storage
+	async onStart() {
+		if (this.room.id === "tables-room") {
+			const storedTables = await this.room.storage.get<Table[]>("tables");
+			if (storedTables) {
+				this.tables = new Map(storedTables.map(t => [t.id, t]));
+			}
+		} else if (this.room.id.startsWith("game-")) {
+			const storedGame = await this.room.storage.get<GameState>("gameState");
+			if (storedGame) {
+				this.games.set(this.room.id, storedGame);
+			}
+		}
+	}
+
+	// Persist tables to storage
+	async persistTables() {
+		if (this.room.id === "tables-room") {
+			await this.room.storage.put("tables", Array.from(this.tables.values()));
+		}
+	}
+
+	// Persist game state to storage
+	async persistGameState(gameState: GameState) {
+		await this.room.storage.put("gameState", gameState);
+	}
+
 	onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
 		console.log(
 			`Connected: id: ${conn.id}, room: ${this.room.id}, url: ${new URL(ctx.request.url).pathname}`,
@@ -117,11 +144,11 @@ export default class Server implements Party.Server {
 		}
 	}
 
-	onClose(conn: Party.Connection) {
+	async onClose(conn: Party.Connection) {
 		// Handle spectator disconnect
 		const spectatorInfo = this.connectionToSpectator.get(conn.id);
 		if (spectatorInfo) {
-			this.removeSpectator(spectatorInfo.gameId, conn.id);
+			await this.removeSpectator(spectatorInfo.gameId, conn.id);
 			this.connectionToSpectator.delete(conn.id);
 		}
 	}
@@ -161,31 +188,31 @@ export default class Server implements Party.Server {
 		return undefined;
 	}
 
-	handleEvent(event: TableEvent, sender: Party.Connection) {
+	async handleEvent(event: TableEvent, sender: Party.Connection) {
 		switch (event.type) {
 			case "get-state":
 				this.sendState(sender);
 				break;
 
 			case "create-table":
-				this.createTable(event.name, event.player, sender);
+				await this.createTable(event.name, event.player, sender);
 				break;
 
 			case "join-table":
-				this.joinTable(event.tableId, event.player, sender);
+				await this.joinTable(event.tableId, event.player, sender);
 				break;
 
 			case "leave-table":
-				this.leaveTable(event.tableId, event.playerId);
+				await this.leaveTable(event.tableId, event.playerId);
 				break;
 
 			case "delete-table":
-				this.deleteTable(event.tableId, event.playerId);
+				await this.deleteTable(event.tableId, event.playerId);
 				break;
 		}
 	}
 
-	createTable(name: string, player: Player, sender: Party.Connection) {
+	async createTable(name: string, player: Player, sender: Party.Connection) {
 		// Check if player is already at another table
 		const existingTable = this.findPlayerTable(player.id);
 		if (existingTable) {
@@ -206,10 +233,11 @@ export default class Server implements Party.Server {
 		};
 
 		this.tables.set(tableId, table);
+		await this.persistTables();
 		this.broadcastState();
 	}
 
-	joinTable(tableId: string, player: Player, sender: Party.Connection) {
+	async joinTable(tableId: string, player: Player, sender: Party.Connection) {
 		const table = this.tables.get(tableId);
 		if (!table) {
 			this.sendError(sender, "Tisch nicht gefunden.");
@@ -238,19 +266,23 @@ export default class Server implements Party.Server {
 		}
 
 		table.players.push(player);
+		await this.persistTables();
 		this.broadcastState();
 
 		// Check if table is full (4 players) and start game
 		if (table.players.length === 4 && !table.gameStarted) {
-			this.startGame(table);
+			await this.startGame(table);
 		}
 	}
 
-	startGame(table: Table) {
+	async startGame(table: Table) {
 		// Generate game ID
 		const gameId = `game-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 		table.gameId = gameId;
 		table.gameStarted = true;
+
+		// Persist tables state
+		await this.persistTables();
 
 		// Broadcast game started event with players
 		const message: TableMessage = {
@@ -265,7 +297,7 @@ export default class Server implements Party.Server {
 		this.broadcastState();
 	}
 
-	leaveTable(tableId: string, playerId: string) {
+	async leaveTable(tableId: string, playerId: string) {
 		const table = this.tables.get(tableId);
 		if (!table) {
 			return;
@@ -278,10 +310,11 @@ export default class Server implements Party.Server {
 			this.tables.delete(tableId);
 		}
 
+		await this.persistTables();
 		this.broadcastState();
 	}
 
-	deleteTable(tableId: string, playerId: string) {
+	async deleteTable(tableId: string, playerId: string) {
 		const table = this.tables.get(tableId);
 		if (!table) {
 			return;
@@ -290,6 +323,7 @@ export default class Server implements Party.Server {
 		// Only allow deletion if the player is the creator (first player)
 		if (table.players.length > 0 && table.players[0]?.id === playerId) {
 			this.tables.delete(tableId);
+			await this.persistTables();
 			this.broadcastState();
 		}
 	}
@@ -325,7 +359,7 @@ export default class Server implements Party.Server {
 	}
 
 	// Game server methods
-	handleGameEvent(event: GameEvent, sender: Party.Connection) {
+	async handleGameEvent(event: GameEvent, sender: Party.Connection) {
 		switch (event.type) {
 			case "get-state": {
 				const gameState = this.games.get(this.room.id);
@@ -336,21 +370,21 @@ export default class Server implements Party.Server {
 			}
 
 			case "start-game":
-				this.startGameRoom(event.players, event.tableId);
+				await this.startGameRoom(event.players, event.tableId);
 				break;
 
 			case "play-card":
-				this.playCard(event.cardId, event.playerId, sender);
+				await this.playCard(event.cardId, event.playerId, sender);
 				break;
 
 			case "spectate-game":
-				this.addSpectator(event.gameId, event.spectatorId, event.spectatorName, event.spectatorImage, sender);
+				await this.addSpectator(event.gameId, event.spectatorId, event.spectatorName, event.spectatorImage, sender);
 				break;
 		}
 	}
 
 	// Spectator management
-	addSpectator(gameId: string, spectatorId: string, spectatorName: string, spectatorImage: string | null | undefined, conn: Party.Connection) {
+	async addSpectator(gameId: string, spectatorId: string, spectatorName: string, spectatorImage: string | null | undefined, conn: Party.Connection) {
 		// Track connection as spectator
 		if (!this.spectatorConnections.has(gameId)) {
 			this.spectatorConnections.set(gameId, new Set());
@@ -374,7 +408,7 @@ export default class Server implements Party.Server {
 			this.broadcastGameState(gameState);
 
 			// Update table with spectator count
-			this.updateTableSpectatorCount(gameState.tableId, gameState.spectatorCount);
+			await this.updateTableSpectatorCount(gameState.tableId, gameState.spectatorCount);
 		}
 	}
 
@@ -392,7 +426,7 @@ export default class Server implements Party.Server {
 		return spectatorList;
 	}
 
-	removeSpectator(gameId: string, connectionId: string) {
+	async removeSpectator(gameId: string, connectionId: string) {
 		const spectators = this.spectatorConnections.get(gameId);
 		if (spectators) {
 			spectators.delete(connectionId);
@@ -407,15 +441,16 @@ export default class Server implements Party.Server {
 				this.broadcastGameState(gameState);
 
 				// Update table with spectator count
-				this.updateTableSpectatorCount(gameState.tableId, gameState.spectatorCount);
+				await this.updateTableSpectatorCount(gameState.tableId, gameState.spectatorCount);
 			}
 		}
 	}
 
-	updateTableSpectatorCount(tableId: string, count: number) {
+	async updateTableSpectatorCount(tableId: string, count: number) {
 		const table = this.tables.get(tableId);
 		if (table) {
 			table.spectatorCount = count;
+			await this.persistTables();
 			this.broadcastState();
 		}
 	}
@@ -513,7 +548,7 @@ export default class Server implements Party.Server {
 		return hands;
 	}
 
-	startGameRoom(players: Player[], tableId: string) {
+	async startGameRoom(players: Player[], tableId: string) {
 		const gameId = this.room.id;
 		if (this.games.has(gameId)) {
 			return;
@@ -585,10 +620,11 @@ export default class Server implements Party.Server {
 		};
 
 		this.games.set(gameId, gameState);
+		await this.persistGameState(gameState);
 		this.broadcastGameState(gameState);
 	}
 
-	playCard(cardId: string, playerId: string, sender: Party.Connection) {
+	async playCard(cardId: string, playerId: string, sender: Party.Connection) {
 		const gameState = this.games.get(this.room.id);
 		if (!gameState || !gameState.gameStarted) {
 			this.sendGameError(sender, "Spiel wurde noch nicht gestartet.");
@@ -643,6 +679,7 @@ export default class Server implements Party.Server {
 			gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % 4;
 		}
 
+		await this.persistGameState(gameState);
 		this.broadcastGameState(gameState);
 		this.broadcastToSpectators(gameState);
 	}

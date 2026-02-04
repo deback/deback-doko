@@ -242,190 +242,188 @@ export function GameBoard({
 
 	return (
 		<DndContext onDragEnd={handleDragEnd} sensors={sensors}>
-			<div className="relative h-dvh w-screen overflow-hidden bg-wood">
-				{/* Oberer Gegner */}
-				{topPlayer && (
-					<div className="absolute top-4 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
-						<PlayerInfo
-							cardCount={gameState.hands[topPlayer.id]?.length || 0}
-							isCurrentPlayer={false}
-							isCurrentTurn={
-								gameState.players[gameState.currentPlayerIndex]?.id ===
-								topPlayer.id
-							}
-							player={topPlayer}
-							position="top"
-							score={gameState.scores[topPlayer.id] || 0}
-							team={gameState.teams[topPlayer.id]}
-						/>
-						<OpponentHand
-							cardCount={gameState.hands[topPlayer.id]?.length || 0}
-							position="top"
-						/>
-					</div>
-				)}
-
-				{/* Linker Gegner */}
-				{leftPlayer && (
-					<div className="absolute top-1/2 left-4 flex -translate-y-1/2 flex-col items-center gap-2">
-						<PlayerInfo
-							cardCount={gameState.hands[leftPlayer.id]?.length || 0}
-							isCurrentPlayer={false}
-							isCurrentTurn={
-								gameState.players[gameState.currentPlayerIndex]?.id ===
-								leftPlayer.id
-							}
-							player={leftPlayer}
-							position="left"
-							score={gameState.scores[leftPlayer.id] || 0}
-							team={gameState.teams[leftPlayer.id]}
-						/>
-						<OpponentHand
-							cardCount={gameState.hands[leftPlayer.id]?.length || 0}
-							position="left"
-						/>
-					</div>
-				)}
-
-				{/* Rechter Gegner */}
-				{rightPlayer && (
-					<div className="absolute top-1/2 right-4 flex -translate-y-1/2 flex-col items-center gap-2">
-						<PlayerInfo
-							cardCount={gameState.hands[rightPlayer.id]?.length || 0}
-							isCurrentPlayer={false}
-							isCurrentTurn={
-								gameState.players[gameState.currentPlayerIndex]?.id ===
-								rightPlayer.id
-							}
-							player={rightPlayer}
-							position="right"
-							score={gameState.scores[rightPlayer.id] || 0}
-							team={gameState.teams[rightPlayer.id]}
-						/>
-						<OpponentHand
-							cardCount={gameState.hands[rightPlayer.id]?.length || 0}
-							position="right"
-						/>
-					</div>
-				)}
-
-				{/* Stich-Bereich (Mitte) */}
-				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-					<TrickArea
-						currentPlayerId={currentPlayer.id}
-						players={gameState.players}
-						trickCards={gameState.currentTrick.cards}
+			{/* Oberer Gegner */}
+			{topPlayer && (
+				<div className="absolute top-4 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
+					<PlayerInfo
+						cardCount={gameState.hands[topPlayer.id]?.length || 0}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							topPlayer.id
+						}
+						player={topPlayer}
+						position="top"
+						score={gameState.scores[topPlayer.id] || 0}
+						team={gameState.teams[topPlayer.id]}
+					/>
+					<OpponentHand
+						cardCount={gameState.hands[topPlayer.id]?.length || 0}
+						position="top"
 					/>
 				</div>
+			)}
 
-				{/* Unterer Spieler (aktueller Benutzer) */}
-				{bottomPlayer && (
-					<div className="absolute bottom-4 left-1/2 flex w-full max-w-3xl -translate-x-1/2 flex-col items-center gap-2 px-4">
-						<PlayerInfo
-							cardCount={sortedHand.length}
-							isCurrentPlayer
-							isCurrentTurn={isMyTurn}
-							player={bottomPlayer}
-							position="bottom"
-							score={gameState.scores[bottomPlayer.id] || 0}
-							team={gameState.teams[bottomPlayer.id]}
-						/>
-						<PlayerHand
-							cards={sortedHand}
-							className="w-full"
-							hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
-							isMyTurn={isMyTurn}
-							onPlayCard={handlePlayCard}
-							playableCardIds={playableCardIds}
-						/>
+			{/* Linker Gegner */}
+			{leftPlayer && (
+				<div className="absolute top-1/2 left-4 flex -translate-y-1/2 flex-col items-center gap-2">
+					<PlayerInfo
+						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							leftPlayer.id
+						}
+						player={leftPlayer}
+						position="left"
+						score={gameState.scores[leftPlayer.id] || 0}
+						team={gameState.teams[leftPlayer.id]}
+					/>
+					<OpponentHand
+						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
+						position="left"
+					/>
+				</div>
+			)}
+
+			{/* Rechter Gegner */}
+			{rightPlayer && (
+				<div className="absolute top-1/2 right-4 flex -translate-y-1/2 flex-col items-center gap-2">
+					<PlayerInfo
+						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							rightPlayer.id
+						}
+						player={rightPlayer}
+						position="right"
+						score={gameState.scores[rightPlayer.id] || 0}
+						team={gameState.teams[rightPlayer.id]}
+					/>
+					<OpponentHand
+						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
+						position="right"
+					/>
+				</div>
+			)}
+
+			{/* Stich-Bereich (Mitte) */}
+			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+				<TrickArea
+					currentPlayerId={currentPlayer.id}
+					players={gameState.players}
+					trickCards={gameState.currentTrick.cards}
+				/>
+			</div>
+
+			{/* Unterer Spieler (aktueller Benutzer) */}
+			{bottomPlayer && (
+				<div className="absolute bottom-4 left-1/2 flex w-full max-w-3xl -translate-x-1/2 flex-col items-center gap-2 px-4">
+					<PlayerInfo
+						cardCount={sortedHand.length}
+						isCurrentPlayer
+						isCurrentTurn={isMyTurn}
+						player={bottomPlayer}
+						position="bottom"
+						score={gameState.scores[bottomPlayer.id] || 0}
+						team={gameState.teams[bottomPlayer.id]}
+					/>
+					<PlayerHand
+						cards={sortedHand}
+						className="w-full"
+						hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
+						isMyTurn={isMyTurn}
+						onPlayCard={handlePlayCard}
+						playableCardIds={playableCardIds}
+					/>
+				</div>
+			)}
+
+			{/* Turn-Indikator */}
+			{!isMyTurn && (
+				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-24">
+					<div className="rounded-full bg-black/60 px-4 py-2 text-white/80 text-sm backdrop-blur-sm">
+						Warte auf {gameState.players[gameState.currentPlayerIndex]?.name}
+						...
 					</div>
-				)}
+				</div>
+			)}
 
-				{/* Turn-Indikator */}
-				{!isMyTurn && (
-					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-24">
-						<div className="rounded-full bg-black/60 px-4 py-2 text-white/80 text-sm backdrop-blur-sm">
-							Warte auf {gameState.players[gameState.currentPlayerIndex]?.name}
-							...
-						</div>
-					</div>
-				)}
-
-				{/* Verbindungsstatus & Zuschauer */}
-				<div className="absolute top-4 right-4 flex flex-col items-end gap-2">
-					<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
-						<div
-							className={cn(
-								"h-2 w-2 rounded-full",
-								"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
-							)}
-						/>
-						<span className="text-white/70 text-xs">Verbunden</span>
-					</div>
-
-					{/* Zuschauer-Liste */}
-					{gameState.spectators && gameState.spectators.length > 0 && (
-						<div className="rounded-lg bg-black/40 px-3 py-2 backdrop-blur-sm">
-							<div className="mb-1.5 flex items-center gap-1.5 text-white/50 text-xs">
-								<Eye className="h-3 w-3" />
-								Zuschauer ({gameState.spectators.length})
-							</div>
-							<div className="flex flex-col gap-1.5">
-								{gameState.spectators.map((spectator) => (
-									<div className="flex items-center gap-2" key={spectator.id}>
-										<Avatar
-											alt={spectator.name}
-											fallback={spectator.name.charAt(0).toUpperCase()}
-											size="xs"
-											src={spectator.image}
-										/>
-										<span className="text-white/70 text-xs">
-											{spectator.name}
-										</span>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
+			{/* Verbindungsstatus & Zuschauer */}
+			<div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+				<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+					<div
+						className={cn(
+							"h-2 w-2 rounded-full",
+							"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
+						)}
+					/>
+					<span className="text-white/70 text-xs">Verbunden</span>
 				</div>
 
-				{/* Spielende */}
-				{gameState.gameEnded && (
-					<div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-						<div className="rounded-xl bg-white/90 p-8 text-center shadow-2xl">
-							<h2 className="mb-4 font-bold text-2xl text-emerald-600">
-								Spiel beendet!
-							</h2>
-							<div className="space-y-2">
-								{gameState.players
-									.sort(
-										(a, b) =>
-											(gameState.scores[b.id] || 0) -
-											(gameState.scores[a.id] || 0),
-									)
-									.map((player, index) => (
-										<div
-											className="flex items-center justify-between gap-4"
-											key={player.id}
-										>
-											<span
-												className={cn(
-													"font-medium",
-													index === 0 && "text-yellow-600",
-												)}
-											>
-												{index + 1}. {player.name}
-											</span>
-											<span className="font-bold">
-												{gameState.scores[player.id] || 0} Pkt.
-											</span>
-										</div>
-									))}
-							</div>
+				{/* Zuschauer-Liste */}
+				{gameState.spectators && gameState.spectators.length > 0 && (
+					<div className="rounded-lg bg-black/40 px-3 py-2 backdrop-blur-sm">
+						<div className="mb-1.5 flex items-center gap-1.5 text-white/50 text-xs">
+							<Eye className="h-3 w-3" />
+							Zuschauer ({gameState.spectators.length})
+						</div>
+						<div className="flex flex-col gap-1.5">
+							{gameState.spectators.map((spectator) => (
+								<div className="flex items-center gap-2" key={spectator.id}>
+									<Avatar
+										alt={spectator.name}
+										fallback={spectator.name.charAt(0).toUpperCase()}
+										size="xs"
+										src={spectator.image}
+									/>
+									<span className="text-white/70 text-xs">
+										{spectator.name}
+									</span>
+								</div>
+							))}
 						</div>
 					</div>
 				)}
 			</div>
+
+			{/* Spielende */}
+			{gameState.gameEnded && (
+				<div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+					<div className="rounded-xl bg-white/90 p-8 text-center shadow-2xl">
+						<h2 className="mb-4 font-bold text-2xl text-emerald-600">
+							Spiel beendet!
+						</h2>
+						<div className="space-y-2">
+							{gameState.players
+								.sort(
+									(a, b) =>
+										(gameState.scores[b.id] || 0) -
+										(gameState.scores[a.id] || 0),
+								)
+								.map((player, index) => (
+									<div
+										className="flex items-center justify-between gap-4"
+										key={player.id}
+									>
+										<span
+											className={cn(
+												"font-medium",
+												index === 0 && "text-yellow-600",
+											)}
+										>
+											{index + 1}. {player.name}
+										</span>
+										<span className="font-bold">
+											{gameState.scores[player.id] || 0} Pkt.
+										</span>
+									</div>
+								))}
+						</div>
+					</div>
+				</div>
+			)}
 		</DndContext>
 	);
 }
