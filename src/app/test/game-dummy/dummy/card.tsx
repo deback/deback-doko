@@ -17,7 +17,7 @@ export default function Card({
 
 	return (
 		<div
-			className={cn("absolute w-[30vw] aspect-5/7", className)}
+			className={cn("absolute w-[30vw] aspect-5/7 max-w-40", className)}
 			style={style}
 		>
 			<Image alt={alt} fill src={src} />

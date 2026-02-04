@@ -44,6 +44,8 @@ export default function Cards({
 		<div className={cn("absolute", positionClasses[position], className)}>
 			{cardIds.map((id, index) => {
 				const offset = (index - (cardCount - 1) / 2) * cardSpacing;
+				const sign = offset >= 0 ? 1 : -1;
+				const absOffset = Math.abs(offset);
 
 				return (
 					<Card
@@ -52,7 +54,7 @@ export default function Cards({
 						key={id}
 						style={{
 							bottom: 0,
-							left: `calc(50% - ${offset}vw)`,
+							left: `calc(50% - ${sign} * min(${absOffset}vw, ${absOffset * 8}px))`,
 							transform: `translateX(-50%)`,
 						}}
 					/>
