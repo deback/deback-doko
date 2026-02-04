@@ -24,6 +24,13 @@ const DEFAULT_CARD_IDS = [
 	"QH",
 ];
 
+const positionClasses = {
+	bottom: "bottom-0 left-1/2 -translate-x-1/2",
+	top: "top-0 left-1/2 -translate-x-1/2 rotate-180",
+	left: "left-0 top-1/2 origin-bottom-left rotate-90",
+	right: "right-0 top-1/2 origin-bottom-right -rotate-90",
+};
+
 export default function Cards({
 	opponent = false,
 	position = "bottom",
@@ -34,15 +41,7 @@ export default function Cards({
 	const cardCount = cardIds.length;
 
 	return (
-		<div
-			className={cn(
-				"absolute bottom-0 left-1/2 -translate-x-1/2",
-				{ "rotate-180 top-0": position === "top" },
-				{ "rotate-90 left-0": position === "left" },
-				{ "rotate-270 right-0": position === "right" },
-				className,
-			)}
-		>
+		<div className={cn("absolute", positionClasses[position], className)}>
 			{cardIds.map((id, index) => {
 				const offset = (index - (cardCount - 1) / 2) * cardSpacing;
 
