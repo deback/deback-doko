@@ -242,74 +242,80 @@ export function GameBoard({
 
 	return (
 		<DndContext onDragEnd={handleDragEnd} sensors={sensors}>
-			{/* Oberer Gegner */}
+			{/* Oberer Gegner - wie in /test/hand */}
 			{topPlayer && (
-				<div className="absolute top-4 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
-					<PlayerInfo
-						cardCount={gameState.hands[topPlayer.id]?.length || 0}
-						isCurrentPlayer={false}
-						isCurrentTurn={
-							gameState.players[gameState.currentPlayerIndex]?.id ===
-							topPlayer.id
-						}
-						player={topPlayer}
-						position="top"
-						score={gameState.scores[topPlayer.id] || 0}
-						team={gameState.teams[topPlayer.id]}
-					/>
+				<>
+					<div className="fixed top-4 left-1/2 z-10 -translate-x-1/2">
+						<PlayerInfo
+							cardCount={gameState.hands[topPlayer.id]?.length || 0}
+							isCurrentPlayer={false}
+							isCurrentTurn={
+								gameState.players[gameState.currentPlayerIndex]?.id ===
+								topPlayer.id
+							}
+							player={topPlayer}
+							position="top"
+							score={gameState.scores[topPlayer.id] || 0}
+							team={gameState.teams[topPlayer.id]}
+						/>
+					</div>
 					<OpponentHand
 						cardCount={gameState.hands[topPlayer.id]?.length || 0}
-						position="top"
+						className="fixed top-0 left-0 right-0 mx-auto max-w-[1200px] rotate-180 translate-y-1/2 sm:-translate-y-[50px]"
 					/>
-				</div>
+				</>
 			)}
 
-			{/* Linker Gegner */}
+			{/* Linker Gegner - wie in /test/hand */}
 			{leftPlayer && (
-				<div className="absolute top-1/2 left-4 flex -translate-y-1/2 flex-col items-center gap-2">
-					<PlayerInfo
-						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
-						isCurrentPlayer={false}
-						isCurrentTurn={
-							gameState.players[gameState.currentPlayerIndex]?.id ===
-							leftPlayer.id
-						}
-						player={leftPlayer}
-						position="left"
-						score={gameState.scores[leftPlayer.id] || 0}
-						team={gameState.teams[leftPlayer.id]}
-					/>
+				<>
+					<div className="fixed left-4 top-1/2 z-10 -translate-y-1/2">
+						<PlayerInfo
+							cardCount={gameState.hands[leftPlayer.id]?.length || 0}
+							isCurrentPlayer={false}
+							isCurrentTurn={
+								gameState.players[gameState.currentPlayerIndex]?.id ===
+								leftPlayer.id
+							}
+							player={leftPlayer}
+							position="left"
+							score={gameState.scores[leftPlayer.id] || 0}
+							team={gameState.teams[leftPlayer.id]}
+						/>
+					</div>
 					<OpponentHand
 						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
-						position="left"
+						className="fixed top-1/2 left-0 w-[min(100vw,1200px)] -translate-y-1/2 -translate-x-1/2 rotate-90 origin-center sm:-translate-x-[calc(50%+50px)]"
 					/>
-				</div>
+				</>
 			)}
 
-			{/* Rechter Gegner */}
+			{/* Rechter Gegner - wie in /test/hand */}
 			{rightPlayer && (
-				<div className="absolute top-1/2 right-4 flex -translate-y-1/2 flex-col items-center gap-2">
-					<PlayerInfo
-						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
-						isCurrentPlayer={false}
-						isCurrentTurn={
-							gameState.players[gameState.currentPlayerIndex]?.id ===
-							rightPlayer.id
-						}
-						player={rightPlayer}
-						position="right"
-						score={gameState.scores[rightPlayer.id] || 0}
-						team={gameState.teams[rightPlayer.id]}
-					/>
+				<>
+					<div className="fixed right-4 top-1/2 z-10 -translate-y-1/2">
+						<PlayerInfo
+							cardCount={gameState.hands[rightPlayer.id]?.length || 0}
+							isCurrentPlayer={false}
+							isCurrentTurn={
+								gameState.players[gameState.currentPlayerIndex]?.id ===
+								rightPlayer.id
+							}
+							player={rightPlayer}
+							position="right"
+							score={gameState.scores[rightPlayer.id] || 0}
+							team={gameState.teams[rightPlayer.id]}
+						/>
+					</div>
 					<OpponentHand
 						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
-						position="right"
+						className="fixed top-1/2 right-0 w-[min(100vw,1200px)] -translate-y-1/2 translate-x-1/2 -rotate-90 origin-center sm:translate-x-[calc(50%+50px)]"
 					/>
-				</div>
+				</>
 			)}
 
 			{/* Stich-Bereich (Mitte) */}
-			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+			<div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
 				<TrickArea
 					currentPlayerId={currentPlayer.id}
 					players={gameState.players}
@@ -319,30 +325,32 @@ export function GameBoard({
 
 			{/* Unterer Spieler (aktueller Benutzer) */}
 			{bottomPlayer && (
-				<div className="absolute bottom-4 left-1/2 flex w-full max-w-3xl -translate-x-1/2 flex-col items-center gap-2 px-4">
-					<PlayerInfo
-						cardCount={sortedHand.length}
-						isCurrentPlayer
-						isCurrentTurn={isMyTurn}
-						player={bottomPlayer}
-						position="bottom"
-						score={gameState.scores[bottomPlayer.id] || 0}
-						team={gameState.teams[bottomPlayer.id]}
-					/>
+				<>
+					<div className="fixed bottom-[25%] left-1/2 z-10 -translate-x-1/2">
+						<PlayerInfo
+							cardCount={sortedHand.length}
+							isCurrentPlayer
+							isCurrentTurn={isMyTurn}
+							player={bottomPlayer}
+							position="bottom"
+							score={gameState.scores[bottomPlayer.id] || 0}
+							team={gameState.teams[bottomPlayer.id]}
+						/>
+					</div>
 					<PlayerHand
 						cards={sortedHand}
-						className="w-full"
+						className="fixed bottom-0 left-0 right-0 mx-auto max-w-[1200px]"
 						hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
 						isMyTurn={isMyTurn}
 						onPlayCard={handlePlayCard}
 						playableCardIds={playableCardIds}
 					/>
-				</div>
+				</>
 			)}
 
 			{/* Turn-Indikator */}
 			{!isMyTurn && (
-				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-24">
+				<div className="fixed top-1/2 left-1/2 z-20 -translate-x-1/2 translate-y-24">
 					<div className="rounded-full bg-black/60 px-4 py-2 text-white/80 text-sm backdrop-blur-sm">
 						Warte auf {gameState.players[gameState.currentPlayerIndex]?.name}
 						...
@@ -351,7 +359,7 @@ export function GameBoard({
 			)}
 
 			{/* Verbindungsstatus & Zuschauer */}
-			<div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+			<div className="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
 				<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
 					<div
 						className={cn(
@@ -390,7 +398,7 @@ export function GameBoard({
 
 			{/* Spielende */}
 			{gameState.gameEnded && (
-				<div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
 					<div className="rounded-xl bg-white/90 p-8 text-center shadow-2xl">
 						<h2 className="mb-4 font-bold text-2xl text-emerald-600">
 							Spiel beendet!

@@ -57,7 +57,7 @@ export function DraggableCard({
 		<button
 			className={cn(
 				"touch-none bg-transparent p-0 border-none",
-				isDragging && "z-[100] scale-105 opacity-90 transition-none!",
+				isDragging && "z-100 scale-105 opacity-90 transition-none!",
 				isDisabled && "opacity-40",
 				className,
 			)}

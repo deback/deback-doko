@@ -14,39 +14,12 @@ interface PlayerHandProps {
 	className?: string;
 }
 
-function calculateCardTransform(
-	index: number,
-	totalCards: number,
-	isHovered: boolean,
-	isSelected: boolean,
-) {
-	const centerIndex = (totalCards - 1) / 2;
-	const offsetFromCenter = index - centerIndex;
-
-	// Rotation: max ±30°, dynamisch basierend auf Kartenanzahl
-	const maxRotation = Math.min(30, 2.5 * totalCards);
-	const rotationStep =
-		totalCards > 1 ? (maxRotation * 2) / (totalCards - 1) : 0;
-	const rotation = offsetFromCenter * rotationStep;
-
-	// Vertikaler Bogen (Parabel) - Karten in der Mitte sind höher
-	const normalizedOffset =
-		totalCards > 1 ? offsetFromCenter / (totalCards / 2) : 0;
-	const verticalOffset = normalizedOffset ** 2 * 30;
-
-	// Horizontale Verteilung
-	const horizontalSpread = offsetFromCenter * 55;
-
-	// Hover/Selection Anpassungen
-	let translateY = verticalOffset;
-	if (isHovered) translateY -= 35;
-	if (isSelected) translateY -= 45;
-
-	return {
-		transform: `translateX(${horizontalSpread}px) translateY(${translateY}px) rotate(${rotation}deg)`,
-		zIndex: isHovered || isSelected ? 50 : index,
-	};
-}
+// Transform-Konstanten wie in /test/hand (prozentual)
+const ROTATION_STEP = 2; // Grad pro Karte
+const TRANSLATE_X_STEP = 25; // % pro Karte
+const TRANSLATE_Y_STEP = 2; // % pro Karte (für Bogen bei Karten rechts von der Mitte)
+const SELECTED_TRANSLATE_Y = 12; // % Anhebung bei Selection
+const HOVER_TRANSLATE_Y = 8; // % Anhebung bei Hover
 
 export function PlayerHand({
 	cards,
@@ -59,10 +32,17 @@ export function PlayerHand({
 	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 	const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
+	const cardCount = cards.length;
+	const centerIndex = (cardCount - 1) / 2;
+
 	// Wenn der Spieler am Zug ist und eine vorher ausgewählte Karte spielbar ist,
 	// spiele sie automatisch
 	useEffect(() => {
-		if (isMyTurn && selectedCardId && playableCardIds.includes(selectedCardId)) {
+		if (
+			isMyTurn &&
+			selectedCardId &&
+			playableCardIds.includes(selectedCardId)
+		) {
 			onPlayCard(selectedCardId);
 			setSelectedCardId(null);
 		}
@@ -71,7 +51,11 @@ export function PlayerHand({
 	// Wenn sich die spielbaren Karten ändern und die ausgewählte Karte nicht mehr spielbar ist,
 	// deselektiere sie
 	useEffect(() => {
-		if (hasTrickStarted && selectedCardId && !playableCardIds.includes(selectedCardId)) {
+		if (
+			hasTrickStarted &&
+			selectedCardId &&
+			!playableCardIds.includes(selectedCardId)
+		) {
 			setSelectedCardId(null);
 		}
 	}, [hasTrickStarted, selectedCardId, playableCardIds]);
@@ -108,51 +92,57 @@ export function PlayerHand({
 	};
 
 	return (
-		<div className={cn("relative flex items-end justify-center", className)}>
-			<div
-				className="relative flex items-end justify-center"
-				style={{ height: "180px", width: "100%" }}
-			>
-				{cards.map((card, index) => {
-					const isCardPlayable = playableCardIds.includes(card.id);
-					// Karte ist nur dann wirklich "playable" (grün markiert) wenn am Zug
-					const isPlayable = isMyTurn && isCardPlayable;
-					// Karte ist deaktiviert wenn Stich begonnen hat und nicht spielbar
-					const isDisabled = hasTrickStarted && !isCardPlayable;
-					// Karte ist selektierbar wenn nicht deaktiviert
-					const isSelectable = !isDisabled;
-					const isSelected = selectedCardId === card.id;
-					const isHovered = hoveredCardId === card.id && isSelectable;
+		<div
+			className={cn("@container flex items-center justify-center", className)}
+		>
+			{cards.map((card, index) => {
+				const isCardPlayable = playableCardIds.includes(card.id);
+				// Karte ist nur dann wirklich "playable" (grün markiert) wenn am Zug
+				const isPlayable = isMyTurn && isCardPlayable;
+				// Karte ist deaktiviert wenn Stich begonnen hat und nicht spielbar
+				const isDisabled = hasTrickStarted && !isCardPlayable;
+				// Karte ist selektierbar wenn nicht deaktiviert
+				const isSelectable = !isDisabled;
+				const isSelected = selectedCardId === card.id;
+				const isHovered = hoveredCardId === card.id && isSelectable;
 
-					const { transform, zIndex } = calculateCardTransform(
-						index,
-						cards.length,
-						isHovered,
-						isSelected,
-					);
+				// Transform-Berechnung wie in /test/hand (prozentual)
+				const offsetFromCenter = index - centerIndex;
+				const rotation = offsetFromCenter * ROTATION_STEP;
+				const translateX = offsetFromCenter * TRANSLATE_X_STEP;
+				// Bogen-Effekt: nur Karten rechts von der Mitte gehen nach unten
+				const baseTranslateY =
+					offsetFromCenter > 0 ? offsetFromCenter * TRANSLATE_Y_STEP : 0;
 
-					return (
-						<DraggableCard
-							card={card}
-							className="absolute bottom-0 left-1/2 w-20 transition-all duration-200 sm:w-24 md:w-28"
-							isDisabled={isDisabled}
-							isDraggingDisabled={!isMyTurn || isDisabled}
-							isPlayable={isPlayable}
-							isSelectable={isSelectable}
-							isSelected={isSelected}
-							key={card.id}
-							onClick={isSelectable ? () => handleCardClick(card.id) : undefined}
-							onMouseEnter={isSelectable ? () => setHoveredCardId(card.id) : undefined}
-							onMouseLeave={() => setHoveredCardId(null)}
-							style={{
-								transform,
-								zIndex,
-								transformOrigin: "bottom center",
-							}}
-						/>
-					);
-				})}
-			</div>
+				// Hover/Selection Anpassungen
+				let translateY = baseTranslateY;
+				if (isHovered) translateY -= HOVER_TRANSLATE_Y;
+				if (isSelected) translateY -= SELECTED_TRANSLATE_Y;
+
+				return (
+					<DraggableCard
+						card={card}
+						className={cn(
+							"absolute w-1/5 transition-transform duration-200",
+							isSelectable && !isSelected && "hover:-translate-y-[8%]",
+						)}
+						isDisabled={isDisabled}
+						isDraggingDisabled={!isMyTurn || isDisabled}
+						isPlayable={isPlayable}
+						isSelectable={isSelectable}
+						isSelected={isSelected}
+						key={card.id}
+						onClick={isSelectable ? () => handleCardClick(card.id) : undefined}
+						onMouseEnter={
+							isSelectable ? () => setHoveredCardId(card.id) : undefined
+						}
+						onMouseLeave={() => setHoveredCardId(null)}
+						style={{
+							transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
+						}}
+					/>
+				);
+			})}
 		</div>
 	);
 }

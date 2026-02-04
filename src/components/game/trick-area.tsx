@@ -1,10 +1,31 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { CardImage } from "@/components/cards/card-image";
 import { cn } from "@/lib/utils";
 import type { Card } from "@/types/game";
 import type { Player } from "@/types/tables";
+
+// Hook to detect landscape orientation
+function useIsLandscape() {
+	const [isLandscape, setIsLandscape] = useState(false);
+
+	useEffect(() => {
+		const checkOrientation = () => {
+			setIsLandscape(window.innerWidth > window.innerHeight);
+		};
+
+		// Initial check
+		checkOrientation();
+
+		// Listen to resize events
+		window.addEventListener("resize", checkOrientation);
+		return () => window.removeEventListener("resize", checkOrientation);
+	}, []);
+
+	return isLandscape;
+}
 
 interface TrickCard {
 	card: Card;
@@ -18,7 +39,7 @@ interface TrickAreaProps {
 	className?: string;
 }
 
-// Positionen für gespiele Karten basierend auf Spielerposition
+// Positionen für gespiele Karten basierend auf Spielerposition (in %)
 function getCardPosition(
 	playerIndex: number,
 	currentPlayerIndex: number,
@@ -29,14 +50,15 @@ function getCardPosition(
 		(playerIndex - currentPlayerIndex + totalPlayers) % totalPlayers;
 
 	// Positionen: 0 = unten (aktueller Spieler), 1 = links, 2 = oben, 3 = rechts
+	// Werte in % relativ zur Kartengröße
 	const positions: { x: number; y: number; rotation: number }[] = [
-		{ x: 0, y: 40, rotation: 0 }, // Unten (Spieler)
-		{ x: -60, y: 0, rotation: -8 }, // Links
-		{ x: 0, y: -40, rotation: 4 }, // Oben
-		{ x: 60, y: 0, rotation: 12 }, // Rechts
+		{ x: 0, y: 60, rotation: 0 }, // Unten (Spieler)
+		{ x: -80, y: 0, rotation: -8 }, // Links
+		{ x: 0, y: -60, rotation: 4 }, // Oben
+		{ x: 80, y: 0, rotation: 12 }, // Rechts
 	];
 
-	const defaultPosition = { x: 0, y: 40, rotation: 0 };
+	const defaultPosition = { x: 0, y: 60, rotation: 0 };
 	return positions[relativePosition] ?? defaultPosition;
 }
 
@@ -52,12 +74,22 @@ export function TrickArea({
 
 	const canDrop = active?.data?.current?.type === "card";
 	const currentPlayerIndex = players.findIndex((p) => p.id === currentPlayerId);
+	const isLandscape = useIsLandscape();
+
+	// Kartenbreite: 1/5 von max 1200px = max 240px = 20vw (bei 1200px viewport)
+	// Bei einem 1200px viewport: 1200 * 0.2 = 240px
+	// Wir verwenden die gleiche Berechnung wie die Hand: min(20vw, 240px)
+	const cardWidth = "min(20vw, 240px)";
+
+	// Bei Landscape werden alle Karten um 90° gedreht
+	const landscapeRotation = isLandscape ? 90 : 0;
 
 	return (
 		<div
 			className={cn(
 				"relative flex items-center justify-center rounded-3xl transition-all duration-300",
-				"h-56 w-72 sm:h-64 sm:w-80 md:h-72 md:w-96",
+				// Container groß genug für 4 Karten mit Abstand
+				"h-[50vw] w-[60vw] max-h-[500px] max-w-[600px]",
 				isOver &&
 					canDrop &&
 					"scale-105 bg-emerald-500/20 ring-4 ring-emerald-400",
@@ -82,21 +114,21 @@ export function TrickArea({
 					players.length,
 				);
 
+				// Gesamtrotation: Position-Rotation + Landscape-Rotation
+				const totalRotation = position.rotation + landscapeRotation;
+
 				return (
-					<div
-						className="absolute w-20 transition-all duration-300 sm:w-24"
+					<CardImage
+						className="absolute shadow-lg transition-all duration-300"
 						key={`trick-${trickCard.card.id}-${index}`}
+						rank={trickCard.card.rank}
 						style={{
-							transform: `translate(${position.x}px, ${position.y}px) rotate(${position.rotation}deg)`,
+							width: cardWidth,
+							transform: `translateX(${position.x}%) translateY(${position.y}%) rotate(${totalRotation}deg)`,
 							zIndex: index + 1,
 						}}
-					>
-						<CardImage
-							className="shadow-lg"
-							rank={trickCard.card.rank}
-							suit={trickCard.card.suit}
-						/>
-					</div>
+						suit={trickCard.card.suit}
+					/>
 				);
 			})}
 

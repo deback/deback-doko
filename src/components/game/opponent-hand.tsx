@@ -5,95 +5,36 @@ import { cn } from "@/lib/utils";
 
 interface OpponentHandProps {
 	cardCount: number;
-	position: "top" | "left" | "right" | "bottom";
 	className?: string;
 }
 
-function calculateOpponentCardTransform(
-	index: number,
-	totalCards: number,
-	position: "top" | "left" | "right" | "bottom",
-) {
-	const centerIndex = (totalCards - 1) / 2;
-	const offsetFromCenter = index - centerIndex;
+// Transform-Konstanten wie in Hand-Komponente (prozentual)
+const ROTATION_STEP = 2; // Grad pro Karte
+const TRANSLATE_X_STEP = 25; // % pro Karte
+const TRANSLATE_Y_STEP = 2; // % pro Karte (für Bogen bei Karten rechts von der Mitte)
 
-	// Kleinerer Fächer für Gegner
-	const maxRotation = Math.min(20, 2 * totalCards);
-	const rotationStep =
-		totalCards > 1 ? (maxRotation * 2) / (totalCards - 1) : 0;
-	let rotation = offsetFromCenter * rotationStep;
-
-	// Horizontale Verteilung
-	let horizontalSpread = offsetFromCenter * 20;
-
-	// Vertikaler Bogen
-	const normalizedOffset =
-		totalCards > 1 ? offsetFromCenter / (totalCards / 2) : 0;
-	let verticalOffset = normalizedOffset ** 2 * 10;
-
-	// Position-spezifische Anpassungen
-	if (position === "top") {
-		// Oben: Karten sind umgedreht (180°)
-		rotation = -rotation;
-		verticalOffset = -verticalOffset;
-	} else if (position === "left") {
-		// Links: 90° gedreht
-		const temp = horizontalSpread;
-		horizontalSpread = verticalOffset;
-		verticalOffset = temp;
-		rotation += 90;
-	} else if (position === "right") {
-		// Rechts: -90° gedreht
-		const temp = horizontalSpread;
-		horizontalSpread = -verticalOffset;
-		verticalOffset = temp;
-		rotation -= 90;
-	} else if (position === "bottom") {
-		// Unten: Normale Ausrichtung (wie Spieler, aber Kartenrücken)
-		// Keine Änderung nötig
-	}
-
-	return {
-		transform: `translateX(${horizontalSpread}px) translateY(${verticalOffset}px) rotate(${rotation}deg)`,
-		zIndex: index,
-	};
-}
-
-export function OpponentHand({
-	cardCount,
-	position,
-	className,
-}: OpponentHandProps) {
-	const isVertical = position === "left" || position === "right";
-	const isBottom = position === "bottom";
+export function OpponentHand({ cardCount, className }: OpponentHandProps) {
+	const centerIndex = (cardCount - 1) / 2;
 
 	return (
-		<div
-			className={cn(
-				"relative flex items-center justify-center",
-				isVertical ? "h-48 w-16" : isBottom ? "h-24 w-64" : "h-20 w-48",
-				className,
-			)}
-		>
+		<div className={cn("@container flex items-center justify-center", className)}>
 			{Array.from({ length: cardCount }).map((_, index) => {
-				const { transform, zIndex } = calculateOpponentCardTransform(
-					index,
-					cardCount,
-					position,
-				);
+				const offsetFromCenter = index - centerIndex;
+				const rotation = offsetFromCenter * ROTATION_STEP;
+				const translateX = offsetFromCenter * TRANSLATE_X_STEP;
+				// Bogen-Effekt: nur Karten rechts von der Mitte gehen nach unten
+				const translateY = offsetFromCenter > 0 ? offsetFromCenter * TRANSLATE_Y_STEP : 0;
 
 				return (
-					<div
-						className={cn("absolute", isVertical ? "h-12 w-8" : "h-16 w-11")}
+					<CardImage
+						backDesign="blue"
+						className="absolute w-1/5 transition-transform duration-200"
 						key={`opponent-card-${index}`}
+						showBack
 						style={{
-							transform,
-							zIndex,
-							transformOrigin: "center center",
+							transform: `translateX(${translateX}%) translateY(${translateY}%) rotate(${rotation}deg)`,
 						}}
-					>
-						<CardImage backDesign="blue" className="h-full w-full" showBack />
-					</div>
+					/>
 				);
 			})}
 		</div>
