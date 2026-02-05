@@ -1,5 +1,15 @@
+"use client";
+
+import type { Ref } from "react";
 import Image from "next/image";
+import { type TargetAndTransition, type Variants, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+
+const THROW_TRANSITION = {
+	type: "tween" as const,
+	duration: 0.5,
+	ease: [0.25, 0.1, 0.25, 1] as const,
+};
 
 export default function Card({
 	file,
@@ -7,18 +17,26 @@ export default function Card({
 	className,
 	selected = false,
 	onClick,
+	variants,
+	initial,
+	animate,
+	ref,
 }: {
 	file: string;
 	angle: number;
 	className?: string;
 	selected?: boolean;
 	onClick?: () => void;
+	variants?: Variants;
+	initial?: string | false | TargetAndTransition;
+	animate?: string | TargetAndTransition;
+	ref?: Ref<HTMLButtonElement>;
 }) {
-	const Component = onClick ? "button" : "div";
 	return (
-		<Component
+		<motion.button
+			animate={animate}
 			className={cn(
-				"absolute w-[30vw] max-w-56 aspect-5/7 origin-[50%_650%] shadow-md rounded-[1cqw] xl:origin-[50%_850%] transition-transform duration-200",
+				"absolute w-[30vw] max-w-56 aspect-5/7 origin-[50%_650%] shadow-md rounded-[1cqw] xl:origin-[50%_850%] transition-[translate,box-shadow] duration-200",
 				{ "cursor-pointer hover:-translate-y-[6%]": onClick },
 				{
 					"-translate-y-[10%] hover:-translate-y-[10%] ring-2 ring-primary":
@@ -26,13 +44,17 @@ export default function Card({
 				},
 				className,
 			)}
+			initial={initial}
 			onClick={onClick}
+			ref={ref}
 			style={{
-				transform: `rotate(${angle}deg)`,
+				rotate: angle,
 			}}
-			type={onClick ? "button" : undefined}
+			transition={THROW_TRANSITION}
+			type="button"
+			variants={variants}
 		>
 			<Image alt={file} draggable={false} fill src={`/poker/${file}`} />
-		</Component>
+		</motion.button>
 	);
 }

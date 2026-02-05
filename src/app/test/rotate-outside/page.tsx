@@ -1,6 +1,8 @@
 "use client";
+
+import { useState } from "react";
 import DropZone from "./drop-zone";
-import Hand from "./hand";
+import Hand, { type CardOrigin } from "./hand";
 
 const CARD_FILES: string[] = [
 	"TH.svg",
@@ -16,14 +18,33 @@ const CARD_FILES: string[] = [
 	"QC.svg",
 	"6C.svg",
 ];
+
 export default function RotateOutsidePage() {
+	const [playedCard, setPlayedCard] = useState<string | null>(null);
+	const [cardOrigin, setCardOrigin] = useState<CardOrigin | null>(null);
+	const [handCards, setHandCards] = useState(CARD_FILES);
+
+	function handlePlayCard(file: string, origin: CardOrigin) {
+		setCardOrigin(origin);
+		setPlayedCard(file);
+		setHandCards((prev) => {
+			const idx = prev.indexOf(file);
+			if (idx === -1) return prev;
+			return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+		});
+	}
+
 	return (
 		<>
-			<Hand cards={CARD_FILES} position="bottom" />
+			<Hand
+				cards={handCards}
+				onPlayCard={handlePlayCard}
+				position="bottom"
+			/>
 			<Hand cards={CARD_FILES} opponent position="top" />
 			<Hand cards={CARD_FILES} opponent position="left" />
 			<Hand cards={CARD_FILES} opponent position="right" />
-			<DropZone />
+			<DropZone cardOrigin={cardOrigin} playedCard={playedCard} />
 		</>
 	);
 }
