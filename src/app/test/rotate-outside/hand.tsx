@@ -12,7 +12,7 @@ export interface CardOrigin {
 	rotate: number;
 }
 
-const CLOSE_GAP_DELAY = 1000;
+const CLOSE_GAP_DELAY = 600;
 
 export default function Hand({
 	cards,

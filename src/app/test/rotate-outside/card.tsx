@@ -35,7 +35,8 @@ export default function Card({
 	// DropZone cards without rotate in animate → rotation via style (instant).
 	const mergedAnimate = animate ?? { rotate: angle };
 	const hasAnimatedRotation = animate != null && "rotate" in animate;
-	const rotateStyle = hasAnimatedRotation || !animate ? undefined : { rotate: angle };
+	const rotateStyle =
+		hasAnimatedRotation || !animate ? undefined : { rotate: angle };
 
 	return (
 		<motion.button
@@ -56,7 +57,7 @@ export default function Card({
 			transition={THROW_TRANSITION}
 			type="button"
 		>
-			<Image alt={file} draggable={false} fill src={`/poker/${file}`} />
+			<Image alt={file} draggable={false} fill src={`/doko/${file}`} />
 		</motion.button>
 	);
 }
