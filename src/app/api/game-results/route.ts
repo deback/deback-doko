@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
-import { env } from "@/env";
 import { db } from "@/server/db";
 import { gameResult, playerGameResult, user } from "@/server/db/schema";
 

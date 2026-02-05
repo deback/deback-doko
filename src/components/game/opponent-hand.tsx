@@ -32,6 +32,7 @@ export function OpponentHand({ cardCount, className }: OpponentHandProps) {
 					<CardImage
 						backDesign="blue"
 						className="absolute w-[20%] landscape:w-[15%] transition-transform duration-200"
+						// biome-ignore lint/suspicious/noArrayIndexKey: opponent cards are identical, no stable ID available
 						key={`opponent-card-${index}`}
 						showBack
 						style={{
