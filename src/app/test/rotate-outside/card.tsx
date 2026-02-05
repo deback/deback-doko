@@ -1,8 +1,8 @@
 "use client";
 
-import type { Ref } from "react";
+import { motion, type TargetAndTransition } from "framer-motion";
 import Image from "next/image";
-import { type TargetAndTransition, type Variants, motion } from "framer-motion";
+import type { Ref } from "react";
 import { cn } from "@/lib/utils";
 
 const THROW_TRANSITION = {
@@ -17,7 +17,6 @@ export default function Card({
 	className,
 	selected = false,
 	onClick,
-	variants,
 	initial,
 	animate,
 	ref,
@@ -27,9 +26,8 @@ export default function Card({
 	className?: string;
 	selected?: boolean;
 	onClick?: () => void;
-	variants?: Variants;
-	initial?: string | false | TargetAndTransition;
-	animate?: string | TargetAndTransition;
+	initial?: false | TargetAndTransition;
+	animate?: TargetAndTransition;
 	ref?: Ref<HTMLButtonElement>;
 }) {
 	return (
@@ -47,12 +45,9 @@ export default function Card({
 			initial={initial}
 			onClick={onClick}
 			ref={ref}
-			style={{
-				rotate: angle,
-			}}
+			style={{ rotate: angle }}
 			transition={THROW_TRANSITION}
 			type="button"
-			variants={variants}
 		>
 			<Image alt={file} draggable={false} fill src={`/poker/${file}`} />
 		</motion.button>

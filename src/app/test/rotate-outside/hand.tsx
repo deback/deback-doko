@@ -88,11 +88,11 @@ export default function Hand({
 							className="top-0 left-0 w-full h-full"
 							file={`${opponent ? "1B.svg" : card}`}
 							key={`${position}-${index}-${card}`}
-							ref={!opponent ? setCardRef(index) : undefined}
-							selected={!opponent && selectedIndex === index}
 							onClick={
 								opponent ? undefined : () => handleClick(index)
 							}
+							ref={!opponent ? setCardRef(index) : undefined}
+							selected={!opponent && selectedIndex === index}
 						/>
 					);
 				})}

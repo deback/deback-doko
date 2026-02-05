@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, scale } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import Card from "./card";
 import type { CardOrigin } from "./hand";
@@ -45,7 +45,6 @@ export default function DropZone({
 		}
 	}, [playedCard]);
 
-	// Calculate initial position relative to DropZone center
 	function getInitialFromOrigin(targetAngle: number) {
 		if (!cardOrigin || !dropZoneRef.current) return undefined;
 		const dropRect = dropZoneRef.current.getBoundingClientRect();
@@ -55,7 +54,6 @@ export default function DropZone({
 		const originCenterY = cardOrigin.y + cardOrigin.height / 2;
 		const spinOptions = [-360, 0, 360];
 		const spin = spinOptions[Math.floor(Math.random() * 3)] ?? 0;
-		console.log(cardOrigin.width, dropRect.width);
 		return {
 			x: originCenterX - dropCenterX,
 			y: originCenterY - dropCenterY,
