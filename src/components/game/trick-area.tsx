@@ -1,7 +1,6 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { motion } from "framer-motion";
 import {
 	useCallback,
 	useEffect,
@@ -103,6 +102,23 @@ function getEntryOffset(position: RelativePosition): {
 			return { x: 300, y: 0 };
 		case "bottom":
 			return { x: 0, y: 300 };
+	}
+}
+
+// Get the position offset for cards during play (30% of card size)
+function getPlayOffset(position: RelativePosition): {
+	x: string;
+	y: string;
+} {
+	switch (position) {
+		case "top":
+			return { x: "0%", y: "-30%" };
+		case "left":
+			return { x: "-30%", y: "0%" };
+		case "right":
+			return { x: "30%", y: "0%" };
+		case "bottom":
+			return { x: "0%", y: "30%" };
 	}
 }
 
@@ -423,20 +439,23 @@ export function TrickArea({
 
 						// End-of-trick animation phases
 						if (isAnimating) {
+							// Get position offset for this card
+							const playOffset = getPlayOffset(position);
+
 							// Calculate animation properties based on phase
 							let animateProps: {
-								x: number;
-								y: number;
 								scale: number;
 								rotate: number;
 								opacity: number;
+								x: number | string;
+								y: number | string;
 							};
 
 							if (animationPhase === "waiting") {
 								// Keep cards in their normal positions
 								animateProps = {
-									x: 0,
-									y: 0,
+									x: playOffset.x,
+									y: playOffset.y,
 									scale: 1,
 									rotate: baseAngle,
 									opacity: 1,
@@ -444,8 +463,8 @@ export function TrickArea({
 							} else if (animationPhase === "collecting") {
 								// Cards move to center
 								animateProps = {
-									x: 0,
-									y: 0,
+									x: "0%",
+									y: "0%",
 									scale: 0.9,
 									rotate: 0,
 									opacity: 1,
@@ -461,8 +480,8 @@ export function TrickArea({
 							} else {
 								// flipping phase
 								animateProps = {
-									x: 0,
-									y: 0,
+									x: "0%",
+									y: "0%",
 									scale: 0.9,
 									rotate: 0,
 									opacity: 1,
@@ -470,39 +489,55 @@ export function TrickArea({
 							}
 
 							return (
-								<motion.div
+								<Card
+									angle={0}
 									animate={animateProps}
-									className="absolute"
-									initial={
-										animationPhase === "waiting"
-											? { x: 0, y: 0, scale: 1, rotate: baseAngle, opacity: 1 }
-											: false
-									}
+									card={trickCard.card}
+									className="origin-center!"
+									initial={{
+										x: playOffset.x,
+										y: playOffset.y,
+										scale: 1,
+										rotate: baseAngle,
+										opacity: 1,
+									}}
 									key={trickCard.card.id}
-									transition={
-										animationPhase === "collecting"
-											? { duration: 0.4, ease: "easeInOut" }
-											: animationPhase === "toWinner"
-												? { duration: 0.5, ease: "easeIn" }
-												: { duration: 0.3 }
+									flipProgress={
+										animationPhase === "flipping" ||
+										animationPhase === "toWinner"
+											? flipProgress
+											: 0
 									}
-								>
-									<Card
-										angle={0}
-										card={trickCard.card}
-										className={
-											animationPhase === "waiting"
-												? positionClass
-												: "origin-center!"
-										}
-										flipProgress={
-											animationPhase === "flipping" ||
-											animationPhase === "toWinner"
-												? flipProgress
-												: 0
-										}
-									/>
-								</motion.div>
+								/>
+							);
+						}
+
+						// New opponent card - fly in from their position
+						if (flyInCardIds.has(trickCard.card.id)) {
+							const entryOffset = getEntryOffset(position);
+							const spinOptions = [-360, 0, 360];
+							const spin =
+								spinOptions[Math.floor(Math.random() * 3)] ?? 0;
+
+							return (
+								<Card
+									angle={0}
+									animate={{
+										x: 0,
+										y: 0,
+										scale: 1,
+										rotate: baseAngle,
+									}}
+									card={trickCard.card}
+									className={positionClass}
+									initial={{
+										x: entryOffset.x,
+										y: entryOffset.y,
+										scale: 0.6,
+										rotate: baseAngle + spin,
+									}}
+									key={trickCard.card.id}
+								/>
 							);
 						}
 
