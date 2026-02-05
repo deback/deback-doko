@@ -30,16 +30,18 @@ export default function Card({
 	animate?: TargetAndTransition;
 	ref?: Ref<HTMLButtonElement>;
 }) {
-	// If an explicit animate is provided (DropZone), use style for rotation.
-	// Otherwise (Hand), use animate so framer-motion interpolates angle changes.
+	// Hand cards: no animate prop → rotation via framer-motion animate for smooth interpolation.
+	// DropZone cards with rotate in animate → framer-motion controls rotation, no style needed.
+	// DropZone cards without rotate in animate → rotation via style (instant).
 	const mergedAnimate = animate ?? { rotate: angle };
-	const rotateStyle = animate ? { rotate: angle } : undefined;
+	const hasAnimatedRotation = animate != null && "rotate" in animate;
+	const rotateStyle = hasAnimatedRotation || !animate ? undefined : { rotate: angle };
 
 	return (
 		<motion.button
 			animate={mergedAnimate}
 			className={cn(
-				"absolute w-[30vw] max-w-56 aspect-5/7 origin-[50%_650%] shadow-md rounded-[1cqw] xl:origin-[50%_850%] transition-[translate,box-shadow] duration-200",
+				"absolute w-[30vw] max-w-56 aspect-5/7 origin-[50%_650%] shadow-md rounded-[1cqw] xl:origin-[50%_850%] transition-[translate,box-shadow] duration-200 select-none",
 				{ "cursor-pointer hover:-translate-y-[6%]": onClick },
 				{
 					"-translate-y-[10%] hover:-translate-y-[10%] ring-2 ring-primary":

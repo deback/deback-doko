@@ -31,7 +31,7 @@ export default function DropZone({
 	const snapshotRef = useRef<{
 		card: string;
 		angle: number;
-		initial: { x: number; y: number; scale: number };
+		initial: { x: number; y: number; scale: number; rotate: number };
 	} | null>(null);
 
 	useEffect(() => {
@@ -55,13 +55,17 @@ export default function DropZone({
 		const dropCenterY = dropRect.top + dropRect.height / 2;
 		const originCenterX = cardOrigin.x + cardOrigin.width / 2;
 		const originCenterY = cardOrigin.y + cardOrigin.height / 2;
+		const angle = randomAngle();
+		const spinOptions = [-360, 0, 360];
+		const spin = spinOptions[Math.floor(Math.random() * 3)] ?? 0;
 		snapshotRef.current = {
 			card: playedCard,
-			angle: randomAngle(),
+			angle,
 			initial: {
 				x: originCenterX - dropCenterX,
 				y: originCenterY - dropCenterY,
 				scale: 1.2,
+				rotate: angle + spin,
 			},
 		};
 	}
@@ -111,11 +115,12 @@ export default function DropZone({
 					<AnimatePresence mode="popLayout">
 						{playedCard && snapshotRef.current?.card === playedCard && (
 							<Card
-								angle={snapshotRef.current.angle}
+								angle={0}
 								animate={{
 									x: 0,
 									y: 0,
 									scale: 1,
+									rotate: snapshotRef.current.angle,
 								}}
 								className="origin-center! translate-y-[30%]"
 								file={playedCard}
