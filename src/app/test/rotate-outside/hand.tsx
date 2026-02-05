@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import Card from "./card";
 
@@ -10,6 +13,8 @@ export default function Hand({
 	position: "bottom" | "top" | "left" | "right";
 	opponent?: boolean;
 }) {
+	const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
 	return (
 		<div
 			className={cn(
@@ -43,6 +48,15 @@ export default function Hand({
 							className="top-0 left-0 w-full h-full"
 							file={`${opponent ? "1B.svg" : card}`}
 							key={`${position}-${index}-${card}`}
+							selected={!opponent && selectedIndex === index}
+							onClick={
+								opponent
+									? undefined
+									: () =>
+											setSelectedIndex((prev) =>
+												prev === index ? null : index,
+											)
+							}
 						/>
 					);
 				})}
