@@ -504,53 +504,45 @@ export function TrickArea({
 							);
 						}
 
-						// New opponent card - fly in from their position
-						if (flyInCardIds.has(trickCard.card.id)) {
-							const entryOffset = getEntryOffset(position);
-							const playOffset = getPlayOffset(position);
-							const spinOptions = [-360, 0, 360];
-							const spin =
-								spinOptions[Math.floor(Math.random() * 3)] ?? 0;
+						// Normal card rendering (including fly-in for new opponent cards)
+						const playOffset = getPlayOffset(position);
+						const isNewOpponentCard = flyInCardIds.has(trickCard.card.id);
 
-							return (
-								<Card
-									angle={0}
-									animate={{
-										x: playOffset.x,
-										y: playOffset.y,
-										scale: 1,
-										rotate: baseAngle,
-									}}
-									card={trickCard.card}
-									className="origin-center!"
-									initial={{
-										x: entryOffset.x,
-										y: entryOffset.y,
-										scale: 0.6,
-										rotate: baseAngle + spin,
-									}}
-									key={trickCard.card.id}
-								/>
-							);
+						// For new opponent cards, start from entry position
+						// For existing cards, use initial={false} to preserve current animated state
+						let initialProps: false | {
+							x: number | string;
+							y: number | string;
+							scale: number;
+							rotate: number;
+						} = false;
+
+						if (isNewOpponentCard) {
+							const entryOffset = getEntryOffset(position);
+							// Use card id for deterministic spin instead of Math.random()
+							const spinIndex = trickCard.card.id.charCodeAt(0) % 3;
+							const spinOptions = [-360, 0, 360];
+							const spin = spinOptions[spinIndex] ?? 0;
+							initialProps = {
+								x: entryOffset.x,
+								y: entryOffset.y,
+								scale: 0.6,
+								rotate: baseAngle + spin,
+							};
 						}
 
-						// Normal static card - use Framer Motion for position
-						const playOffset = getPlayOffset(position);
 						return (
 							<Card
 								angle={0}
 								animate={{
 									x: playOffset.x,
 									y: playOffset.y,
+									scale: 1,
 									rotate: baseAngle,
 								}}
 								card={trickCard.card}
 								className="origin-center!"
-								initial={{
-									x: playOffset.x,
-									y: playOffset.y,
-									rotate: baseAngle,
-								}}
+								initial={initialProps}
 								key={trickCard.card.id}
 							/>
 						);
