@@ -89,6 +89,23 @@ function getWinnerOffset(winnerPosition: RelativePosition): {
 	}
 }
 
+// Get the entry offset for opponent card fly-in animation
+function getEntryOffset(position: RelativePosition): {
+	x: number;
+	y: number;
+} {
+	switch (position) {
+		case "top":
+			return { x: 0, y: -300 };
+		case "left":
+			return { x: -300, y: 0 };
+		case "right":
+			return { x: 300, y: 0 };
+		case "bottom":
+			return { x: 0, y: 300 };
+	}
+}
+
 export function TrickArea({
 	trickCards,
 	players,
@@ -124,6 +141,9 @@ export function TrickArea({
 	} | null>(null);
 
 	const currentPlayerIndex = players.findIndex((p) => p.id === currentPlayerId);
+
+	// Track known card IDs to detect newly arrived opponent cards
+	const knownCardIdsRef = useRef<Set<string>>(new Set());
 
 	// Animation state for trick completion
 	const [animationPhase, setAnimationPhase] =
@@ -249,6 +269,7 @@ export function TrickArea({
 			setCachedTrickCards([]);
 			setCachedWinnerId(null);
 			setFlipProgress(0);
+			knownCardIdsRef.current.clear();
 		}
 	}, [trickCards.length, animationPhase]);
 
@@ -278,6 +299,23 @@ export function TrickArea({
 			},
 		};
 	}
+
+	// Detect newly arrived opponent cards for fly-in animation (synchronous)
+	const flyInCardIds = new Set<string>();
+	for (const tc of trickCards) {
+		if (
+			!knownCardIdsRef.current.has(tc.card.id) &&
+			tc.playerId !== currentPlayerId
+		) {
+			flyInCardIds.add(tc.card.id);
+		}
+	}
+
+	// Update known cards ref AFTER render via useEffect so fly-in detection
+	// remains stable across re-renders within the same commit
+	useEffect(() => {
+		knownCardIdsRef.current = new Set(trickCards.map((tc) => tc.card.id));
+	}, [trickCards]);
 
 	// Determine which cards to render based on animation phase
 	const isAnimating = animationPhase !== "playing";
@@ -465,6 +503,35 @@ export function TrickArea({
 										}
 									/>
 								</motion.div>
+							);
+						}
+
+						// New opponent card - fly in from their position
+						if (flyInCardIds.has(trickCard.card.id)) {
+							const entryOffset = getEntryOffset(position);
+							const spinOptions = [-360, 0, 360];
+							const spin =
+								spinOptions[Math.floor(Math.random() * 3)] ?? 0;
+
+							return (
+								<Card
+									angle={0}
+									animate={{
+										x: 0,
+										y: 0,
+										scale: 1,
+										rotate: baseAngle,
+									}}
+									card={trickCard.card}
+									className={positionClass}
+									initial={{
+										x: entryOffset.x,
+										y: entryOffset.y,
+										scale: 0.6,
+										rotate: baseAngle + spin,
+									}}
+									key={trickCard.card.id}
+								/>
 							);
 						}
 

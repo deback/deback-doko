@@ -691,8 +691,14 @@ export default class Server implements Party.Server {
 
 	async playCard(cardId: string, playerId: string, sender: Party.Connection) {
 		const gameState = this.games.get(this.room.id);
-		if (!gameState || !gameState.gameStarted) {
+		if (!gameState || !gameState.gameStarted || gameState.gameEnded) {
 			this.sendGameError(sender, "Spiel wurde noch nicht gestartet.");
+			return;
+		}
+
+		// Block play during trick completion animation
+		if (gameState.currentTrick.completed || gameState.currentTrick.cards.length >= 4) {
+			this.sendGameError(sender, "Stich wird gerade ausgewertet.");
 			return;
 		}
 
