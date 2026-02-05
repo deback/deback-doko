@@ -82,6 +82,7 @@ interface GameState {
 type GameEvent =
 	| { type: "get-state" }
 	| { type: "play-card"; cardId: string; playerId: string }
+	| { type: "auto-play" }
 	| { type: "start-game"; players: Player[]; tableId: string }
 	| {
 			type: "spectate-game";
@@ -401,6 +402,10 @@ export default class Server implements Party.Server {
 
 			case "play-card":
 				await this.playCard(event.cardId, event.playerId, sender);
+				break;
+
+			case "auto-play":
+				await this.autoPlay(sender);
 				break;
 
 			case "spectate-game":
@@ -1132,6 +1137,35 @@ export default class Server implements Party.Server {
 	): boolean {
 		const playableCards = this.getPlayableCards(hand, currentTrick, trump);
 		return playableCards.some((c) => c.id === card.id);
+	}
+
+	async autoPlay(sender: Party.Connection) {
+		const gameState = this.games.get(this.room.id);
+		if (!gameState || !gameState.gameStarted || gameState.gameEnded) {
+			this.sendGameError(sender, "Spiel läuft nicht.");
+			return;
+		}
+
+		const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+		if (!currentPlayer) {
+			this.sendGameError(sender, "Kein aktueller Spieler.");
+			return;
+		}
+
+		const hand = gameState.hands[currentPlayer.id];
+		if (!hand || hand.length === 0) {
+			this.sendGameError(sender, "Keine Karten auf der Hand.");
+			return;
+		}
+
+		const playableCards = this.getPlayableCards(hand, gameState.currentTrick, gameState.trump);
+		const cardToPlay = playableCards[0];
+		if (!cardToPlay) {
+			this.sendGameError(sender, "Keine spielbare Karte gefunden.");
+			return;
+		}
+
+		await this.playCard(cardToPlay.id, currentPlayer.id, sender);
 	}
 
 	sendGameState(conn: Party.Connection, gameState: GameState) {

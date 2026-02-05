@@ -23,6 +23,7 @@ export function GameClient({
 		isConnected,
 		isSpectator: spectatorMode,
 		playCard,
+		autoPlay,
 	} = useGameConnection({
 		gameId,
 		player,
@@ -65,6 +66,7 @@ export function GameClient({
 
 	return (
 		<GameBoard
+			autoPlay={autoPlay}
 			currentPlayer={player}
 			gameState={gameState}
 			playCard={playCard}

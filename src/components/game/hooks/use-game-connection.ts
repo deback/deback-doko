@@ -17,6 +17,7 @@ interface UseGameConnectionReturn {
 	isConnected: boolean;
 	isSpectator: boolean;
 	playCard: (cardId: string) => void;
+	autoPlay: () => void;
 }
 
 export function useGameConnection({
@@ -124,11 +125,19 @@ export function useGameConnection({
 		[gameState, player.id],
 	);
 
+	const autoPlay = useCallback(() => {
+		if (!socketRef.current || !gameState) return;
+
+		const event: GameEvent = { type: "auto-play" };
+		socketRef.current.send(JSON.stringify(event));
+	}, [gameState]);
+
 	return {
 		gameState,
 		error,
 		isConnected,
 		isSpectator: spectatorMode,
 		playCard,
+		autoPlay,
 	};
 }

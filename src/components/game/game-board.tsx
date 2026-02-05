@@ -10,7 +10,7 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { Eye, X } from "lucide-react";
+import { Bot, Eye, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -28,6 +28,7 @@ interface GameBoardProps {
 	gameState: GameState;
 	currentPlayer: Player;
 	playCard: (cardId: string) => void;
+	autoPlay: () => void;
 }
 
 // Sortier- und Spiellogik aus game-client.tsx
@@ -165,6 +166,7 @@ export function GameBoard({
 	gameState,
 	currentPlayer,
 	playCard,
+	autoPlay,
 }: GameBoardProps) {
 	const dndContextId = useId();
 
@@ -507,6 +509,18 @@ export function GameBoard({
 					</div>
 				)}
 			</div>
+
+			{/* Auto-Play Test-Button */}
+			{process.env.NODE_ENV === "development" && (
+				<button
+					className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-full bg-amber-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-amber-600"
+					onClick={autoPlay}
+					type="button"
+				>
+					<Bot className="h-4 w-4" />
+					Auto-Play
+				</button>
+			)}
 
 			{/* Spielende */}
 			{gameState.gameEnded && showGameEndDialog && (

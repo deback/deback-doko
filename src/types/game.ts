@@ -61,6 +61,7 @@ export interface GameState {
 export type GameEvent =
 	| { type: "get-state" }
 	| { type: "play-card"; cardId: string; playerId: string }
+	| { type: "auto-play" }
 	| {
 			type: "start-game";
 			players: Array<{ id: string; name: string }>;
