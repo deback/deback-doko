@@ -314,6 +314,8 @@ export function TrickArea({
 				rotate: angle + spin,
 			},
 		};
+		// Store the angle in anglesRef so getCardAngle returns the same value
+		anglesRef.current.set(playedCard.card.id, angle);
 	}
 
 	// Detect newly arrived opponent cards for fly-in animation (synchronous)
