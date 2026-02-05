@@ -4,7 +4,8 @@
 			"Bash(pnpm biome:*)",
 			"Bash(pnpm typecheck:*)",
 			"Bash(pnpm db:generate:*)",
-			"Bash(test:*)"
+			"Bash(test:*)",
+			"Bash(xxd:*)"
 		]
 	}
 }

@@ -3,7 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import Card from "./card";
+import Card, { CARD_SIZE } from "./card";
 
 export interface CardOrigin {
 	x: number;
@@ -175,7 +175,7 @@ export default function Hand({
 				},
 			)}
 		>
-			<div className="@container relative w-[30vw] max-w-40 lg:max-w-56 aspect-5/7">
+			<div className={`@container relative ${CARD_SIZE}`}>
 				{cards.map((card, index) => {
 					const t = index - (cards.length - 1) / 2;
 					const angle = t * 1.2;

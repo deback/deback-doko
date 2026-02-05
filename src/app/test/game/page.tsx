@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/core";
 import Image from "next/image";
 import { useCallback, useId, useState } from "react";
+import { CARD_SIZE } from "./card";
 import DropZone from "./drop-zone";
 import Hand, { type CardOrigin } from "./hand";
 
@@ -110,7 +111,7 @@ export default function RotateOutsidePage() {
 			<DropZone cardOrigin={cardOrigin} playedCard={playedCard} />
 			<DragOverlay dropAnimation={null}>
 				{activeDragCard && (
-					<div className="relative w-[30vw] max-w-56 aspect-5/7">
+					<div className={`relative ${CARD_SIZE}`}>
 						<Image
 							alt={activeDragCard}
 							className="rounded-[1cqw] shadow-xl"

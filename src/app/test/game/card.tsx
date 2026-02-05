@@ -9,6 +9,9 @@ import Image from "next/image";
 import type { Ref } from "react";
 import { cn } from "@/lib/utils";
 
+export const CARD_SIZE =
+	"w-[30vw] max-w-40 lg:max-w-56 landscape:w-[30vh] landscape:max-w-28 lg:landscape:max-w-56 aspect-5/7";
+
 const THROW_TRANSITION = {
 	type: "tween" as const,
 	duration: 0.5,
@@ -53,7 +56,7 @@ export default function Card({
 		<motion.button
 			animate={mergedAnimate}
 			className={cn(
-				"absolute w-[30vw] max-w-56 aspect-5/7 origin-[50%_650%] shadow-md rounded-[5cqw] xl:origin-[50%_850%] transition-[translate,box-shadow] duration-200 select-none",
+				`absolute ${CARD_SIZE} origin-[50%_650%] shadow-md rounded-[5cqw] xl:origin-[50%_850%] transition-[translate,box-shadow] duration-200 select-none`,
 				{ "cursor-pointer hover:-translate-y-[6%]": onClick },
 				{
 					"-translate-y-[10%] hover:-translate-y-[10%] ring-2 ring-primary":

@@ -2,7 +2,13 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { AnimatePresence } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { cn } from "@/lib/utils";
 import Card from "./card";
 import type { CardOrigin } from "./hand";
@@ -18,6 +24,19 @@ const OPPONENT_CARDS: {
 
 function randomAngle() {
 	return Math.random() * 40 - 20;
+}
+
+const SHORT_SCREEN_QUERY = "(max-height: 500px)";
+const subscribe = (cb: () => void) => {
+	const mql = window.matchMedia(SHORT_SCREEN_QUERY);
+	mql.addEventListener("change", cb);
+	return () => mql.removeEventListener("change", cb);
+};
+const getSnapshot = () => window.matchMedia(SHORT_SCREEN_QUERY).matches;
+const getServerSnapshot = () => false;
+
+function useIsShortScreen() {
+	return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 export default function DropZone({
@@ -45,6 +64,7 @@ export default function DropZone({
 		[setDroppableRef],
 	);
 	const canDrop = active != null;
+	const isShortScreen = useIsShortScreen();
 	const snapshotRef = useRef<{
 		card: string;
 		angle: number;
@@ -97,42 +117,51 @@ export default function DropZone({
 					: "border-red-500",
 
 				// -- Top --
-				"top-[calc(min(30vw,10rem)*1.4*0.2)]",
-				"portrait:top-[calc(min(30vw,10rem)*1.4/3)]",
-				"lg:top-[calc(min(30vw,14rem)*1.4/3)]",
+			"top-[calc(min(30vw,10rem)*1.4*0.2)]",
+			"portrait:top-[calc(min(30vw,10rem)*1.4/3)]",
+			"lg:top-[calc(min(30vw,14rem)*1.4/3)]",
 
-				// -- Bottom --
-				"bottom-[calc(min(30vw,10rem)*1.4*2/3)]",
-				"sm:bottom-[calc(min(30vw,10rem)*1.4/2)]",
-				"landscape:bottom-[calc(min(30vw,10rem)*1.4/3)]",
-				"lg:bottom-[calc(min(30vw,14rem)*1.4*2/3)]",
-				"lg:landscape:bottom-[calc(min(30vw,14rem)*1.4/2)]",
+			// -- Bottom: matches Hand translate-y at each breakpoint --
+			"bottom-[calc(min(30vw,10rem)*1.4*2/3)]",
+			"sm:bottom-[calc(min(30vw,10rem)*1.4/2)]",
+			"landscape:bottom-[calc(min(30vh,7rem)*1.4/3)]",
+			"lg:bottom-[calc(min(30vw,14rem)*1.4/2)]",
+			"lg:landscape:bottom-[calc(min(30vw,14rem)*1.4/2)]",
 
-				// -- Left/Right --
-				"left-[calc(min(30vw,10rem)*0.4)]",
-				"right-[calc(min(30vw,10rem)*0.4)]",
-				"lg:left-[calc(min(30vw,14rem)*0.4)]",
-				"lg:right-[calc(min(30vw,14rem)*0.4)]",
+			// -- Left/Right --
+			"left-[calc(min(30vw,10rem)*0.4)]",
+			"right-[calc(min(30vw,10rem)*0.4)]",
+			"landscape:left-[calc(min(30vh,7rem)*0.4)]",
+			"landscape:right-[calc(min(30vh,7rem)*0.4)]",
+			"lg:left-[calc(min(30vw,14rem)*0.4)]",
+			"lg:right-[calc(min(30vw,14rem)*0.4)]",
 			)}
 			ref={mergedRef}
 		>
 			{mounted && (
 				<div className="relative w-full h-full flex items-center justify-center">
-					{OPPONENT_CARDS.map((card) => (
-						<Card
-							angle={anglesRef.current.get(card.position) ?? 0}
-							className={[
-								"origin-center!",
-								card.position === "top" && "-translate-y-[30%]",
-								card.position === "left" && "-translate-x-[30%]",
-								card.position === "right" && "translate-x-[30%]",
-							]
-								.filter(Boolean)
-								.join(" ")}
-							file={card.file}
-							key={card.position}
-						/>
-					))}
+					{OPPONENT_CARDS.map((card) => {
+						const shortScreenOffset =
+							isShortScreen && card.position === "top" ? 90 : 0;
+						return (
+							<Card
+								angle={
+									(anglesRef.current.get(card.position) ?? 0) +
+									shortScreenOffset
+								}
+								className={[
+									"origin-center!",
+									card.position === "top" && "-translate-y-[30%]",
+									card.position === "left" && "-translate-x-[30%]",
+									card.position === "right" && "translate-x-[30%]",
+								]
+									.filter(Boolean)
+									.join(" ")}
+								file={card.file}
+								key={card.position}
+							/>
+						);
+					})}
 					<AnimatePresence mode="popLayout">
 						{playedCard && snapshotRef.current?.card === playedCard && (
 							<Card
@@ -141,7 +170,9 @@ export default function DropZone({
 									x: 0,
 									y: 0,
 									scale: 1,
-									rotate: snapshotRef.current.angle,
+									rotate:
+										snapshotRef.current.angle +
+										(isShortScreen ? 90 : 0),
 								}}
 								className="origin-center! translate-y-[30%]"
 								file={playedCard}
