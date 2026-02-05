@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import Card from "./card";
 
@@ -12,33 +12,45 @@ export interface CardOrigin {
 	rotate: number;
 }
 
+const CLOSE_GAP_DELAY = 1000;
+
 export default function Hand({
 	cards,
 	position,
 	opponent = false,
 	onPlayCard,
+	onRemoveCard,
 }: {
 	cards: string[];
 	position: "bottom" | "top" | "left" | "right";
 	opponent?: boolean;
 	onPlayCard?: (file: string, origin: CardOrigin) => void;
+	onRemoveCard?: (file: string) => void;
 }) {
 	const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-	const cardRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+	const [ghostFile, setGhostFile] = useState<string | null>(null);
+	const cardRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+	const ghostTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	const setCardRef = useCallback(
-		(index: number) => (el: HTMLButtonElement | null) => {
-			if (el) cardRefs.current.set(index, el);
-			else cardRefs.current.delete(index);
+		(file: string) => (el: HTMLButtonElement | null) => {
+			if (el) cardRefs.current.set(file, el);
+			else cardRefs.current.delete(file);
 		},
 		[],
 	);
 
-	function handleClick(index: number) {
+	useEffect(() => {
+		return () => {
+			clearTimeout(ghostTimerRef.current);
+		};
+	}, []);
+
+	function handleClick(card: string, index: number) {
+		if (ghostFile !== null) return;
 		if (selectedIndex === index) {
-			const card = cards[index];
-			const el = cardRefs.current.get(index);
-			if (card && el) {
+			const el = cardRefs.current.get(card);
+			if (el) {
 				const rect = el.getBoundingClientRect();
 				const t = index - (cards.length - 1) / 2;
 				const angle = t * 1.2;
@@ -49,6 +61,11 @@ export default function Hand({
 					height: rect.height,
 					rotate: angle,
 				});
+				setGhostFile(card);
+				ghostTimerRef.current = setTimeout(() => {
+					onRemoveCard?.(card);
+					setGhostFile(null);
+				}, CLOSE_GAP_DELAY);
 			}
 			setSelectedIndex(null);
 		} else {
@@ -85,13 +102,19 @@ export default function Hand({
 					return (
 						<Card
 							angle={angle}
-							className="top-0 left-0 w-full h-full"
+							className={cn(
+								"top-0 left-0 w-full h-full",
+								ghostFile === card &&
+									"invisible pointer-events-none",
+							)}
 							file={`${opponent ? "1B.svg" : card}`}
-							key={`${position}-${index}-${card}`}
+							key={card}
 							onClick={
-								opponent ? undefined : () => handleClick(index)
+								opponent
+									? undefined
+									: () => handleClick(card, index)
 							}
-							ref={!opponent ? setCardRef(index) : undefined}
+							ref={!opponent ? setCardRef(card) : undefined}
 							selected={!opponent && selectedIndex === index}
 						/>
 					);

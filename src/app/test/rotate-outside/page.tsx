@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import DropZone from "./drop-zone";
 import Hand, { type CardOrigin } from "./hand";
 
@@ -27,18 +27,22 @@ export default function RotateOutsidePage() {
 	function handlePlayCard(file: string, origin: CardOrigin) {
 		setCardOrigin(origin);
 		setPlayedCard(file);
+	}
+
+	const handleRemoveCard = useCallback((file: string) => {
 		setHandCards((prev) => {
 			const idx = prev.indexOf(file);
 			if (idx === -1) return prev;
 			return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
 		});
-	}
+	}, []);
 
 	return (
 		<>
 			<Hand
 				cards={handCards}
 				onPlayCard={handlePlayCard}
+				onRemoveCard={handleRemoveCard}
 				position="bottom"
 			/>
 			<Hand cards={CARD_FILES} opponent position="top" />

@@ -45,19 +45,16 @@ export default function DropZone({
 		}
 	}, [playedCard]);
 
-	function getInitialFromOrigin(targetAngle: number) {
+	function getInitialFromOrigin() {
 		if (!cardOrigin || !dropZoneRef.current) return undefined;
 		const dropRect = dropZoneRef.current.getBoundingClientRect();
 		const dropCenterX = dropRect.left + dropRect.width / 2;
 		const dropCenterY = dropRect.top + dropRect.height / 2;
 		const originCenterX = cardOrigin.x + cardOrigin.width / 2;
 		const originCenterY = cardOrigin.y + cardOrigin.height / 2;
-		const spinOptions = [-360, 0, 360];
-		const spin = spinOptions[Math.floor(Math.random() * 3)] ?? 0;
 		return {
 			x: originCenterX - dropCenterX,
 			y: originCenterY - dropCenterY,
-			rotate: targetAngle + spin,
 			scale: 1.2,
 		};
 	}
@@ -107,18 +104,16 @@ export default function DropZone({
 					<AnimatePresence mode="popLayout">
 						{playedCard && (
 							<Card
-								angle={0}
+								angle={anglesRef.current.get("bottom") ?? 0}
 								animate={{
 									x: 0,
 									y: 0,
 									scale: 1,
-									rotate: anglesRef.current.get("bottom") ?? 0,
 								}}
 								className="origin-center! translate-y-[30%]"
 								file={playedCard}
 								initial={
-									getInitialFromOrigin(anglesRef.current.get("bottom") ?? 0) ||
-									false
+									getInitialFromOrigin() || false
 								}
 								key={playedCard}
 							/>
