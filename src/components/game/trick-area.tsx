@@ -1,6 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import { motion } from "framer-motion";
 import {
 	useCallback,
 	useEffect,
@@ -37,6 +38,14 @@ interface TrickCard {
 	playerId: string;
 }
 
+// Animation phases for trick completion
+type TrickAnimationPhase =
+	| "playing" // Normal play phase
+	| "waiting" // 1s wait after last card
+	| "collecting" // Cards move to center
+	| "flipping" // Cards flip over
+	| "toWinner"; // Cards animate to winner
+
 interface TrickAreaProps {
 	trickCards: TrickCard[];
 	players: Player[];
@@ -44,6 +53,8 @@ interface TrickAreaProps {
 	// Animation props
 	playedCard?: { card: CardType; playerId: string } | null;
 	cardOrigin?: CardOrigin | null;
+	// Trick winner for end-of-trick animation
+	trickWinnerId?: string | null;
 	className?: string;
 }
 
@@ -61,12 +72,30 @@ function getRelativePosition(
 	return positions[relativePosition] ?? "bottom";
 }
 
+// Get the target position offset for animating cards to the winner
+function getWinnerOffset(winnerPosition: RelativePosition): {
+	x: number;
+	y: number;
+} {
+	switch (winnerPosition) {
+		case "bottom":
+			return { x: 0, y: 200 };
+		case "top":
+			return { x: 0, y: -200 };
+		case "left":
+			return { x: -200, y: 0 };
+		case "right":
+			return { x: 200, y: 0 };
+	}
+}
+
 export function TrickArea({
 	trickCards,
 	players,
 	currentPlayerId,
 	playedCard,
 	cardOrigin,
+	trickWinnerId,
 	className,
 }: TrickAreaProps) {
 	const {
@@ -96,27 +125,132 @@ export function TrickArea({
 
 	const currentPlayerIndex = players.findIndex((p) => p.id === currentPlayerId);
 
+	// Animation state for trick completion
+	const [animationPhase, setAnimationPhase] =
+		useState<TrickAnimationPhase>("playing");
+	const [cachedTrickCards, setCachedTrickCards] = useState<TrickCard[]>([]);
+	const [cachedWinnerId, setCachedWinnerId] = useState<string | null>(null);
+	const [flipProgress, setFlipProgress] = useState(0);
+
 	useEffect(() => {
 		setMounted(true);
 	}, []);
 
-	// Generate random angles for trick cards on mount
-	useEffect(() => {
-		for (const trickCard of trickCards) {
-			if (!anglesRef.current.has(trickCard.card.id)) {
-				const playerIndex = players.findIndex(
-					(p) => p.id === trickCard.playerId,
-				);
+	// Helper to get or create angle for a card (synchronous, stable)
+	const getCardAngle = useCallback(
+		(cardId: string, playerId: string): number => {
+			if (!anglesRef.current.has(cardId)) {
+				const playerIndex = players.findIndex((p) => p.id === playerId);
 				const position = getRelativePosition(
 					playerIndex,
 					currentPlayerIndex,
 					players.length,
 				);
 				const baseAngle = position === "left" || position === "right" ? 90 : 0;
-				anglesRef.current.set(trickCard.card.id, baseAngle + randomAngle());
+				anglesRef.current.set(cardId, baseAngle + randomAngle());
 			}
+			return anglesRef.current.get(cardId) ?? 0;
+		},
+		[players, currentPlayerIndex],
+	);
+
+	// Ref to track if animation is in progress (prevents timer cancellation)
+	const animationInProgressRef = useRef(false);
+
+	// Detect completed trick and start animation sequence
+	useEffect(() => {
+		// Trick is complete when we have 4 cards AND a winner
+		if (
+			trickCards.length === 4 &&
+			trickWinnerId &&
+			animationPhase === "playing" &&
+			!animationInProgressRef.current
+		) {
+			animationInProgressRef.current = true;
+
+			// Cache the trick cards and winner before animation starts
+			setCachedTrickCards([...trickCards]);
+			setCachedWinnerId(trickWinnerId);
+
+			// Start animation sequence
+			setAnimationPhase("waiting");
 		}
-	}, [trickCards, players, currentPlayerIndex]);
+	}, [trickCards, trickWinnerId, animationPhase]);
+
+	// Handle waiting -> collecting transition
+	useEffect(() => {
+		if (animationPhase === "waiting") {
+			const waitTimer = setTimeout(() => {
+				setAnimationPhase("collecting");
+			}, 1000);
+
+			return () => clearTimeout(waitTimer);
+		}
+	}, [animationPhase]);
+
+	// Handle collecting -> flipping transition
+	useEffect(() => {
+		if (animationPhase === "collecting") {
+			const collectTimer = setTimeout(() => {
+				setAnimationPhase("flipping");
+			}, 500);
+
+			return () => clearTimeout(collectTimer);
+		}
+	}, [animationPhase]);
+
+	// Handle flipping animation
+	useEffect(() => {
+		if (animationPhase === "flipping") {
+			let startTime: number | null = null;
+			const duration = 400;
+
+			const animateFlip = (timestamp: number) => {
+				if (!startTime) startTime = timestamp;
+				const elapsed = timestamp - startTime;
+				const progress = Math.min(elapsed / duration, 1);
+				setFlipProgress(progress);
+
+				if (progress < 1) {
+					requestAnimationFrame(animateFlip);
+				} else {
+					setAnimationPhase("toWinner");
+				}
+			};
+
+			requestAnimationFrame(animateFlip);
+		}
+	}, [animationPhase]);
+
+	// Handle toWinner -> reset transition
+	useEffect(() => {
+		if (animationPhase === "toWinner") {
+			const toWinnerTimer = setTimeout(() => {
+				// Reset animation state
+				setAnimationPhase("playing");
+				setCachedTrickCards([]);
+				setCachedWinnerId(null);
+				setFlipProgress(0);
+				anglesRef.current.clear();
+				animationInProgressRef.current = false;
+			}, 600);
+
+			return () => clearTimeout(toWinnerTimer);
+		}
+	}, [animationPhase]);
+
+	// Reset animation when trick is cleared by server (only if not animating)
+	useEffect(() => {
+		if (
+			trickCards.length === 0 &&
+			animationPhase === "playing" &&
+			!animationInProgressRef.current
+		) {
+			setCachedTrickCards([]);
+			setCachedWinnerId(null);
+			setFlipProgress(0);
+		}
+	}, [trickCards.length, animationPhase]);
 
 	// Compute snapshot synchronously for the played card animation
 	if (
@@ -144,6 +278,20 @@ export function TrickArea({
 			},
 		};
 	}
+
+	// Determine which cards to render based on animation phase
+	const isAnimating = animationPhase !== "playing";
+	const cardsToRender = isAnimating ? cachedTrickCards : trickCards;
+
+	// Calculate winner position for animation
+	const winnerPosition = cachedWinnerId
+		? getRelativePosition(
+				players.findIndex((p) => p.id === cachedWinnerId),
+				currentPlayerIndex,
+				players.length,
+			)
+		: "bottom";
+	const winnerOffset = getWinnerOffset(winnerPosition);
 
 	return (
 		<div
@@ -180,8 +328,8 @@ export function TrickArea({
 		>
 			{mounted && (
 				<div className="relative w-full h-full flex items-center justify-center">
-					{/* All trick cards - show animated version if it's the currently played card */}
-					{trickCards.map((trickCard) => {
+					{/* All trick cards - with animation phases */}
+					{cardsToRender.map((trickCard) => {
 						const playerIndex = players.findIndex(
 							(p) => p.id === trickCard.playerId,
 						);
@@ -195,12 +343,29 @@ export function TrickArea({
 
 						// Check if this card should be animated (just played by local player)
 						const snapshot = snapshotRef.current;
-						const isAnimatingCard =
+						const isThrowingCard =
 							playedCard?.card.id === trickCard.card.id &&
-							snapshot?.cardId === trickCard.card.id;
+							snapshot?.cardId === trickCard.card.id &&
+							animationPhase === "playing";
 
-						if (isAnimatingCard && snapshot) {
-							// Render animated version
+						// Get stable angle for this card (synchronously generated if new)
+						const storedAngle = getCardAngle(
+							trickCard.card.id,
+							trickCard.playerId,
+						);
+						const baseAngle = storedAngle + shortScreenOffset;
+
+						// Position class based on player position (like in test drop-zone)
+						const positionClass = cn(
+							"origin-center!",
+							position === "top" && "-translate-y-[30%]",
+							position === "left" && "-translate-x-[30%]",
+							position === "right" && "translate-x-[30%]",
+							position === "bottom" && "translate-y-[30%]",
+						);
+
+						// Throwing animation (local player just played)
+						if (isThrowingCard && snapshot) {
 							return (
 								<Card
 									angle={0}
@@ -211,34 +376,106 @@ export function TrickArea({
 										rotate: snapshot.angle + shortScreenOffset,
 									}}
 									card={trickCard.card}
-									className={cn(
-										"origin-center!",
-										position === "top" && "-translate-y-[30%]",
-										position === "left" && "-translate-x-[30%]",
-										position === "right" && "translate-x-[30%]",
-										position === "bottom" && "translate-y-[30%]",
-									)}
+									className={positionClass}
 									initial={snapshot.initial}
 									key={trickCard.card.id}
 								/>
 							);
 						}
 
-						// Render static version
+						// End-of-trick animation phases
+						if (isAnimating) {
+							// Calculate animation properties based on phase
+							let animateProps: {
+								x: number;
+								y: number;
+								scale: number;
+								rotate: number;
+								opacity: number;
+							};
+
+							if (animationPhase === "waiting") {
+								// Keep cards in their normal positions
+								animateProps = {
+									x: 0,
+									y: 0,
+									scale: 1,
+									rotate: baseAngle,
+									opacity: 1,
+								};
+							} else if (animationPhase === "collecting") {
+								// Cards move to center
+								animateProps = {
+									x: 0,
+									y: 0,
+									scale: 0.9,
+									rotate: 0,
+									opacity: 1,
+								};
+							} else if (animationPhase === "toWinner") {
+								animateProps = {
+									x: winnerOffset.x,
+									y: winnerOffset.y,
+									scale: 0.5,
+									rotate: 0,
+									opacity: 0,
+								};
+							} else {
+								// flipping phase
+								animateProps = {
+									x: 0,
+									y: 0,
+									scale: 0.9,
+									rotate: 0,
+									opacity: 1,
+								};
+							}
+
+							return (
+								<motion.div
+									animate={animateProps}
+									className="absolute"
+									initial={
+										animationPhase === "waiting"
+											? { x: 0, y: 0, scale: 1, rotate: baseAngle, opacity: 1 }
+											: false
+									}
+									key={trickCard.card.id}
+									transition={
+										animationPhase === "collecting"
+											? { duration: 0.4, ease: "easeInOut" }
+											: animationPhase === "toWinner"
+												? { duration: 0.5, ease: "easeIn" }
+												: { duration: 0.3 }
+									}
+								>
+									<Card
+										angle={0}
+										card={trickCard.card}
+										className={
+											animationPhase === "waiting"
+												? positionClass
+												: "origin-center!"
+										}
+										flipProgress={
+											animationPhase === "flipping" ||
+											animationPhase === "toWinner"
+												? flipProgress
+												: 0
+										}
+									/>
+								</motion.div>
+							);
+						}
+
+						// Normal static card - use animate with rotation
 						return (
 							<Card
-								angle={
-									(anglesRef.current.get(trickCard.card.id) ?? 0) +
-									shortScreenOffset
-								}
+								angle={0}
+								animate={{ rotate: baseAngle }}
 								card={trickCard.card}
-								className={cn(
-									"origin-center!",
-									position === "top" && "-translate-y-[30%]",
-									position === "left" && "-translate-x-[30%]",
-									position === "right" && "translate-x-[30%]",
-									position === "bottom" && "translate-y-[30%]",
-								)}
+								className={positionClass}
+								initial={{ rotate: baseAngle }}
 								key={trickCard.card.id}
 							/>
 						);
@@ -247,11 +484,14 @@ export function TrickArea({
 			)}
 
 			{/* Drop-Zone Hinweis */}
-			{trickCards.length === 0 && !playedCard && !isOver && (
-				<div className="absolute inset-0 flex items-center justify-center">
-					<span className="text-white/30 text-sm">Karte hier ablegen</span>
-				</div>
-			)}
+			{trickCards.length === 0 &&
+				!playedCard &&
+				!isOver &&
+				!isAnimating && (
+					<div className="absolute inset-0 flex items-center justify-center">
+						<span className="text-white/30 text-sm">Karte hier ablegen</span>
+					</div>
+				)}
 
 			{/* Hover-Effekt */}
 			{isOver && canDrop && (

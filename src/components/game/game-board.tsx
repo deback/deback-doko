@@ -408,6 +408,7 @@ export function GameBoard({
 				playedCard={playedCard}
 				players={gameState.players}
 				trickCards={gameState.currentTrick.cards}
+				trickWinnerId={gameState.currentTrick.winnerId}
 			/>
 
 			{/* Unterer Spieler (aktueller Benutzer) */}

@@ -39,6 +39,8 @@ interface CardProps {
 	showBack?: boolean;
 	backDesign?: "blue" | "red";
 	angle?: number;
+	// Flip animation (0 = front face, 1 = back face)
+	flipProgress?: number;
 	// State
 	playable?: boolean;
 	selected?: boolean;
@@ -66,6 +68,7 @@ export default function Card({
 	showBack = false,
 	backDesign = "blue",
 	angle = 0,
+	flipProgress = 0,
 	playable = false,
 	selected = false,
 	disabled = false,
@@ -80,22 +83,28 @@ export default function Card({
 	dragListeners,
 	dragAttributes,
 }: CardProps) {
-	// Determine image path
-	let imagePath: string;
+	// Flip animation: when flipProgress > 0.5, show the back
+	const isFlipped = flipProgress > 0.5;
+	const showBackSide = showBack || isFlipped;
+
+	// Determine image paths for front and back
+	let frontImagePath: string;
 	if (file) {
-		imagePath = `/doko/${file}`;
-	} else if (showBack) {
-		imagePath = getCardBackPath(backDesign);
+		frontImagePath = `/doko/${file}`;
 	} else if (card) {
-		imagePath = getCardImagePath(card.suit, card.rank);
+		frontImagePath = getCardImagePath(card.suit, card.rank);
 	} else if (suit && rank) {
-		imagePath = getCardImagePath(suit, rank);
+		frontImagePath = getCardImagePath(suit, rank);
 	} else {
-		imagePath = getCardBackPath(backDesign);
+		frontImagePath = getCardBackPath(backDesign);
 	}
+	const backImagePath = getCardBackPath(backDesign);
+
+	// Choose which image to show based on flip state
+	const imagePath = showBackSide ? backImagePath : frontImagePath;
 
 	// Alt text
-	const altText = showBack
+	const altText = showBackSide
 		? "Kartenrücken"
 		: file || `${rank} of ${suit}` || "Karte";
 
@@ -106,7 +115,20 @@ export default function Card({
 	const hasAnimatedRotation = animate != null && "rotate" in animate;
 	const rotateStyle =
 		hasAnimatedRotation || !animate ? undefined : { rotate: angle };
-	const mergedStyle = { ...rotateStyle, ...style };
+
+	// Flip transform: use rotateY for 3D flip effect
+	// The scaleX creates a perspective effect during flip
+	const flipRotateY = flipProgress * 180;
+	const flipScaleX = Math.abs(Math.cos(flipProgress * Math.PI));
+	const flipStyle: React.CSSProperties =
+		flipProgress > 0
+			? {
+					transform: `rotateY(${flipRotateY}deg) scaleX(${flipScaleX})`,
+					transformStyle: "preserve-3d" as const,
+				}
+			: {};
+
+	const mergedStyle = { ...rotateStyle, ...flipStyle, ...style };
 
 	const isInteractive = onClick && !disabled;
 

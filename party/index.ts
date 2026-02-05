@@ -722,17 +722,17 @@ export default class Server implements Party.Server {
 		});
 
 		if (gameState.currentTrick.cards.length === 4) {
-			this.completeTrick(gameState);
+			// completeTrick handles broadcasting with animation delay
+			await this.completeTrick(gameState);
 		} else {
 			gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % 4;
+			await this.persistGameState(gameState);
+			this.broadcastGameState(gameState);
+			this.broadcastToSpectators(gameState);
 		}
-
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
 	}
 
-	completeTrick(gameState: GameState) {
+	async completeTrick(gameState: GameState) {
 		const trick = gameState.currentTrick;
 		const isLastTrick = gameState.completedTricks.length === 11; // 12. Stich
 		const winner = this.determineTrickWinner(
@@ -756,20 +756,35 @@ export default class Server implements Party.Server {
 			gameState.scores[winner] = (gameState.scores[winner] || 0) + trickPoints;
 		}
 
-		gameState.completedTricks.push(trick);
-		gameState.currentPlayerIndex = gameState.players.findIndex(
-			(p) => p.id === winner,
-		);
+		// First broadcast: Show completed trick with winnerId (cards still visible)
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
 
-		gameState.currentTrick = {
-			cards: [],
-			completed: false,
-		};
+		// After animation delay, clear the trick and start a new one
+		const TRICK_ANIMATION_DELAY = 2500; // 1s wait + ~1.5s animation
+		setTimeout(async () => {
+			// Move trick to completed
+			gameState.completedTricks.push({ ...trick });
+			gameState.currentPlayerIndex = gameState.players.findIndex(
+				(p) => p.id === winner,
+			);
 
-		if (gameState.completedTricks.length >= 12) {
-			gameState.gameEnded = true;
-			this.saveGameResults(gameState);
-		}
+			// Start new trick
+			gameState.currentTrick = {
+				cards: [],
+				completed: false,
+			};
+
+			if (gameState.completedTricks.length >= 12) {
+				gameState.gameEnded = true;
+				this.saveGameResults(gameState);
+			}
+
+			await this.persistGameState(gameState);
+			this.broadcastGameState(gameState);
+			this.broadcastToSpectators(gameState);
+		}, TRICK_ANIMATION_DELAY);
 	}
 
 	async saveGameResults(gameState: GameState) {

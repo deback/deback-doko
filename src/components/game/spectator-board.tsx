@@ -132,6 +132,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 				currentPlayerId={gameState.players[0]?.id || ""}
 				players={gameState.players}
 				trickCards={gameState.currentTrick.cards}
+				trickWinnerId={gameState.currentTrick.winnerId}
 			/>
 
 			{/* Bottom Player - wie in /test/hand */}
