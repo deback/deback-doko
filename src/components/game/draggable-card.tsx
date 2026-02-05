@@ -1,94 +1,89 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-import { CardImage } from "@/components/cards/card-image";
+import { useCallback } from "react";
 import { cn } from "@/lib/utils";
-import type { Card } from "@/types/game";
+import type { Card as CardType } from "@/types/game";
+import GameCard from "./card";
 
 interface DraggableCardProps {
-	card: Card;
+	card: CardType;
+	angle?: number;
 	isPlayable?: boolean;
-	isSelectable?: boolean;
 	isSelected?: boolean;
 	isDisabled?: boolean;
+	isGhost?: boolean;
 	isDraggingDisabled?: boolean;
 	onClick?: () => void;
-	onMouseEnter?: () => void;
-	onMouseLeave?: () => void;
+	onRef?: (el: HTMLButtonElement | null) => void;
 	className?: string;
 	style?: React.CSSProperties;
 }
 
 export function DraggableCard({
 	card,
+	angle = 0,
 	isPlayable = false,
-	isSelectable = true,
 	isSelected = false,
 	isDisabled = false,
+	isGhost = false,
 	isDraggingDisabled = false,
 	onClick,
-	onMouseEnter,
-	onMouseLeave,
+	onRef,
 	className,
 	style,
 }: DraggableCardProps) {
-	const { attributes, listeners, setNodeRef, transform, isDragging } =
-		useDraggable({
-			id: card.id,
-			disabled: isDraggingDisabled || !isPlayable,
-			data: {
-				type: "card",
-				card,
-			},
-		});
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
+		isDragging: isDraggingThis,
+	} = useDraggable({
+		id: card.id,
+		disabled: isDraggingDisabled || isDisabled,
+		data: {
+			type: "card",
+			card,
+			angle,
+		},
+	});
 
-	// Kombiniere die Drag-Transform mit der ursprünglichen Transform
-	// WICHTIG: Drag-Translation muss ZUERST kommen, damit die Bewegung
-	// im Screen-Space erfolgt und nicht relativ zur Rotation
-	const combinedTransform = transform
-		? `${CSS.Translate.toString(transform)} ${style?.transform || ""}`.trim()
-		: style?.transform;
+	// Merge refs: dnd-kit ref + external ref callback
+	const mergedRef = useCallback(
+		(el: HTMLButtonElement | null) => {
+			setNodeRef(el);
+			onRef?.(el);
+		},
+		[setNodeRef, onRef],
+	);
 
-	// Karte ist interaktiv wenn spielbar ODER selektierbar (und nicht deaktiviert)
-	const isInteractive = (isPlayable || isSelectable) && !isDisabled;
+	// Drag transform style
+	const dragStyle: React.CSSProperties | undefined =
+		transform && !isDraggingThis
+			? { translate: `${transform.x}px ${transform.y}px` }
+			: undefined;
 
 	return (
-		<button
+		<GameCard
+			angle={angle}
+			card={card}
 			className={cn(
-				"touch-none bg-transparent p-0 border-none",
-				isDragging && "z-100 scale-105 opacity-90 transition-none!",
-				isDisabled && "opacity-40",
+				"top-0 left-0 w-full h-full touch-none",
+				(isGhost || isDraggingThis) && "invisible pointer-events-none",
+				isDraggingThis && "transition-none!",
 				className,
 			)}
-			disabled={!isInteractive}
-			onClick={isInteractive ? onClick : undefined}
-			onMouseEnter={onMouseEnter}
-			onMouseLeave={onMouseLeave}
-			ref={setNodeRef}
-			style={{
-				...style,
-				transform: combinedTransform,
-				zIndex: isDragging ? 100 : style?.zIndex,
-			}}
-			type="button"
-			{...listeners}
-			{...attributes}
-		>
-			<CardImage
-				className={cn(
-					"w-full transition-transform duration-200",
-					isPlayable && !isDragging && "cursor-grab hover:scale-105",
-					isDragging && "cursor-grabbing",
-					isDisabled && "cursor-not-allowed grayscale",
-					!isPlayable && !isDisabled && isSelectable && "cursor-pointer",
-				)}
-				disabled={isDisabled}
-				playable={isPlayable && !isDragging}
-				rank={card.rank}
-				selected={isSelected}
-				suit={card.suit}
-			/>
-		</button>
+			disabled={isDisabled}
+			dragAttributes={attributes}
+			dragListeners={listeners}
+			isDragging={isDraggingThis}
+			isGhost={isGhost}
+			onClick={onClick}
+			playable={isPlayable && !isDraggingThis}
+			ref={mergedRef}
+			selected={isSelected}
+			style={{ ...style, ...dragStyle }}
+		/>
 	);
 }

@@ -1,40 +1,39 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { useEffect, useState } from "react";
-import { CardImage } from "@/components/cards/card-image";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { cn } from "@/lib/utils";
-import type { Card } from "@/types/game";
+import type { Card as CardType } from "@/types/game";
 import type { Player } from "@/types/tables";
+import Card, { type CardOrigin } from "./card";
 
-// Hook to detect landscape orientation and screen size
-function useScreenLayout() {
-	const [layout, setLayout] = useState<{
-		isLandscape: boolean;
-		isLargeScreen: boolean;
-	}>({ isLandscape: false, isLargeScreen: false });
+// Random angle for natural card fall (-20° to +20°)
+function randomAngle() {
+	return Math.random() * 40 - 20;
+}
 
-	useEffect(() => {
-		const checkLayout = () => {
-			const isLandscape = window.innerWidth > window.innerHeight;
-			// lg breakpoint = 1024px
-			const isLargeScreen = window.innerWidth >= 1024;
-			setLayout({ isLandscape, isLargeScreen });
-		};
+// Hook to detect short screens
+const SHORT_SCREEN_QUERY = "(max-height: 500px)";
+const subscribe = (cb: () => void) => {
+	const mql = window.matchMedia(SHORT_SCREEN_QUERY);
+	mql.addEventListener("change", cb);
+	return () => mql.removeEventListener("change", cb);
+};
+const getSnapshot = () => window.matchMedia(SHORT_SCREEN_QUERY).matches;
+const getServerSnapshot = () => false;
 
-		// Initial check
-		checkLayout();
-
-		// Listen to resize events
-		window.addEventListener("resize", checkLayout);
-		return () => window.removeEventListener("resize", checkLayout);
-	}, []);
-
-	return layout;
+function useIsShortScreen() {
+	return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 interface TrickCard {
-	card: Card;
+	card: CardType;
 	playerId: string;
 }
 
@@ -42,106 +41,217 @@ interface TrickAreaProps {
 	trickCards: TrickCard[];
 	players: Player[];
 	currentPlayerId: string;
+	// Animation props
+	playedCard?: { card: CardType; playerId: string } | null;
+	cardOrigin?: CardOrigin | null;
 	className?: string;
 }
 
-// Positionen für gespiele Karten basierend auf Spielerposition (in %)
-function getCardPosition(
+// Get relative position for a player's card in the trick
+type RelativePosition = "bottom" | "left" | "top" | "right";
+
+function getRelativePosition(
 	playerIndex: number,
 	currentPlayerIndex: number,
 	totalPlayers: number,
-	isLandscape: boolean,
-	isLargeScreen: boolean,
-): { x: number; y: number; rotation: number } {
-	// Berechne relative Position zum aktuellen Spieler
+): RelativePosition {
 	const relativePosition =
 		(playerIndex - currentPlayerIndex + totalPlayers) % totalPlayers;
-
-	// Positionen: 0 = unten (aktueller Spieler), 1 = links, 2 = oben, 3 = rechts
-	// Werte in % relativ zur Kartengröße
-	// Portrait: 60%, Landscape klein: 20%, Landscape groß: 40%
-	const yOffset = isLandscape ? (isLargeScreen ? 40 : 20) : 60;
-	const positions: { x: number; y: number; rotation: number }[] = [
-		{ x: 0, y: yOffset, rotation: 0 }, // Unten (Spieler)
-		{ x: -80, y: 0, rotation: -8 }, // Links
-		{ x: 0, y: -yOffset, rotation: 4 }, // Oben
-		{ x: 80, y: 0, rotation: 12 }, // Rechts
-	];
-
-	const defaultPosition = { x: 0, y: yOffset, rotation: 0 };
-	return positions[relativePosition] ?? defaultPosition;
+	const positions: RelativePosition[] = ["bottom", "left", "top", "right"];
+	return positions[relativePosition] ?? "bottom";
 }
 
 export function TrickArea({
 	trickCards,
 	players,
 	currentPlayerId,
+	playedCard,
+	cardOrigin,
 	className,
 }: TrickAreaProps) {
-	const { setNodeRef, isOver, active } = useDroppable({
+	const {
+		setNodeRef: setDroppableRef,
+		isOver,
+		active,
+	} = useDroppable({
 		id: "trick-area",
 	});
-
+	const [mounted, setMounted] = useState(false);
+	const anglesRef = useRef<Map<string, number>>(new Map());
+	const dropZoneRef = useRef<HTMLDivElement>(null);
+	const mergedRef = useCallback(
+		(el: HTMLDivElement | null) => {
+			dropZoneRef.current = el;
+			setDroppableRef(el);
+		},
+		[setDroppableRef],
+	);
 	const canDrop = active?.data?.current?.type === "card";
+	const isShortScreen = useIsShortScreen();
+	const snapshotRef = useRef<{
+		cardId: string;
+		angle: number;
+		initial: { x: number; y: number; scale: number; rotate: number };
+	} | null>(null);
+
 	const currentPlayerIndex = players.findIndex((p) => p.id === currentPlayerId);
-	const { isLandscape, isLargeScreen } = useScreenLayout();
 
-	// Kartenbreite: Portrait 20%, Landscape 15%
-	// Gleiche Größe wie die Handkarten
-	const cardWidth = isLandscape ? "min(15vw, 180px)" : "min(20vw, 240px)";
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
-	// Bei Landscape werden alle Karten um 90° gedreht
-	const landscapeRotation = isLandscape ? 90 : 0;
+	// Generate random angles for trick cards on mount
+	useEffect(() => {
+		for (const trickCard of trickCards) {
+			if (!anglesRef.current.has(trickCard.card.id)) {
+				const playerIndex = players.findIndex(
+					(p) => p.id === trickCard.playerId,
+				);
+				const position = getRelativePosition(
+					playerIndex,
+					currentPlayerIndex,
+					players.length,
+				);
+				const baseAngle = position === "left" || position === "right" ? 90 : 0;
+				anglesRef.current.set(trickCard.card.id, baseAngle + randomAngle());
+			}
+		}
+	}, [trickCards, players, currentPlayerIndex]);
+
+	// Compute snapshot synchronously for the played card animation
+	if (
+		playedCard &&
+		cardOrigin &&
+		snapshotRef.current?.cardId !== playedCard.card.id &&
+		dropZoneRef.current
+	) {
+		const dropRect = dropZoneRef.current.getBoundingClientRect();
+		const dropCenterX = dropRect.left + dropRect.width / 2;
+		const dropCenterY = dropRect.top + dropRect.height / 2;
+		const originCenterX = cardOrigin.x + cardOrigin.width / 2;
+		const originCenterY = cardOrigin.y + cardOrigin.height / 2;
+		const angle = randomAngle();
+		const spinOptions = [-360, 0, 360];
+		const spin = spinOptions[Math.floor(Math.random() * 3)] ?? 0;
+		snapshotRef.current = {
+			cardId: playedCard.card.id,
+			angle,
+			initial: {
+				x: originCenterX - dropCenterX,
+				y: originCenterY - dropCenterY,
+				scale: 1.2,
+				rotate: angle + spin,
+			},
+		};
+	}
 
 	return (
 		<div
 			className={cn(
-				"relative flex items-center justify-center rounded-3xl transition-all duration-300",
-				// Container groß genug für 4 Karten mit Abstand
-				"h-[50vw] w-[60vw] max-h-[500px] max-w-[600px]",
-				isOver &&
-					canDrop &&
-					"scale-105 bg-emerald-500/20 ring-4 ring-emerald-400",
-				!isOver && "bg-black/10",
+				"fixed border-2 transition-all duration-200",
+
+				isOver && canDrop
+					? "border-primary bg-primary/10 scale-[1.02]"
+					: "border-transparent",
+
+				// -- Top --
+				"top-[calc(min(30vw,10rem)*1.4*0.2)]",
+				"portrait:top-[calc(min(30vw,10rem)*1.4/3)]",
+				"lg:top-[calc(min(30vw,14rem)*1.4/3)]",
+
+				// -- Bottom: matches Hand translate-y at each breakpoint --
+				"bottom-[calc(min(30vw,10rem)*1.4*2/3)]",
+				"sm:bottom-[calc(min(30vw,10rem)*1.4/2)]",
+				"landscape:bottom-[calc(min(30vh,7rem)*1.4/3)]",
+				"lg:bottom-[calc(min(30vw,14rem)*1.4/2)]",
+				"lg:landscape:bottom-[calc(min(30vw,14rem)*1.4/2)]",
+
+				// -- Left/Right --
+				"left-[calc(min(30vw,10rem)*0.4)]",
+				"right-[calc(min(30vw,10rem)*0.4)]",
+				"landscape:left-[calc(min(30vh,7rem)*0.4)]",
+				"landscape:right-[calc(min(30vh,7rem)*0.4)]",
+				"lg:left-[calc(min(30vw,14rem)*0.4)]",
+				"lg:right-[calc(min(30vw,14rem)*0.4)]",
+
 				className,
 			)}
-			ref={setNodeRef}
+			ref={mergedRef}
 		>
-			{/* Drop-Zone Hinweis */}
-			{trickCards.length === 0 && !isOver && (
-				<span className="text-white/30 text-sm">Karte hier ablegen</span>
+			{mounted && (
+				<div className="relative w-full h-full flex items-center justify-center">
+					{/* All trick cards - show animated version if it's the currently played card */}
+					{trickCards.map((trickCard) => {
+						const playerIndex = players.findIndex(
+							(p) => p.id === trickCard.playerId,
+						);
+						const position = getRelativePosition(
+							playerIndex,
+							currentPlayerIndex,
+							players.length,
+						);
+						const shortScreenOffset =
+							isShortScreen && position === "top" ? 90 : 0;
+
+						// Check if this card should be animated (just played by local player)
+						const snapshot = snapshotRef.current;
+						const isAnimatingCard =
+							playedCard?.card.id === trickCard.card.id &&
+							snapshot?.cardId === trickCard.card.id;
+
+						if (isAnimatingCard && snapshot) {
+							// Render animated version
+							return (
+								<Card
+									angle={0}
+									animate={{
+										x: 0,
+										y: 0,
+										scale: 1,
+										rotate: snapshot.angle + shortScreenOffset,
+									}}
+									card={trickCard.card}
+									className={cn(
+										"origin-center!",
+										position === "top" && "-translate-y-[30%]",
+										position === "left" && "-translate-x-[30%]",
+										position === "right" && "translate-x-[30%]",
+										position === "bottom" && "translate-y-[30%]",
+									)}
+									initial={snapshot.initial}
+									key={trickCard.card.id}
+								/>
+							);
+						}
+
+						// Render static version
+						return (
+							<Card
+								angle={
+									(anglesRef.current.get(trickCard.card.id) ?? 0) +
+									shortScreenOffset
+								}
+								card={trickCard.card}
+								className={cn(
+									"origin-center!",
+									position === "top" && "-translate-y-[30%]",
+									position === "left" && "-translate-x-[30%]",
+									position === "right" && "translate-x-[30%]",
+									position === "bottom" && "translate-y-[30%]",
+								)}
+								key={trickCard.card.id}
+							/>
+						);
+					})}
+				</div>
 			)}
 
-			{/* Gespielte Karten */}
-			{trickCards.map((trickCard, index) => {
-				const playerIndex = players.findIndex(
-					(p) => p.id === trickCard.playerId,
-				);
-				const position = getCardPosition(
-					playerIndex,
-					currentPlayerIndex,
-					players.length,
-					isLandscape,
-					isLargeScreen,
-				);
-
-				// Gesamtrotation: Position-Rotation + Landscape-Rotation
-				const totalRotation = position.rotation + landscapeRotation;
-
-				return (
-					<CardImage
-						className="absolute shadow-lg transition-all duration-300"
-						key={`trick-${trickCard.card.id}-${index}`}
-						rank={trickCard.card.rank}
-						style={{
-							width: cardWidth,
-							transform: `translateX(${position.x}%) translateY(${position.y}%) rotate(${totalRotation}deg)`,
-							zIndex: index + 1,
-						}}
-						suit={trickCard.card.suit}
-					/>
-				);
-			})}
+			{/* Drop-Zone Hinweis */}
+			{trickCards.length === 0 && !playedCard && !isOver && (
+				<div className="absolute inset-0 flex items-center justify-center">
+					<span className="text-white/30 text-sm">Karte hier ablegen</span>
+				</div>
+			)}
 
 			{/* Hover-Effekt */}
 			{isOver && canDrop && (

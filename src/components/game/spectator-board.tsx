@@ -74,7 +74,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 					</div>
 					<OpponentHand
 						cardCount={getCardCount(topPlayer.id)}
-						className="fixed top-0 left-0 right-0 mx-auto max-w-[1200px] rotate-180 translate-y-1/2 sm:-translate-y-[50px]"
+						position="top"
 					/>
 				</>
 			)}
@@ -98,7 +98,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 					</div>
 					<OpponentHand
 						cardCount={getCardCount(leftPlayer.id)}
-						className="fixed top-1/2 left-0 w-[min(100vw,1200px)] -translate-y-1/2 -translate-x-1/2 rotate-90 origin-center sm:-translate-x-[calc(50%+50px)]"
+						position="left"
 					/>
 				</>
 			)}
@@ -122,19 +122,17 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 					</div>
 					<OpponentHand
 						cardCount={getCardCount(rightPlayer.id)}
-						className="fixed top-1/2 right-0 w-[min(100vw,1200px)] -translate-y-1/2 translate-x-1/2 -rotate-90 origin-center sm:translate-x-[calc(50%+50px)]"
+						position="right"
 					/>
 				</>
 			)}
 
 			{/* Trick Area (Center) */}
-			<div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-				<TrickArea
-					currentPlayerId={gameState.players[0]?.id || ""}
-					players={gameState.players}
-					trickCards={gameState.currentTrick.cards}
-				/>
-			</div>
+			<TrickArea
+				currentPlayerId={gameState.players[0]?.id || ""}
+				players={gameState.players}
+				trickCards={gameState.currentTrick.cards}
+			/>
 
 			{/* Bottom Player - wie in /test/hand */}
 			{bottomPlayer && (
@@ -155,7 +153,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 					</div>
 					<OpponentHand
 						cardCount={getCardCount(bottomPlayer.id)}
-						className="fixed bottom-0 left-0 right-0 mx-auto max-w-[1200px]"
+						position="bottom"
 					/>
 				</>
 			)}

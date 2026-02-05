@@ -3,17 +3,22 @@
 import {
 	DndContext,
 	type DragEndEvent,
+	DragOverlay,
+	type DragStartEvent,
 	MouseSensor,
 	TouchSensor,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
 import { Eye } from "lucide-react";
-import { useId } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
+import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
 import type { Card, GameState, Suit } from "@/types/game";
 import type { Player } from "@/types/tables";
+import { CARD_SIZE, type CardOrigin } from "./card";
 import { OpponentHand } from "./opponent-hand";
 import { PlayerHand } from "./player-hand";
 import { PlayerInfo } from "./player-info";
@@ -163,6 +168,15 @@ export function GameBoard({
 }: GameBoardProps) {
 	const dndContextId = useId();
 
+	// Animation state
+	const [playedCard, setPlayedCard] = useState<{
+		card: Card;
+		playerId: string;
+	} | null>(null);
+	const [cardOrigin, setCardOrigin] = useState<CardOrigin | null>(null);
+	const [activeDragCard, setActiveDragCard] = useState<Card | null>(null);
+	const [dragPlayedCard, setDragPlayedCard] = useState<string | null>(null);
+
 	const mouseSensor = useSensor(MouseSensor, {
 		activationConstraint: {
 			distance: 10,
@@ -226,26 +240,96 @@ export function GameBoard({
 		(tc) => tc.playerId === currentPlayer.id,
 	);
 
-	const handleDragEnd = (event: DragEndEvent) => {
-		const { over, active } = event;
-
-		if (over?.id === "trick-area" && active?.id) {
-			const cardId = active.id as string;
-			if (playableCardIds.includes(cardId)) {
-				playCard(cardId);
-			}
+	function handleDragStart(event: DragStartEvent) {
+		const cardData = event.active.data.current?.card as Card | undefined;
+		if (cardData) {
+			setActiveDragCard(cardData);
 		}
-	};
+	}
 
-	const handlePlayCard = (cardId: string) => {
-		if (playableCardIds.includes(cardId)) {
+	function handleDragEnd(event: DragEndEvent) {
+		const { over, active, delta } = event;
+		setActiveDragCard(null);
+
+		if (over?.id !== "trick-area" || !active?.id) return;
+
+		const cardId = active.id as string;
+		if (!playableCardIds.includes(cardId)) return;
+
+		const cardData = active.data.current?.card as Card | undefined;
+		if (!cardData) return;
+
+		const initialRect = active.rect.current.initial;
+		if (!initialRect) return;
+
+		const angle =
+			(active.data.current as { angle?: number } | undefined)?.angle ?? 0;
+
+		const dropOrigin: CardOrigin = {
+			x: initialRect.left + delta.x,
+			y: initialRect.top + delta.y,
+			width: initialRect.width,
+			height: initialRect.height,
+			rotate: angle,
+		};
+
+		// Set animation state
+		setCardOrigin(dropOrigin);
+		setPlayedCard({ card: cardData, playerId: currentPlayer.id });
+		setDragPlayedCard(cardId);
+
+		// Actually play the card
+		playCard(cardId);
+	}
+
+	const handlePlayCard = useCallback(
+		(cardId: string, origin: CardOrigin) => {
+			if (!playableCardIds.includes(cardId)) return;
+
+			const card = sortedHand.find((c) => c.id === cardId);
+			if (!card) return;
+
+			// Set animation state
+			setCardOrigin(origin);
+			setPlayedCard({ card, playerId: currentPlayer.id });
+
+			// Actually play the card
 			playCard(cardId);
+		},
+		[playableCardIds, sortedHand, currentPlayer.id, playCard],
+	);
+
+	const handleRemoveCard = useCallback(() => {
+		// Card removal is handled by server state update
+		// Just clear the drag played card state
+		setDragPlayedCard(null);
+	}, []);
+
+	// Track trick card count to detect when a new trick starts
+	const prevTrickLengthRef = useRef(gameState.currentTrick.cards.length);
+
+	// Reset animation state when trick is cleared (new trick starts)
+	useEffect(() => {
+		const currentLength = gameState.currentTrick.cards.length;
+		const prevLength = prevTrickLengthRef.current;
+
+		// If trick was reset (e.g., from 4 cards to 0), clear animation state
+		if (currentLength < prevLength) {
+			setPlayedCard(null);
+			setCardOrigin(null);
 		}
-	};
+
+		prevTrickLengthRef.current = currentLength;
+	}, [gameState.currentTrick.cards.length]);
 
 	return (
-		<DndContext id={dndContextId} onDragEnd={handleDragEnd} sensors={sensors}>
-			{/* Oberer Gegner - wie in /test/hand */}
+		<DndContext
+			id={dndContextId}
+			onDragEnd={handleDragEnd}
+			onDragStart={handleDragStart}
+			sensors={sensors}
+		>
+			{/* Oberer Gegner */}
 			{topPlayer && (
 				<>
 					<div className="fixed top-4 left-1/2 z-10 -translate-x-1/2">
@@ -264,12 +348,12 @@ export function GameBoard({
 					</div>
 					<OpponentHand
 						cardCount={gameState.hands[topPlayer.id]?.length || 0}
-						className="fixed top-0 left-0 right-0 mx-auto max-w-[1200px] rotate-180 translate-y-1/2 sm:-translate-y-[50px]"
+						position="top"
 					/>
 				</>
 			)}
 
-			{/* Linker Gegner - wie in /test/hand */}
+			{/* Linker Gegner */}
 			{leftPlayer && (
 				<>
 					<div className="fixed left-4 top-1/2 z-10 -translate-y-1/2">
@@ -288,12 +372,12 @@ export function GameBoard({
 					</div>
 					<OpponentHand
 						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
-						className="fixed top-1/2 left-0 w-[min(100vw,1200px)] -translate-y-1/2 -translate-x-1/2 rotate-90 origin-center sm:-translate-x-[calc(50%+50px)]"
+						position="left"
 					/>
 				</>
 			)}
 
-			{/* Rechter Gegner - wie in /test/hand */}
+			{/* Rechter Gegner */}
 			{rightPlayer && (
 				<>
 					<div className="fixed right-4 top-1/2 z-10 -translate-y-1/2">
@@ -312,19 +396,19 @@ export function GameBoard({
 					</div>
 					<OpponentHand
 						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
-						className="fixed top-1/2 right-0 w-[min(100vw,1200px)] -translate-y-1/2 translate-x-1/2 -rotate-90 origin-center sm:translate-x-[calc(50%+50px)]"
+						position="right"
 					/>
 				</>
 			)}
 
 			{/* Stich-Bereich (Mitte) */}
-			<div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-				<TrickArea
-					currentPlayerId={currentPlayer.id}
-					players={gameState.players}
-					trickCards={gameState.currentTrick.cards}
-				/>
-			</div>
+			<TrickArea
+				cardOrigin={cardOrigin}
+				currentPlayerId={currentPlayer.id}
+				playedCard={playedCard}
+				players={gameState.players}
+				trickCards={gameState.currentTrick.cards}
+			/>
 
 			{/* Unterer Spieler (aktueller Benutzer) */}
 			{bottomPlayer && (
@@ -341,15 +425,31 @@ export function GameBoard({
 						/>
 					</div>
 					<PlayerHand
+						activeDragCard={dragPlayedCard}
 						cards={sortedHand}
-						className="fixed bottom-0 left-0 right-0 mx-auto max-w-[1200px] landscape:-bottom-[8%] landscape:lg:-bottom-[4%] landscape:xl:bottom-0"
 						hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
 						isMyTurn={isMyTurn}
 						onPlayCard={handlePlayCard}
+						onRemoveCard={handleRemoveCard}
 						playableCardIds={playableCardIds}
 					/>
 				</>
 			)}
+
+			{/* Drag Overlay */}
+			<DragOverlay dropAnimation={null}>
+				{activeDragCard && (
+					<div className={`relative ${CARD_SIZE}`}>
+						<Image
+							alt={`${activeDragCard.rank} of ${activeDragCard.suit}`}
+							className="rounded-[1cqw] shadow-xl"
+							draggable={false}
+							fill
+							src={getCardImagePath(activeDragCard.suit, activeDragCard.rank)}
+						/>
+					</div>
+				)}
+			</DragOverlay>
 
 			{/* Turn-Indikator */}
 			{!isMyTurn && (
