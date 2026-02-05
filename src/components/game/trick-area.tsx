@@ -95,13 +95,13 @@ function getEntryOffset(position: RelativePosition): {
 } {
 	switch (position) {
 		case "top":
-			return { x: 0, y: -300 };
+			return { x: 0, y: -window.innerHeight / 2 };
 		case "left":
-			return { x: -300, y: 0 };
+			return { x: -window.innerWidth / 2, y: 0 };
 		case "right":
-			return { x: 300, y: 0 };
+			return { x: window.innerWidth / 2, y: 0 };
 		case "bottom":
-			return { x: 0, y: 300 };
+			return { x: 0, y: window.innerHeight / 2 };
 	}
 }
 
@@ -486,6 +486,12 @@ export function TrickArea({
 									animate={animateProps}
 									card={trickCard.card}
 									className="origin-center!"
+									flipProgress={
+										animationPhase === "flipping" ||
+										animationPhase === "toWinner"
+											? flipProgress
+											: 0
+									}
 									initial={{
 										x: playOffset.x,
 										y: playOffset.y,
@@ -494,12 +500,6 @@ export function TrickArea({
 										opacity: 1,
 									}}
 									key={trickCard.card.id}
-									flipProgress={
-										animationPhase === "flipping" ||
-										animationPhase === "toWinner"
-											? flipProgress
-											: 0
-									}
 								/>
 							);
 						}
@@ -510,12 +510,14 @@ export function TrickArea({
 
 						// For new opponent cards, start from entry position
 						// For existing cards, use initial={false} to preserve current animated state
-						let initialProps: false | {
-							x: number | string;
-							y: number | string;
-							scale: number;
-							rotate: number;
-						} = false;
+						let initialProps:
+							| false
+							| {
+									x: number | string;
+									y: number | string;
+									scale: number;
+									rotate: number;
+							  } = false;
 
 						if (isNewOpponentCard) {
 							const entryOffset = getEntryOffset(position);
@@ -526,7 +528,7 @@ export function TrickArea({
 							initialProps = {
 								x: entryOffset.x,
 								y: entryOffset.y,
-								scale: 0.6,
+								scale: 1,
 								rotate: baseAngle + spin,
 							};
 						}
@@ -551,14 +553,11 @@ export function TrickArea({
 			)}
 
 			{/* Drop-Zone Hinweis */}
-			{trickCards.length === 0 &&
-				!playedCard &&
-				!isOver &&
-				!isAnimating && (
-					<div className="absolute inset-0 flex items-center justify-center">
-						<span className="text-white/30 text-sm">Karte hier ablegen</span>
-					</div>
-				)}
+			{trickCards.length === 0 && !playedCard && !isOver && !isAnimating && (
+				<div className="absolute inset-0 flex items-center justify-center">
+					<span className="text-white/30 text-sm">Karte hier ablegen</span>
+				</div>
+			)}
 
 			{/* Hover-Effekt */}
 			{isOver && canDrop && (
