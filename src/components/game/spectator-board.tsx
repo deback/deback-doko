@@ -1,6 +1,7 @@
 "use client";
 
-import { Eye } from "lucide-react";
+import { Eye, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { GameState } from "@/types/game";
 import type { Player } from "@/types/tables";
@@ -15,6 +16,15 @@ interface SpectatorBoardProps {
 }
 
 export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
+	const [showGameEndDialog, setShowGameEndDialog] = useState(true);
+
+	// Reset game end dialog when a new game starts
+	useEffect(() => {
+		if (!gameState.gameEnded) {
+			setShowGameEndDialog(true);
+		}
+	}, [gameState.gameEnded]);
+
 	// For spectators, we show all players as "opponents" (card backs)
 	// We'll use the first player as the "bottom" position for consistent viewing
 
@@ -183,9 +193,16 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 			)}
 
 			{/* Game End Overlay */}
-			{gameState.gameEnded && (
+			{gameState.gameEnded && showGameEndDialog && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-					<div className="rounded-xl bg-white/90 p-8 text-center shadow-2xl">
+					<div className="relative rounded-xl bg-white/90 p-8 text-center shadow-2xl">
+						<button
+							className="absolute top-2 right-2 rounded-full p-1 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+							onClick={() => setShowGameEndDialog(false)}
+							type="button"
+						>
+							<X className="h-5 w-5" />
+						</button>
 						<h2 className="mb-4 font-bold text-2xl text-emerald-600">
 							Spiel beendet!
 						</h2>

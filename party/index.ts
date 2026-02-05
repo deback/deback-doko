@@ -116,6 +116,7 @@ export default class Server implements Party.Server {
 
 	// Load persisted state from storage
 	async onStart() {
+		console.log("[onStart] Room:", this.room.id);
 		if (this.room.id === "tables-room") {
 			const storedTables = await this.room.storage.get<Table[]>("tables");
 			if (storedTables) {
@@ -123,8 +124,19 @@ export default class Server implements Party.Server {
 			}
 		} else if (this.room.id.startsWith("game-")) {
 			const storedGame = await this.room.storage.get<GameState>("gameState");
+			console.log("[onStart] Loaded game:", storedGame?.id, "gameEnded:", storedGame?.gameEnded);
 			if (storedGame) {
 				this.games.set(this.room.id, storedGame);
+
+				// If loaded game is ended, schedule restart
+				if (storedGame.gameEnded) {
+					console.log("[onStart] Game is ended, scheduling restart in 5 seconds");
+					const RESTART_DELAY = 5000;
+					setTimeout(() => {
+						console.log("[onStart] Restarting game now...");
+						this.restartGame(storedGame);
+					}, RESTART_DELAY);
+				}
 			}
 		}
 	}
@@ -779,12 +791,102 @@ export default class Server implements Party.Server {
 			if (gameState.completedTricks.length >= 12) {
 				gameState.gameEnded = true;
 				this.saveGameResults(gameState);
+
+				await this.persistGameState(gameState);
+				this.broadcastGameState(gameState);
+				this.broadcastToSpectators(gameState);
+
+				// Restart game after 5 seconds
+				const RESTART_DELAY = 5000;
+				setTimeout(() => {
+					this.restartGame(gameState);
+				}, RESTART_DELAY);
+				return;
 			}
 
 			await this.persistGameState(gameState);
 			this.broadcastGameState(gameState);
 			this.broadcastToSpectators(gameState);
 		}, TRICK_ANIMATION_DELAY);
+	}
+
+	async restartGame(oldGameState: GameState) {
+		console.log("[restartGame] Starting restart for game:", oldGameState.id);
+		const gameId = this.room.id;
+		const players = oldGameState.players;
+		const tableId = oldGameState.tableId;
+		const newRound = oldGameState.round + 1;
+
+		// Create new deck and deal
+		const deck = this.createDeck();
+		const hands = this.dealCards(deck, players);
+		const trump: Suit | "jacks" | "queens" = "jacks";
+
+		// Check for Schweinerei
+		const schweinereiPlayers: string[] = [];
+		for (const player of players) {
+			const hand = hands[player.id];
+			if (hand) {
+				const diamondsAces = hand.filter(
+					(card) => card.suit === "diamonds" && card.rank === "ace",
+				);
+				if (diamondsAces.length === 2) {
+					schweinereiPlayers.push(player.id);
+				}
+			}
+		}
+
+		// Reset scores
+		const scores: Record<string, number> = {};
+		for (const player of players) {
+			scores[player.id] = 0;
+		}
+
+		// Determine Re/Kontra teams
+		const teams: Record<string, "re" | "kontra"> = {};
+		for (const player of players) {
+			const hand = hands[player.id];
+			if (hand) {
+				const hasClubsQueen = hand.some(
+					(card) => card.suit === "clubs" && card.rank === "queen",
+				);
+				teams[player.id] = hasClubsQueen ? "re" : "kontra";
+			}
+		}
+
+		// Create hand counts for spectators
+		const handCounts: Record<string, number> = {};
+		for (const player of players) {
+			handCounts[player.id] = hands[player.id]?.length || 0;
+		}
+
+		const gameState: GameState = {
+			id: gameId,
+			tableId,
+			players,
+			currentPlayerIndex: 0,
+			hands,
+			handCounts,
+			currentTrick: {
+				cards: [],
+				completed: false,
+			},
+			completedTricks: [],
+			trump,
+			gameStarted: true,
+			gameEnded: false,
+			round: newRound,
+			scores,
+			schweinereiPlayers,
+			teams,
+			spectatorCount: oldGameState.spectatorCount,
+			spectators: oldGameState.spectators,
+		};
+
+		this.games.set(gameId, gameState);
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
 	}
 
 	async saveGameResults(gameState: GameState) {

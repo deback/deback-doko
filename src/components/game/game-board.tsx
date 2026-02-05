@@ -10,7 +10,7 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { Eye } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -176,6 +176,7 @@ export function GameBoard({
 	const [cardOrigin, setCardOrigin] = useState<CardOrigin | null>(null);
 	const [activeDragCard, setActiveDragCard] = useState<Card | null>(null);
 	const [dragPlayedCard, setDragPlayedCard] = useState<string | null>(null);
+	const [showGameEndDialog, setShowGameEndDialog] = useState(true);
 
 	const mouseSensor = useSensor(MouseSensor, {
 		activationConstraint: {
@@ -321,6 +322,13 @@ export function GameBoard({
 
 		prevTrickLengthRef.current = currentLength;
 	}, [gameState.currentTrick.cards.length]);
+
+	// Reset game end dialog when a new game starts
+	useEffect(() => {
+		if (!gameState.gameEnded) {
+			setShowGameEndDialog(true);
+		}
+	}, [gameState.gameEnded]);
 
 	return (
 		<DndContext
@@ -501,9 +509,16 @@ export function GameBoard({
 			</div>
 
 			{/* Spielende */}
-			{gameState.gameEnded && (
+			{gameState.gameEnded && showGameEndDialog && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-					<div className="rounded-xl bg-white/90 p-8 text-center shadow-2xl">
+					<div className="relative rounded-xl bg-white/90 p-8 text-center shadow-2xl">
+						<button
+							className="absolute top-2 right-2 rounded-full p-1 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+							onClick={() => setShowGameEndDialog(false)}
+							type="button"
+						>
+							<X className="h-5 w-5" />
+						</button>
 						<h2 className="mb-4 font-bold text-2xl text-emerald-600">
 							Spiel beendet!
 						</h2>
