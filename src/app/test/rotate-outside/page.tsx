@@ -1,4 +1,5 @@
 "use client";
+import DropZone from "./drop-zone";
 import Hand from "./hand";
 
 const CARD_FILES: string[] = [
@@ -22,6 +23,7 @@ export default function RotateOutsidePage() {
 			<Hand cards={CARD_FILES} opponent position="top" />
 			<Hand cards={CARD_FILES} opponent position="left" />
 			<Hand cards={CARD_FILES} opponent position="right" />
+			<DropZone />
 		</>
 	);
 }
