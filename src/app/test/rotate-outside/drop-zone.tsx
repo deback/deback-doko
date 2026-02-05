@@ -28,6 +28,11 @@ export default function DropZone({
 	const [mounted, setMounted] = useState(false);
 	const anglesRef = useRef<Map<string, number>>(new Map());
 	const dropZoneRef = useRef<HTMLDivElement>(null);
+	const snapshotRef = useRef<{
+		card: string;
+		angle: number;
+		initial: { x: number; y: number; scale: number };
+	} | null>(null);
 
 	useEffect(() => {
 		for (const card of OPPONENT_CARDS) {
@@ -35,27 +40,29 @@ export default function DropZone({
 				card.position === "left" || card.position === "right" ? 90 : 0;
 			anglesRef.current.set(card.position, base + randomAngle());
 		}
-		anglesRef.current.set("bottom", randomAngle());
 		setMounted(true);
 	}, []);
 
-	useEffect(() => {
-		if (playedCard) {
-			anglesRef.current.set("bottom", randomAngle());
-		}
-	}, [playedCard]);
-
-	function getInitialFromOrigin() {
-		if (!cardOrigin || !dropZoneRef.current) return undefined;
+	// Compute snapshot synchronously so the card renders immediately
+	if (
+		playedCard &&
+		cardOrigin &&
+		snapshotRef.current?.card !== playedCard &&
+		dropZoneRef.current
+	) {
 		const dropRect = dropZoneRef.current.getBoundingClientRect();
 		const dropCenterX = dropRect.left + dropRect.width / 2;
 		const dropCenterY = dropRect.top + dropRect.height / 2;
 		const originCenterX = cardOrigin.x + cardOrigin.width / 2;
 		const originCenterY = cardOrigin.y + cardOrigin.height / 2;
-		return {
-			x: originCenterX - dropCenterX,
-			y: originCenterY - dropCenterY,
-			scale: 1.2,
+		snapshotRef.current = {
+			card: playedCard,
+			angle: randomAngle(),
+			initial: {
+				x: originCenterX - dropCenterX,
+				y: originCenterY - dropCenterY,
+				scale: 1.2,
+			},
 		};
 	}
 
@@ -102,9 +109,9 @@ export default function DropZone({
 						/>
 					))}
 					<AnimatePresence mode="popLayout">
-						{playedCard && (
+						{playedCard && snapshotRef.current?.card === playedCard && (
 							<Card
-								angle={anglesRef.current.get("bottom") ?? 0}
+								angle={snapshotRef.current.angle}
 								animate={{
 									x: 0,
 									y: 0,
@@ -112,9 +119,7 @@ export default function DropZone({
 								}}
 								className="origin-center! translate-y-[30%]"
 								file={playedCard}
-								initial={
-									getInitialFromOrigin() || false
-								}
+								initial={snapshotRef.current.initial}
 								key={playedCard}
 							/>
 						)}
