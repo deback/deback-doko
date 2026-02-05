@@ -1,6 +1,5 @@
 import Cards from "./dummy/cards";
 import DropZone from "./dummy/drop-zone";
-import OpponentCards from "./dummy/opponent-cards";
 
 export default function GameDummyPage() {
 	return (

@@ -17,10 +17,10 @@ export default function Card({
 
 	return (
 		<div
-			className={cn("absolute w-[30vw] aspect-5/7 max-w-40", className)}
+			className={cn("absolute w-[30vw] aspect-5/7 max-w-50", className)}
 			style={style}
 		>
-			<Image alt={alt} fill src={src} />
+			<Image alt={alt} draggable={false} fill src={src} />
 		</div>
 	);
 }

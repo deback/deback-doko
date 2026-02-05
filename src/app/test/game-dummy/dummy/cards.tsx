@@ -41,7 +41,15 @@ export default function Cards({
 	const cardCount = cardIds.length;
 
 	return (
-		<div className={cn("absolute", positionClasses[position], className)}>
+		<div
+			className={cn(
+				"absolute",
+				positionClasses[position],
+
+				className,
+				{ "-translate-y-[3vw]": opponent },
+			)}
+		>
 			{cardIds.map((id, index) => {
 				const offset = (index - (cardCount - 1) / 2) * cardSpacing;
 				const sign = offset >= 0 ? 1 : -1;
@@ -54,8 +62,8 @@ export default function Cards({
 						key={id}
 						style={{
 							bottom: 0,
-							left: `calc(50% - ${sign} * min(${absOffset}vw, ${absOffset * 8}px))`,
-							transform: `translateX(-50%)`,
+							left: `calc(50% + ${sign} * min(${absOffset}vw, ${absOffset * 10}px))`,
+							transform: `translateX(-50%) `,
 						}}
 					/>
 				);
