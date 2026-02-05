@@ -1,33 +1,33 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(pnpm build:*)",
-      "Bash(pnpm run check:*)",
-      "Bash(curl:*)",
-      "Bash(pnpm tsc:*)",
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "Bash(pnpm run check:write:*)",
-      "Bash(git -C /Users/deback/Development/deback/deback.dev/deback-doko log --oneline -10)",
-      "Bash(head:*)",
-      "Bash(pnpm check:*)",
-      "Bash(pnpm check:write:*)",
-      "Bash(tree:*)",
-      "Bash(pnpm db:push:*)",
-      "Bash(pnpm db:migrate:*)",
-      "Bash(npx tsx:*)",
-      "Bash(source .env)",
-      "Bash(psql:*)",
-      "Bash(npx dotenv-cli:*)",
-      "Bash(gtimeout 30 pnpm db:push:*)",
-      "Bash(pnpm dlx:*)",
-      "Bash(pnpm add:*)",
-      "Bash(python3:*)",
-      "Bash(for card in QC QD QH QS)",
-      "Bash(do)",
-      "Bash(done)",
-      "Bash(for card in JC JD JH JS)"
-    ]
-  }
+	"permissions": {
+		"allow": [
+			"Bash(pnpm build:*)",
+			"Bash(pnpm run check:*)",
+			"Bash(curl:*)",
+			"Bash(pnpm tsc:*)",
+			"Bash(grep:*)",
+			"Bash(find:*)",
+			"Bash(ls:*)",
+			"Bash(pnpm run check:write:*)",
+			"Bash(git -C /Users/deback/Development/deback/deback.dev/deback-doko log --oneline -10)",
+			"Bash(head:*)",
+			"Bash(pnpm check:*)",
+			"Bash(pnpm check:write:*)",
+			"Bash(tree:*)",
+			"Bash(pnpm db:push:*)",
+			"Bash(pnpm db:migrate:*)",
+			"Bash(npx tsx:*)",
+			"Bash(source .env)",
+			"Bash(psql:*)",
+			"Bash(npx dotenv-cli:*)",
+			"Bash(gtimeout 30 pnpm db:push:*)",
+			"Bash(pnpm dlx:*)",
+			"Bash(pnpm add:*)",
+			"Bash(python3:*)",
+			"Bash(for card in QC QD QH QS)",
+			"Bash(do)",
+			"Bash(done)",
+			"Bash(for card in JC JD JH JS)"
+		]
+	}
 }

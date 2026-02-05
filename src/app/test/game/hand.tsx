@@ -1,5 +1,6 @@
 "use client";
 
+import { useDraggable } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import Card from "./card";
@@ -14,16 +15,82 @@ export interface CardOrigin {
 
 const CLOSE_GAP_DELAY = 600;
 
+function DraggableHandCard({
+	file,
+	angle,
+	selected,
+	isGhost,
+	isDragging,
+	disabled,
+	onClick,
+	onRef,
+}: {
+	file: string;
+	angle: number;
+	selected: boolean;
+	isGhost: boolean;
+	isDragging: boolean;
+	disabled: boolean;
+	onClick: () => void;
+	onRef: (el: HTMLButtonElement | null) => void;
+}) {
+	const {
+		setNodeRef,
+		attributes,
+		listeners,
+		transform,
+		isDragging: isDraggingThis,
+	} = useDraggable({
+		id: file,
+		data: { file, angle },
+		disabled,
+	});
+
+	const mergedRef = useCallback(
+		(el: HTMLButtonElement | null) => {
+			setNodeRef(el);
+			onRef(el);
+		},
+		[setNodeRef, onRef],
+	);
+
+	const dragStyle: React.CSSProperties | undefined =
+		transform && !isDraggingThis
+			? { translate: `${transform.x}px ${transform.y}px` }
+			: undefined;
+
+	return (
+		<Card
+			angle={angle}
+			className={cn(
+				"top-0 left-0 w-full h-full touch-none",
+				(isGhost || isDragging || isDraggingThis) &&
+					"invisible pointer-events-none",
+				isDraggingThis && "transition-none!",
+			)}
+			dragAttributes={attributes}
+			dragListeners={listeners}
+			file={file}
+			onClick={onClick}
+			ref={mergedRef}
+			selected={selected}
+			style={dragStyle}
+		/>
+	);
+}
+
 export default function Hand({
 	cards,
 	position,
 	opponent = false,
+	activeDragCard,
 	onPlayCard,
 	onRemoveCard,
 }: {
 	cards: string[];
 	position: "bottom" | "top" | "left" | "right";
 	opponent?: boolean;
+	activeDragCard?: string | null;
 	onPlayCard?: (file: string, origin: CardOrigin) => void;
 	onRemoveCard?: (file: string) => void;
 }) {
@@ -45,6 +112,19 @@ export default function Hand({
 			clearTimeout(ghostTimerRef.current);
 		};
 	}, []);
+
+	// When a card is played via drag, trigger ghost + removal from parent
+	useEffect(() => {
+		if (!activeDragCard || opponent) return;
+		const idx = cards.indexOf(activeDragCard);
+		if (idx === -1) return;
+		setGhostFile(activeDragCard);
+		setSelectedIndex(null);
+		ghostTimerRef.current = setTimeout(() => {
+			onRemoveCard?.(activeDragCard);
+			setGhostFile(null);
+		}, CLOSE_GAP_DELAY);
+	}, [activeDragCard, cards, opponent, onRemoveCard]);
 
 	function handleClick(card: string, index: number) {
 		if (ghostFile !== null) return;
@@ -95,27 +175,33 @@ export default function Hand({
 				},
 			)}
 		>
-			<div className="relative w-[30vw] max-w-40 lg:max-w-56 aspect-5/7">
+			<div className="@container relative w-[30vw] max-w-40 lg:max-w-56 aspect-5/7">
 				{cards.map((card, index) => {
 					const t = index - (cards.length - 1) / 2;
 					const angle = t * 1.2;
+
+					if (opponent) {
+						return (
+							<Card
+								angle={angle}
+								className="top-0 left-0 w-full h-full"
+								file="1B.svg"
+								key={card}
+							/>
+						);
+					}
+
 					return (
-						<Card
+						<DraggableHandCard
 							angle={angle}
-							className={cn(
-								"top-0 left-0 w-full h-full",
-								ghostFile === card &&
-									"invisible pointer-events-none",
-							)}
-							file={`${opponent ? "1B.svg" : card}`}
+							disabled={ghostFile !== null}
+							file={card}
+							isDragging={activeDragCard === card && ghostFile !== card}
+							isGhost={ghostFile === card}
 							key={card}
-							onClick={
-								opponent
-									? undefined
-									: () => handleClick(card, index)
-							}
-							ref={!opponent ? setCardRef(card) : undefined}
-							selected={!opponent && selectedIndex === index}
+							onClick={() => handleClick(card, index)}
+							onRef={setCardRef(card)}
+							selected={selectedIndex === index}
 						/>
 					);
 				})}

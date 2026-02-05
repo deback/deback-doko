@@ -9,7 +9,10 @@ interface GamePageProps {
 	searchParams: Promise<{ spectate?: string }>;
 }
 
-export default async function GamePage({ params, searchParams }: GamePageProps) {
+export default async function GamePage({
+	params,
+	searchParams,
+}: GamePageProps) {
 	const session = await getSession();
 	const { gameId } = await params;
 	const { spectate } = await searchParams;

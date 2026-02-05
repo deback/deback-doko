@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
+import { useEffect, useState } from "react";
 import { CardImage } from "@/components/cards/card-image";
 import { cn } from "@/lib/utils";
 import type { Card } from "@/types/game";

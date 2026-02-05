@@ -1,7 +1,9 @@
 "use client";
 
+import { useDroppable } from "@dnd-kit/core";
 import { AnimatePresence } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import Card from "./card";
 import type { CardOrigin } from "./hand";
 
@@ -25,9 +27,24 @@ export default function DropZone({
 	playedCard: string | null;
 	cardOrigin: CardOrigin | null;
 }) {
+	const {
+		setNodeRef: setDroppableRef,
+		isOver,
+		active,
+	} = useDroppable({
+		id: "drop-zone",
+	});
 	const [mounted, setMounted] = useState(false);
 	const anglesRef = useRef<Map<string, number>>(new Map());
 	const dropZoneRef = useRef<HTMLDivElement>(null);
+	const mergedRef = useCallback(
+		(el: HTMLDivElement | null) => {
+			dropZoneRef.current = el;
+			setDroppableRef(el);
+		},
+		[setDroppableRef],
+	);
+	const canDrop = active != null;
 	const snapshotRef = useRef<{
 		card: string;
 		angle: number;
@@ -72,8 +89,12 @@ export default function DropZone({
 
 	return (
 		<div
-			className={[
-				"fixed border-2 border-red-500",
+			className={cn(
+				"fixed border-2 transition-all duration-200",
+
+				isOver && canDrop
+					? "border-primary bg-primary/10 scale-[1.02]"
+					: "border-red-500",
 
 				// -- Top --
 				"top-[calc(min(30vw,10rem)*1.4*0.2)]",
@@ -92,8 +113,8 @@ export default function DropZone({
 				"right-[calc(min(30vw,10rem)*0.4)]",
 				"lg:left-[calc(min(30vw,14rem)*0.4)]",
 				"lg:right-[calc(min(30vw,14rem)*0.4)]",
-			].join(" ")}
-			ref={dropZoneRef}
+			)}
+			ref={mergedRef}
 		>
 			{mounted && (
 				<div className="relative w-full h-full flex items-center justify-center">

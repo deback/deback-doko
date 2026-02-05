@@ -1,5 +1,9 @@
 "use client";
 
+import type {
+	DraggableAttributes,
+	DraggableSyntheticListeners,
+} from "@dnd-kit/core";
 import { motion, type TargetAndTransition } from "framer-motion";
 import Image from "next/image";
 import type { Ref } from "react";
@@ -20,6 +24,9 @@ export default function Card({
 	initial,
 	animate,
 	ref,
+	style,
+	dragListeners,
+	dragAttributes,
 }: {
 	file: string;
 	angle: number;
@@ -29,6 +36,9 @@ export default function Card({
 	initial?: false | TargetAndTransition;
 	animate?: TargetAndTransition;
 	ref?: Ref<HTMLButtonElement>;
+	style?: React.CSSProperties;
+	dragListeners?: DraggableSyntheticListeners;
+	dragAttributes?: DraggableAttributes;
 }) {
 	// Hand cards: no animate prop → rotation via framer-motion animate for smooth interpolation.
 	// DropZone cards with rotate in animate → framer-motion controls rotation, no style needed.
@@ -37,12 +47,13 @@ export default function Card({
 	const hasAnimatedRotation = animate != null && "rotate" in animate;
 	const rotateStyle =
 		hasAnimatedRotation || !animate ? undefined : { rotate: angle };
+	const mergedStyle = { ...rotateStyle, ...style };
 
 	return (
 		<motion.button
 			animate={mergedAnimate}
 			className={cn(
-				"absolute w-[30vw] max-w-56 aspect-5/7 origin-[50%_650%] shadow-md rounded-[1cqw] xl:origin-[50%_850%] transition-[translate,box-shadow] duration-200 select-none",
+				"absolute w-[30vw] max-w-56 aspect-5/7 origin-[50%_650%] shadow-md rounded-[5cqw] xl:origin-[50%_850%] transition-[translate,box-shadow] duration-200 select-none",
 				{ "cursor-pointer hover:-translate-y-[6%]": onClick },
 				{
 					"-translate-y-[10%] hover:-translate-y-[10%] ring-2 ring-primary":
@@ -53,9 +64,11 @@ export default function Card({
 			initial={initial ?? false}
 			onClick={onClick}
 			ref={ref}
-			style={rotateStyle}
+			style={mergedStyle}
 			transition={THROW_TRANSITION}
 			type="button"
+			{...dragListeners}
+			{...dragAttributes}
 		>
 			<Image alt={file} draggable={false} fill src={`/doko/${file}`} />
 		</motion.button>

@@ -83,7 +83,13 @@ type GameEvent =
 	| { type: "get-state" }
 	| { type: "play-card"; cardId: string; playerId: string }
 	| { type: "start-game"; players: Player[]; tableId: string }
-	| { type: "spectate-game"; gameId: string; spectatorId: string; spectatorName: string; spectatorImage?: string | null };
+	| {
+			type: "spectate-game";
+			gameId: string;
+			spectatorId: string;
+			spectatorName: string;
+			spectatorImage?: string | null;
+	  };
 
 type GameMessage =
 	| { type: "state"; state: GameState; isSpectator?: boolean }
@@ -96,7 +102,15 @@ export default class Server implements Party.Server {
 	// Track spectators per game: gameId -> Set of spectator connection IDs
 	spectatorConnections: Map<string, Set<string>> = new Map();
 	// Map connection ID to spectator info (including name and image)
-	connectionToSpectator: Map<string, { gameId: string; spectatorId: string; spectatorName: string; spectatorImage?: string | null }> = new Map();
+	connectionToSpectator: Map<
+		string,
+		{
+			gameId: string;
+			spectatorId: string;
+			spectatorName: string;
+			spectatorImage?: string | null;
+		}
+	> = new Map();
 
 	constructor(readonly room: Party.Room) {}
 
@@ -105,7 +119,7 @@ export default class Server implements Party.Server {
 		if (this.room.id === "tables-room") {
 			const storedTables = await this.room.storage.get<Table[]>("tables");
 			if (storedTables) {
-				this.tables = new Map(storedTables.map(t => [t.id, t]));
+				this.tables = new Map(storedTables.map((t) => [t.id, t]));
 			}
 		} else if (this.room.id.startsWith("game-")) {
 			const storedGame = await this.room.storage.get<GameState>("gameState");
@@ -378,13 +392,25 @@ export default class Server implements Party.Server {
 				break;
 
 			case "spectate-game":
-				await this.addSpectator(event.gameId, event.spectatorId, event.spectatorName, event.spectatorImage, sender);
+				await this.addSpectator(
+					event.gameId,
+					event.spectatorId,
+					event.spectatorName,
+					event.spectatorImage,
+					sender,
+				);
 				break;
 		}
 	}
 
 	// Spectator management
-	async addSpectator(gameId: string, spectatorId: string, spectatorName: string, spectatorImage: string | null | undefined, conn: Party.Connection) {
+	async addSpectator(
+		gameId: string,
+		spectatorId: string,
+		spectatorName: string,
+		spectatorImage: string | null | undefined,
+		conn: Party.Connection,
+	) {
 		// Track connection as spectator
 		if (!this.spectatorConnections.has(gameId)) {
 			this.spectatorConnections.set(gameId, new Set());
@@ -393,12 +419,18 @@ export default class Server implements Party.Server {
 		if (spectators) {
 			spectators.add(conn.id);
 		}
-		this.connectionToSpectator.set(conn.id, { gameId, spectatorId, spectatorName, spectatorImage });
+		this.connectionToSpectator.set(conn.id, {
+			gameId,
+			spectatorId,
+			spectatorName,
+			spectatorImage,
+		});
 
 		// Update spectator count and list in game state
 		const gameState = this.games.get(gameId);
 		if (gameState) {
-			gameState.spectatorCount = this.spectatorConnections.get(gameId)?.size || 0;
+			gameState.spectatorCount =
+				this.spectatorConnections.get(gameId)?.size || 0;
 			gameState.spectators = this.getSpectatorList(gameId);
 
 			// Send spectator view (without hands) to the new spectator
@@ -408,18 +440,31 @@ export default class Server implements Party.Server {
 			this.broadcastGameState(gameState);
 
 			// Update table with spectator count
-			await this.updateTableSpectatorCount(gameState.tableId, gameState.spectatorCount);
+			await this.updateTableSpectatorCount(
+				gameState.tableId,
+				gameState.spectatorCount,
+			);
 		}
 	}
 
-	getSpectatorList(gameId: string): Array<{ id: string; name: string; image?: string | null }> {
-		const spectatorList: Array<{ id: string; name: string; image?: string | null }> = [];
+	getSpectatorList(
+		gameId: string,
+	): Array<{ id: string; name: string; image?: string | null }> {
+		const spectatorList: Array<{
+			id: string;
+			name: string;
+			image?: string | null;
+		}> = [];
 		const spectatorConnIds = this.spectatorConnections.get(gameId);
 		if (spectatorConnIds) {
 			for (const connId of spectatorConnIds) {
 				const info = this.connectionToSpectator.get(connId);
 				if (info) {
-					spectatorList.push({ id: info.spectatorId, name: info.spectatorName, image: info.spectatorImage });
+					spectatorList.push({
+						id: info.spectatorId,
+						name: info.spectatorName,
+						image: info.spectatorImage,
+					});
 				}
 			}
 		}
@@ -441,7 +486,10 @@ export default class Server implements Party.Server {
 				this.broadcastGameState(gameState);
 
 				// Update table with spectator count
-				await this.updateTableSpectatorCount(gameState.tableId, gameState.spectatorCount);
+				await this.updateTableSpectatorCount(
+					gameState.tableId,
+					gameState.spectatorCount,
+				);
 			}
 		}
 	}

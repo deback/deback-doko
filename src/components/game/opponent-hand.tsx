@@ -17,13 +17,16 @@ export function OpponentHand({ cardCount, className }: OpponentHandProps) {
 	const centerIndex = (cardCount - 1) / 2;
 
 	return (
-		<div className={cn("@container flex items-center justify-center", className)}>
+		<div
+			className={cn("@container flex items-center justify-center", className)}
+		>
 			{Array.from({ length: cardCount }).map((_, index) => {
 				const offsetFromCenter = index - centerIndex;
 				const rotation = offsetFromCenter * ROTATION_STEP;
 				const translateX = offsetFromCenter * TRANSLATE_X_STEP;
 				// Bogen-Effekt: nur Karten rechts von der Mitte gehen nach unten
-				const translateY = offsetFromCenter > 0 ? offsetFromCenter * TRANSLATE_Y_STEP : 0;
+				const translateY =
+					offsetFromCenter > 0 ? offsetFromCenter * TRANSLATE_Y_STEP : 0;
 
 				return (
 					<CardImage

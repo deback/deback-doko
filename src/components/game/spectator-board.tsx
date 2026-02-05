@@ -32,14 +32,24 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 
 	// Use handCounts for spectator view (since hands are empty for spectators)
 	const getCardCount = (playerId: string) => {
-		return gameState.handCounts[playerId] ?? gameState.hands[playerId]?.length ?? 0;
+		return (
+			gameState.handCounts[playerId] ?? gameState.hands[playerId]?.length ?? 0
+		);
 	};
 
 	return (
-		<div className={cn("relative h-dvh w-screen overflow-hidden bg-wood", className)}>
+		<div
+			className={cn(
+				"relative h-dvh w-screen overflow-hidden bg-wood",
+				className,
+			)}
+		>
 			{/* Spectator Badge */}
 			<div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
-				<Badge className="gap-2 bg-amber-500/20 px-4 py-2 text-amber-700 dark:text-amber-400" variant="secondary">
+				<Badge
+					className="gap-2 bg-amber-500/20 px-4 py-2 text-amber-700 dark:text-amber-400"
+					variant="secondary"
+				>
 					<Eye className="h-4 w-4" />
 					Zuschauer-Modus
 				</Badge>

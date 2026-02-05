@@ -91,7 +91,9 @@ export function TablesClient({ player }: TablesClientProps) {
 					console.error("Error from server:", message.message);
 				} else if (message.type === "game-started") {
 					// Only redirect if current player is part of the game
-					const isPlayerInGame = message.players.some((p) => p.id === player.id);
+					const isPlayerInGame = message.players.some(
+						(p) => p.id === player.id,
+					);
 					if (isPlayerInGame) {
 						// Store game info in sessionStorage for game client
 						sessionStorage.setItem(
@@ -176,7 +178,9 @@ export function TablesClient({ player }: TablesClientProps) {
 		const isAtThisTable = table.players.some((p) => p.id === player.id);
 		const isFull = table.players.length >= 4;
 		// Cannot join a table that has already started a game
-		return !isAtThisTable && !isFull && !isPlayerAtAnyTable && !table.gameStarted;
+		return (
+			!isAtThisTable && !isFull && !isPlayerAtAnyTable && !table.gameStarted
+		);
 	};
 
 	const canSpectateTable = (table: Table) => {
@@ -216,7 +220,8 @@ export function TablesClient({ player }: TablesClientProps) {
 						const joinable = canJoinTable(table);
 						const isMyTable = table.players.some((p) => p.id === player.id);
 						const canSpectate = canSpectateTable(table);
-						const canRejoinGame = isMyTable && table.gameStarted && table.gameId;
+						const canRejoinGame =
+							isMyTable && table.gameStarted && table.gameId;
 						const isClickable = joinable || canSpectate || canRejoinGame;
 
 						const handleTableClick = () => {
@@ -255,7 +260,10 @@ export function TablesClient({ player }: TablesClientProps) {
 											<div className="flex items-center gap-2">
 												<CardTitle>{table.name}</CardTitle>
 												{table.gameStarted && (
-													<Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400" variant="secondary">
+													<Badge
+														className="bg-amber-500/20 text-amber-700 dark:text-amber-400"
+														variant="secondary"
+													>
 														Live
 													</Badge>
 												)}
@@ -330,7 +338,9 @@ export function TablesClient({ player }: TablesClientProps) {
 											>
 												<Eye className="mr-2 h-4 w-4" />
 												Zuschauen
-												{table.spectatorCount ? ` (${table.spectatorCount})` : ""}
+												{table.spectatorCount
+													? ` (${table.spectatorCount})`
+													: ""}
 											</Button>
 										)}
 									</div>
