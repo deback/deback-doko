@@ -117,24 +117,24 @@ export default function DropZone({
 					: "border-red-500",
 
 				// -- Top --
-			"top-[calc(min(30vw,10rem)*1.4*0.2)]",
-			"portrait:top-[calc(min(30vw,10rem)*1.4/3)]",
-			"lg:top-[calc(min(30vw,14rem)*1.4/3)]",
+				"top-[calc(min(30vw,10rem)*1.4*0.2)]",
+				"portrait:top-[calc(min(30vw,10rem)*1.4/3)]",
+				"lg:top-[calc(min(30vw,14rem)*1.4/3)]",
 
-			// -- Bottom: matches Hand translate-y at each breakpoint --
-			"bottom-[calc(min(30vw,10rem)*1.4*2/3)]",
-			"sm:bottom-[calc(min(30vw,10rem)*1.4/2)]",
-			"landscape:bottom-[calc(min(30vh,7rem)*1.4/3)]",
-			"lg:bottom-[calc(min(30vw,14rem)*1.4/2)]",
-			"lg:landscape:bottom-[calc(min(30vw,14rem)*1.4/2)]",
+				// -- Bottom: matches Hand translate-y at each breakpoint --
+				"bottom-[calc(min(30vw,10rem)*1.4*2/3)]",
+				"sm:bottom-[calc(min(30vw,10rem)*1.4/2)]",
+				"landscape:bottom-[calc(min(30vh,7rem)*1.4/3)]",
+				"lg:bottom-[calc(min(30vw,14rem)*1.4/2)]",
+				"lg:landscape:bottom-[calc(min(30vw,14rem)*1.4/2)]",
 
-			// -- Left/Right --
-			"left-[calc(min(30vw,10rem)*0.4)]",
-			"right-[calc(min(30vw,10rem)*0.4)]",
-			"landscape:left-[calc(min(30vh,7rem)*0.4)]",
-			"landscape:right-[calc(min(30vh,7rem)*0.4)]",
-			"lg:left-[calc(min(30vw,14rem)*0.4)]",
-			"lg:right-[calc(min(30vw,14rem)*0.4)]",
+				// -- Left/Right --
+				"left-[calc(min(30vw,10rem)*0.4)]",
+				"right-[calc(min(30vw,10rem)*0.4)]",
+				"landscape:left-[calc(min(30vh,7rem)*0.4)]",
+				"landscape:right-[calc(min(30vh,7rem)*0.4)]",
+				"lg:left-[calc(min(30vw,14rem)*0.4)]",
+				"lg:right-[calc(min(30vw,14rem)*0.4)]",
 			)}
 			ref={mergedRef}
 		>
@@ -170,9 +170,7 @@ export default function DropZone({
 									x: 0,
 									y: 0,
 									scale: 1,
-									rotate:
-										snapshotRef.current.angle +
-										(isShortScreen ? 90 : 0),
+									rotate: snapshotRef.current.angle + (isShortScreen ? 90 : 0),
 								}}
 								className="origin-center! translate-y-[30%]"
 								file={playedCard}
