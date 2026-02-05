@@ -409,28 +409,20 @@ export function TrickArea({
 						);
 						const baseAngle = storedAngle + shortScreenOffset;
 
-						// Position class based on player position (like in test drop-zone)
-						const positionClass = cn(
-							"origin-center!",
-							position === "top" && "-translate-y-[30%]",
-							position === "left" && "-translate-x-[30%]",
-							position === "right" && "translate-x-[30%]",
-							position === "bottom" && "translate-y-[30%]",
-						);
-
 						// Throwing animation (local player just played)
 						if (isThrowingCard && snapshot) {
+							const playOffset = getPlayOffset(position);
 							return (
 								<Card
 									angle={0}
 									animate={{
-										x: 0,
-										y: 0,
+										x: playOffset.x,
+										y: playOffset.y,
 										scale: 1,
 										rotate: snapshot.angle + shortScreenOffset,
 									}}
 									card={trickCard.card}
-									className={positionClass}
+									className="origin-center!"
 									initial={snapshot.initial}
 									key={trickCard.card.id}
 								/>
@@ -515,6 +507,7 @@ export function TrickArea({
 						// New opponent card - fly in from their position
 						if (flyInCardIds.has(trickCard.card.id)) {
 							const entryOffset = getEntryOffset(position);
+							const playOffset = getPlayOffset(position);
 							const spinOptions = [-360, 0, 360];
 							const spin =
 								spinOptions[Math.floor(Math.random() * 3)] ?? 0;
@@ -523,13 +516,13 @@ export function TrickArea({
 								<Card
 									angle={0}
 									animate={{
-										x: 0,
-										y: 0,
+										x: playOffset.x,
+										y: playOffset.y,
 										scale: 1,
 										rotate: baseAngle,
 									}}
 									card={trickCard.card}
-									className={positionClass}
+									className="origin-center!"
 									initial={{
 										x: entryOffset.x,
 										y: entryOffset.y,
@@ -541,43 +534,23 @@ export function TrickArea({
 							);
 						}
 
-						// New opponent card - fly in from their position
-						if (flyInCardIds.has(trickCard.card.id)) {
-							const entryOffset = getEntryOffset(position);
-							const spinOptions = [-360, 0, 360];
-							const spin =
-								spinOptions[Math.floor(Math.random() * 3)] ?? 0;
-
-							return (
-								<Card
-									angle={0}
-									animate={{
-										x: 0,
-										y: 0,
-										scale: 1,
-										rotate: baseAngle,
-									}}
-									card={trickCard.card}
-									className={positionClass}
-									initial={{
-										x: entryOffset.x,
-										y: entryOffset.y,
-										scale: 0.6,
-										rotate: baseAngle + spin,
-									}}
-									key={trickCard.card.id}
-								/>
-							);
-						}
-
-						// Normal static card - use animate with rotation
+						// Normal static card - use Framer Motion for position
+						const playOffset = getPlayOffset(position);
 						return (
 							<Card
 								angle={0}
-								animate={{ rotate: baseAngle }}
+								animate={{
+									x: playOffset.x,
+									y: playOffset.y,
+									rotate: baseAngle,
+								}}
 								card={trickCard.card}
-								className={positionClass}
-								initial={{ rotate: baseAngle }}
+								className="origin-center!"
+								initial={{
+									x: playOffset.x,
+									y: playOffset.y,
+									rotate: baseAngle,
+								}}
 								key={trickCard.card.id}
 							/>
 						);
