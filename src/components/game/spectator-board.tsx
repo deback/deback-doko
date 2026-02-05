@@ -82,10 +82,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 							team={gameState.teams[topPlayer.id]}
 						/>
 					</div>
-					<OpponentHand
-						cardCount={getCardCount(topPlayer.id)}
-						position="top"
-					/>
+					<OpponentHand cardCount={getCardCount(topPlayer.id)} position="top" />
 				</>
 			)}
 

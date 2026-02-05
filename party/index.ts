@@ -125,13 +125,20 @@ export default class Server implements Party.Server {
 			}
 		} else if (this.room.id.startsWith("game-")) {
 			const storedGame = await this.room.storage.get<GameState>("gameState");
-			console.log("[onStart] Loaded game:", storedGame?.id, "gameEnded:", storedGame?.gameEnded);
+			console.log(
+				"[onStart] Loaded game:",
+				storedGame?.id,
+				"gameEnded:",
+				storedGame?.gameEnded,
+			);
 			if (storedGame) {
 				this.games.set(this.room.id, storedGame);
 
 				// If loaded game is ended, schedule restart
 				if (storedGame.gameEnded) {
-					console.log("[onStart] Game is ended, scheduling restart in 5 seconds");
+					console.log(
+						"[onStart] Game is ended, scheduling restart in 5 seconds",
+					);
 					const RESTART_DELAY = 5000;
 					setTimeout(() => {
 						console.log("[onStart] Restarting game now...");
@@ -697,7 +704,10 @@ export default class Server implements Party.Server {
 		}
 
 		// Block play during trick completion animation
-		if (gameState.currentTrick.completed || gameState.currentTrick.cards.length >= 4) {
+		if (
+			gameState.currentTrick.completed ||
+			gameState.currentTrick.cards.length >= 4
+		) {
 			this.sendGameError(sender, "Stich wird gerade ausgewertet.");
 			return;
 		}
@@ -1164,7 +1174,11 @@ export default class Server implements Party.Server {
 			return;
 		}
 
-		const playableCards = this.getPlayableCards(hand, gameState.currentTrick, gameState.trump);
+		const playableCards = this.getPlayableCards(
+			hand,
+			gameState.currentTrick,
+			gameState.trump,
+		);
 		const cardToPlay = playableCards[0];
 		if (!cardToPlay) {
 			this.sendGameError(sender, "Keine spielbare Karte gefunden.");

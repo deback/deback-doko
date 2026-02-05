@@ -96,7 +96,15 @@ export function PlayerHand({
 			}
 			setSelectedCardId(null);
 		}
-	}, [isMyTurn, selectedCardId, playableCardIds, cards, onPlayCard, onRemoveCard, ghostCardId]);
+	}, [
+		isMyTurn,
+		selectedCardId,
+		playableCardIds,
+		cards,
+		onPlayCard,
+		onRemoveCard,
+		ghostCardId,
+	]);
 
 	// Wenn sich die spielbaren Karten ändern und die ausgewählte Karte nicht mehr spielbar ist,
 	// deselektiere sie
@@ -179,7 +187,8 @@ export function PlayerHand({
 					const isDisabled = hasTrickStarted && !isCardPlayable;
 					const isSelected = selectedCardId === card.id;
 					const isGhost = ghostCardId === card.id;
-					const isDragging = activeDragCard === card.id && ghostCardId !== card.id;
+					const isDragging =
+						activeDragCard === card.id && ghostCardId !== card.id;
 
 					return (
 						<DraggableCard
@@ -190,12 +199,16 @@ export function PlayerHand({
 								(isGhost || isDragging) && "invisible pointer-events-none",
 							)}
 							isDisabled={isDisabled}
-							isDraggingDisabled={!isMyTurn || isDisabled || ghostCardId !== null}
+							isDraggingDisabled={
+								!isMyTurn || isDisabled || ghostCardId !== null
+							}
 							isGhost={isGhost}
 							isPlayable={isPlayable}
 							isSelected={isSelected}
 							key={card.id}
-							onClick={!isDisabled ? () => handleCardClick(card, index) : undefined}
+							onClick={
+								!isDisabled ? () => handleCardClick(card, index) : undefined
+							}
 							onRef={setCardRef(card.id)}
 						/>
 					);
