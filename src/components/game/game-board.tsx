@@ -362,20 +362,18 @@ export function GameBoard({
 			{/* Oberer Gegner */}
 			{topPlayer && (
 				<>
-					<div className="fixed top-4 left-1/2 z-10 -translate-x-1/2">
-						<PlayerInfo
-							cardCount={gameState.hands[topPlayer.id]?.length || 0}
-							isCurrentPlayer={false}
-							isCurrentTurn={
-								gameState.players[gameState.currentPlayerIndex]?.id ===
-								topPlayer.id
-							}
-							player={topPlayer}
-							position="top"
-							score={gameState.scores[topPlayer.id] || 0}
-							team={gameState.teams[topPlayer.id]}
-						/>
-					</div>
+					<PlayerInfo
+						cardCount={gameState.hands[topPlayer.id]?.length || 0}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							topPlayer.id
+						}
+						player={topPlayer}
+						position="top"
+						score={gameState.scores[topPlayer.id] || 0}
+						team={gameState.teams[topPlayer.id]}
+					/>
 					<OpponentHand
 						cardCount={gameState.hands[topPlayer.id]?.length || 0}
 						position="top"
@@ -409,20 +407,19 @@ export function GameBoard({
 			{/* Rechter Gegner */}
 			{rightPlayer && (
 				<>
-					<div className="fixed right-4 top-1/2 z-10 -translate-y-1/2">
-						<PlayerInfo
-							cardCount={gameState.hands[rightPlayer.id]?.length || 0}
-							isCurrentPlayer={false}
-							isCurrentTurn={
-								gameState.players[gameState.currentPlayerIndex]?.id ===
-								rightPlayer.id
-							}
-							player={rightPlayer}
-							position="right"
-							score={gameState.scores[rightPlayer.id] || 0}
-							team={gameState.teams[rightPlayer.id]}
-						/>
-					</div>
+					<PlayerInfo
+						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							rightPlayer.id
+						}
+						player={rightPlayer}
+						position="right"
+						score={gameState.scores[rightPlayer.id] || 0}
+						team={gameState.teams[rightPlayer.id]}
+					/>
+
 					<OpponentHand
 						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
 						position="right"
@@ -443,17 +440,15 @@ export function GameBoard({
 			{/* Unterer Spieler (aktueller Benutzer) */}
 			{bottomPlayer && (
 				<>
-					<div className="fixed bottom-0 left-1/2 z-10 -translate-x-1/2">
-						<PlayerInfo
-							cardCount={sortedHand.length}
-							isCurrentPlayer
-							isCurrentTurn={isMyTurn}
-							player={bottomPlayer}
-							position="bottom"
-							score={gameState.scores[bottomPlayer.id] || 0}
-							team={gameState.teams[bottomPlayer.id]}
-						/>
-					</div>
+					<PlayerInfo
+						cardCount={sortedHand.length}
+						isCurrentPlayer
+						isCurrentTurn={isMyTurn}
+						player={bottomPlayer}
+						position="bottom"
+						score={gameState.scores[bottomPlayer.id] || 0}
+						team={gameState.teams[bottomPlayer.id]}
+					/>
 					<PlayerHand
 						activeDragCard={dragPlayedCard}
 						cards={sortedHand}
