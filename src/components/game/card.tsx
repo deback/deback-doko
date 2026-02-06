@@ -84,7 +84,15 @@ export default function Card({
 	dragListeners,
 	dragAttributes,
 }: CardProps) {
-	const { basePath } = useCardDesign();
+	const { basePath, darkModeStyle } = useCardDesign();
+
+	// Dark mode card styles
+	const darkModeClasses = {
+		normal: "",
+		dimmed: "dark:brightness-85 dark:contrast-110",
+		inverted: "dark:invert dark:hue-rotate-180",
+		sepia: "dark:sepia-[0.2] dark:brightness-90",
+	};
 
 	// Flip animation: when flipProgress > 0.5, show the back
 	const isFlipped = flipProgress > 0.5;
@@ -166,7 +174,13 @@ export default function Card({
 			{...dragListeners}
 			{...dragAttributes}
 		>
-			<Image alt={altText} draggable={false} fill src={imagePath} />
+			<Image
+				alt={altText}
+				className={darkModeClasses[darkModeStyle]}
+				draggable={false}
+				fill
+				src={imagePath}
+			/>
 		</motion.button>
 	);
 }

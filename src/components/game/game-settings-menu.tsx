@@ -17,12 +17,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
 	type CardDesign,
+	type DarkModeCardStyle,
 	useCardDesign,
 } from "@/lib/hooks/use-card-design";
 
 export function GameSettingsMenu() {
 	const { theme, setTheme } = useTheme();
-	const { cardDesign, setCardDesign } = useCardDesign();
+	const { cardDesign, setCardDesign, darkModeStyle, setDarkModeStyle } =
+		useCardDesign();
 
 	return (
 		<DropdownMenu>
@@ -78,6 +80,29 @@ export function GameSettingsMenu() {
 							<DropdownMenuRadioItem value="system">
 								<Laptop className="mr-2 h-4 w-4" />
 								System
+							</DropdownMenuRadioItem>
+						</DropdownMenuRadioGroup>
+
+						<DropdownMenuSeparator />
+
+						<DropdownMenuLabel>Karten im Dark Mode</DropdownMenuLabel>
+						<DropdownMenuRadioGroup
+							onValueChange={(value) =>
+								setDarkModeStyle(value as DarkModeCardStyle)
+							}
+							value={darkModeStyle}
+						>
+							<DropdownMenuRadioItem value="normal">
+								Normal
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="dimmed">
+								Abgedunkelt
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="inverted">
+								Invertiert
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="sepia">
+								Sepia
 							</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 					</DropdownMenuSubContent>
