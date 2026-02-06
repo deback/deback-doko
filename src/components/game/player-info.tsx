@@ -30,43 +30,24 @@ export function PlayerInfo({
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm",
+				"flex items-center gap-2 rounded-t-[1.2rem] bg-black/40 px-2 py-2 backdrop-blur-sm",
 				isCurrentTurn &&
-					"ring-2 ring-emerald-400 ring-offset-2 ring-offset-transparent",
-				isVertical && "flex-col px-2 py-3",
+					"ring-2 ring-primary ring-offset-2 ring-offset-transparent",
+				isVertical && "flex-col px-1 py-1",
 				className,
 			)}
 		>
 			<Avatar
 				alt={player.name}
 				fallback={player.name.charAt(0).toUpperCase()}
-				size="sm"
+				size="xs"
 				src={player.image}
 			/>
 			<div className={cn("flex flex-col", isVertical && "items-center")}>
-				<span className="font-medium text-sm text-white">
+				<span className="font-medium text-sm text-white pr-1">
 					{player.name}
-					{isCurrentPlayer && " (Du)"}
 				</span>
-				<div className="flex items-center gap-2 text-white/70 text-xs">
-					<span>{score} Pkt.</span>
-					{cardCount !== undefined && (
-						<span className="text-white/50">{cardCount} Karten</span>
-					)}
-				</div>
 			</div>
-			{team && (
-				<span
-					className={cn(
-						"rounded-full px-2 py-0.5 font-bold text-xs",
-						team === "re"
-							? "bg-cyan-500/80 text-white"
-							: "bg-orange-500/80 text-white",
-					)}
-				>
-					{team === "re" ? "Re" : "Ko"}
-				</span>
-			)}
 		</div>
 	);
 }

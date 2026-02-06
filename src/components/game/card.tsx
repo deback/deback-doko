@@ -151,7 +151,7 @@ export default function Card({
 				// Interactive states
 				{ "cursor-pointer hover:-translate-y-[6%]": isInteractive },
 				// Playable indicator (green ring)
-				{ "ring-2 ring-emerald-500": playable && !selected },
+				{ "": playable && !selected },
 				// Selected state
 				{
 					"-translate-y-[10%] hover:-translate-y-[10%] ring-2 ring-primary":

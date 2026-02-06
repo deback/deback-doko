@@ -30,6 +30,7 @@ import { OpponentHand } from "./opponent-hand";
 import { PlayerHand } from "./player-hand";
 import { PlayerInfo } from "./player-info";
 import { TrickArea } from "./trick-area";
+import { TurnIndicator } from "./turn-indicator";
 
 interface GameBoardProps {
 	gameState: GameState;
@@ -443,7 +444,7 @@ export function GameBoard({
 			{/* Unterer Spieler (aktueller Benutzer) */}
 			{bottomPlayer && (
 				<>
-					<div className="fixed bottom-[25%] left-1/2 z-10 -translate-x-1/2 landscape:bottom-[20%]">
+					<div className="fixed bottom-0 left-1/2 z-10 -translate-x-1/2">
 						<PlayerInfo
 							cardCount={sortedHand.length}
 							isCurrentPlayer
@@ -481,15 +482,13 @@ export function GameBoard({
 				)}
 			</DragOverlay>
 
-			{/* Turn-Indikator */}
-			{!isMyTurn && (
-				<div className="fixed top-1/2 left-1/2 z-20 -translate-x-1/2 translate-y-24">
-					<div className="rounded-full bg-black/60 px-4 py-2 text-white/80 text-sm backdrop-blur-sm">
-						Warte auf {gameState.players[gameState.currentPlayerIndex]?.name}
-						...
-					</div>
-				</div>
-			)}
+			{/* Turn-Indikator (ein-/ausblendbar) */}
+			<TurnIndicator
+				currentPlayerName={
+					gameState.players[gameState.currentPlayerIndex]?.name ?? ""
+				}
+				isMyTurn={isMyTurn}
+			/>
 
 			{/* Verbindungsstatus & Zuschauer */}
 			<div className="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
