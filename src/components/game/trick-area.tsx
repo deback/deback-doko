@@ -78,13 +78,13 @@ function getWinnerOffset(winnerPosition: RelativePosition): {
 } {
 	switch (winnerPosition) {
 		case "bottom":
-			return { x: 0, y: 200 };
+			return { x: 0, y: window.innerHeight / 2 };
 		case "top":
-			return { x: 0, y: -200 };
+			return { x: 0, y: -window.innerHeight / 2 };
 		case "left":
-			return { x: -200, y: 0 };
+			return { x: -window.innerWidth / 2, y: 0 };
 		case "right":
-			return { x: 200, y: 0 };
+			return { x: window.innerWidth / 2, y: 0 };
 	}
 }
 
@@ -310,7 +310,7 @@ export function TrickArea({
 			initial: {
 				x: originCenterX - dropCenterX,
 				y: originCenterY - dropCenterY,
-				scale: 1.2,
+				scale: 1,
 				rotate: angle + spin,
 			},
 		};
@@ -459,7 +459,7 @@ export function TrickArea({
 								animateProps = {
 									x: "0%",
 									y: "0%",
-									scale: 0.9,
+									scale: 1,
 									rotate: 0,
 									opacity: 1,
 								};
@@ -467,7 +467,7 @@ export function TrickArea({
 								animateProps = {
 									x: winnerOffset.x,
 									y: winnerOffset.y,
-									scale: 0.5,
+									scale: 1,
 									rotate: 0,
 									opacity: 0,
 								};
@@ -476,7 +476,7 @@ export function TrickArea({
 								animateProps = {
 									x: "0%",
 									y: "0%",
-									scale: 0.9,
+									scale: 1,
 									rotate: 0,
 									opacity: 1,
 								};
