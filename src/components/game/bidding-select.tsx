@@ -111,13 +111,13 @@ export function BiddingSelect({
 	};
 
 	return (
-		<div className="fixed inset-x-0 top-1/2 z-50 mx-auto flex max-w-md -translate-y-1/2 flex-col items-center gap-4 rounded-xl bg-black/60 p-4 backdrop-blur-md">
-			<h3 className="font-semibold text-white">Vorbehaltsabfrage</h3>
+		<div className="fixed left-1/2 top-1/2 z-50 -mt-8 mx-auto flex max-w-md -translate-y-1/2 -translate-x-1/2 flex-col items-center gap-3 lg:gap-4 rounded-xl bg-background p-4 text-foreground">
+			<h3 className="font-semibold hidden lg:block">Vorbehaltsabfrage</h3>
 
 			{/* Awaiting contract declaration (after Vorbehalt) */}
 			{awaitingDeclaration && (
 				<div className="flex w-full flex-col gap-3">
-					<p className="text-center text-sm text-white/70">
+					<p className="text-center text-sm">
 						Du hast Vorbehalt angesagt. Wähle dein Sonderspiel.
 					</p>
 					{canDeclareHochzeit ? (
@@ -154,7 +154,7 @@ export function BiddingSelect({
 							}
 							value={selectedBid}
 						>
-							<SelectTrigger className="flex-1 bg-white/10 text-white border-white/20">
+							<SelectTrigger className="min-w-30">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
@@ -162,13 +162,9 @@ export function BiddingSelect({
 								<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
 							</SelectContent>
 						</Select>
-						{!isReady ? (
-							<Button onClick={handleConfirm} size="default">
-								OK
-							</Button>
-						) : (
-							<span className="text-xs text-emerald-400">Bereit</span>
-						)}
+						<Button onClick={handleConfirm} size="default">
+							OK
+						</Button>
 					</div>
 
 					{/* Waiting message */}
@@ -186,7 +182,7 @@ export function BiddingSelect({
 			)}
 
 			{/* Player status row */}
-			<div className="flex w-full items-center justify-center gap-4">
+			<div className="flex flex-col w-full items-start justify-center gap-2">
 				{players.map((player, index) => {
 					const playerBid = biddingPhase.bids[player.id];
 					const isCurrent = index === biddingPhase.currentBidderIndex;
@@ -215,8 +211,8 @@ export function BiddingSelect({
 								className={cn(
 									"text-xs",
 									player.id === currentPlayerId
-										? "font-medium text-white"
-										: "text-white/70",
+										? "font-medium text-foreground"
+										: "text-foreground/70",
 								)}
 							>
 								{player.name.split(" ")[0]}
