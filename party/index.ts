@@ -813,7 +813,9 @@ export default class Server implements Party.Server {
 			return { allowed: false, reason: "Diese Ansage wurde bereits gemacht." };
 		}
 
-		// Prüfe Reihenfolge: keine 90 -> keine 60 -> keine 30 -> schwarz
+		// Prüfe ob übersprungene Ansagen noch legal wären (Regel 6.4.3)
+		// Man kann Stufen überspringen, aber alle übersprungenen Ansagen
+		// müssen zu diesem Zeitpunkt noch legal sein (genug Karten)
 		const announcementOrder: PointAnnouncementType[] = [
 			"no90",
 			"no60",
@@ -825,15 +827,20 @@ export default class Server implements Party.Server {
 		);
 
 		for (let i = 0; i < requestedIndex; i++) {
-			const requiredAnnouncement = announcementOrder[i];
+			const skippedAnnouncement = announcementOrder[i];
 			if (
-				requiredAnnouncement &&
-				!teamPointAnnouncements.some((pa) => pa.type === requiredAnnouncement)
+				skippedAnnouncement &&
+				!teamPointAnnouncements.some((pa) => pa.type === skippedAnnouncement)
 			) {
-				return {
-					allowed: false,
-					reason: `Du musst zuerst "${this.getAnnouncementLabel(requiredAnnouncement)}" sagen.`,
-				};
+				// Diese Ansage wird übersprungen - prüfe ob genug Karten
+				const skippedMinCards =
+					this.getMinCardsForAnnouncement(skippedAnnouncement);
+				if (cardCount < skippedMinCards) {
+					return {
+						allowed: false,
+						reason: `Zu spät! Um "${this.getAnnouncementLabel(announcement)}" zu sagen, hättest du "${this.getAnnouncementLabel(skippedAnnouncement)}" noch sagen können müssen (mind. ${skippedMinCards} Karten).`,
+					};
+				}
 			}
 		}
 
@@ -870,6 +877,12 @@ export default class Server implements Party.Server {
 			return;
 		}
 
+		// Während der Vorbehaltsabfrage sind keine Ansagen erlaubt
+		if (gameState.biddingPhase?.active) {
+			this.sendGameError(sender, "Ansagen sind während der Vorbehaltsabfrage nicht erlaubt.");
+			return;
+		}
+
 		// Validierung
 		const validation = this.canMakeAnnouncement(
 			gameState,
@@ -889,17 +902,35 @@ export default class Server implements Party.Server {
 		} else if (announcement === "kontra") {
 			gameState.announcements.kontra = { announced: true, by: playerId };
 		} else {
-			// Punkt-Ansage
-			const pointAnnouncement: PointAnnouncement = {
-				type: announcement as PointAnnouncementType,
-				by: playerId,
-			};
-			if (playerTeam === "re") {
-				gameState.announcements.rePointAnnouncements.push(pointAnnouncement);
-			} else {
-				gameState.announcements.kontraPointAnnouncements.push(
-					pointAnnouncement,
-				);
+			// Punkt-Ansage - auch alle übersprungenen Ansagen speichern (Regel 6.4.3)
+			const announcementOrder: PointAnnouncementType[] = [
+				"no90",
+				"no60",
+				"no30",
+				"schwarz",
+			];
+			const requestedIndex = announcementOrder.indexOf(
+				announcement as PointAnnouncementType,
+			);
+
+			const teamPointAnnouncements =
+				playerTeam === "re"
+					? gameState.announcements.rePointAnnouncements
+					: gameState.announcements.kontraPointAnnouncements;
+
+			// Füge alle übersprungenen Ansagen hinzu (die noch nicht gemacht wurden)
+			for (let i = 0; i <= requestedIndex; i++) {
+				const announcementToAdd = announcementOrder[i];
+				if (
+					announcementToAdd &&
+					!teamPointAnnouncements.some((pa) => pa.type === announcementToAdd)
+				) {
+					const pointAnnouncement: PointAnnouncement = {
+						type: announcementToAdd,
+						by: playerId,
+					};
+					teamPointAnnouncements.push(pointAnnouncement);
+				}
 			}
 		}
 

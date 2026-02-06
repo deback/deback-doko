@@ -590,13 +590,15 @@ export function GameBoard({
 				)}
 			</div>
 
-			{/* Ansagen-Buttons */}
-			<AnnouncementButtons
-				className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2"
-				currentPlayer={currentPlayer}
-				gameState={gameState}
-				onAnnounce={announce}
-			/>
+			{/* Ansagen-Buttons (nicht während Vorbehaltsabfrage) */}
+			{!gameState.biddingPhase?.active && (
+				<AnnouncementButtons
+					className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2"
+					currentPlayer={currentPlayer}
+					gameState={gameState}
+					onAnnounce={announce}
+				/>
+			)}
 
 			{/* Auto-Play & Reset Game Buttons */}
 			{process.env.NODE_ENV === "development" && (

@@ -68,6 +68,8 @@ export function AnnouncementButtons({
 	};
 
 	// Prüfe ob eine Ansage möglich ist
+	// Laut Regel 6.4.3: Man kann Stufen überspringen, aber alle übersprungenen
+	// Ansagen müssen zu diesem Zeitpunkt noch legal sein (genug Karten)
 	const canAnnounce = (announcement: AnnouncementType): boolean => {
 		const minCards = MIN_CARDS[announcement];
 		if (cardCount < minCards) return false;
@@ -85,13 +87,17 @@ export function AnnouncementButtons({
 		// Bereits gemacht?
 		if (hasPointAnnouncement(announcement)) return false;
 
-		// Reihenfolge prüfen
+		// Alle übersprungenen Ansagen müssen auch noch legal sein (genug Karten)
 		const order: AnnouncementType[] = ["no90", "no60", "no30", "schwarz"];
 		const requestedIndex = order.indexOf(announcement);
 		for (let i = 0; i < requestedIndex; i++) {
-			const required = order[i];
-			if (required && !hasPointAnnouncement(required)) {
-				return false;
+			const skipped = order[i];
+			if (skipped && !hasPointAnnouncement(skipped)) {
+				// Diese Ansage wird übersprungen - prüfe ob genug Karten
+				const skippedMinCards = MIN_CARDS[skipped];
+				if (cardCount < skippedMinCards) {
+					return false;
+				}
 			}
 		}
 
@@ -99,12 +105,13 @@ export function AnnouncementButtons({
 	};
 
 	// Prüfe welche Ansagen prinzipiell noch gemacht werden können (für UI)
+	// Alle Buttons sollen sichtbar sein, solange sie nicht bereits gemacht wurden
 	const isAnnouncementPossible = (announcement: AnnouncementType): boolean => {
 		if (announcement === "re" || announcement === "kontra") {
 			if (announcement !== teamAnnouncement) return false;
 			return !teamHasAnnounced;
 		}
-		// Punkt-Ansagen
+		// Punkt-Ansagen - nur ausblenden wenn bereits gemacht
 		if (hasPointAnnouncement(announcement)) return false;
 		return true;
 	};
