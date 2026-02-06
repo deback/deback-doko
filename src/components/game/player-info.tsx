@@ -30,17 +30,17 @@ export function PlayerInfo({
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-2 rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
+				"absolute z-10 inline-flex items-center gap-2 rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
 				{
 					"ring-4 ring-primary": isCurrentTurn,
+				},
+				{
+					"rounded-b-[1.2rem] rounded-t-none top-1/2 left-0 -translate-x-1/2 -rotate-90 origin-[50%_0%]":
+						position === "left",
 				},
 
 				className,
 			)}
-			style={{
-				transformOrigin: position === "left" ? "top center" : "top center",
-				transform: position === "left" ? "-rotate-90" : "rotate-90",
-			}}
 		>
 			<Avatar
 				alt={player.name}

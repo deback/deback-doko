@@ -386,20 +386,19 @@ export function GameBoard({
 			{/* Linker Gegner */}
 			{leftPlayer && (
 				<>
-					<div className="fixed left-0 top-1/2 z-10 -translate-y-1/2">
-						<PlayerInfo
-							cardCount={gameState.hands[leftPlayer.id]?.length || 0}
-							isCurrentPlayer={false}
-							isCurrentTurn={
-								gameState.players[gameState.currentPlayerIndex]?.id ===
-								leftPlayer.id
-							}
-							player={leftPlayer}
-							position="left"
-							score={gameState.scores[leftPlayer.id] || 0}
-							team={gameState.teams[leftPlayer.id]}
-						/>
-					</div>
+					<PlayerInfo
+						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
+						isCurrentPlayer={false}
+						isCurrentTurn={
+							gameState.players[gameState.currentPlayerIndex]?.id ===
+							leftPlayer.id
+						}
+						player={leftPlayer}
+						position="left"
+						score={gameState.scores[leftPlayer.id] || 0}
+						team={gameState.teams[leftPlayer.id]}
+					/>
+
 					<OpponentHand
 						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
 						position="left"
