@@ -1076,18 +1076,19 @@ export default class Server implements Party.Server {
 	}
 
 	getCardPoints(card: Card): number {
-		// Doppelkopf Punktewerte: Dame=3, König=4, 10=10, 9=0, Ass=11
+		// Doppelkopf Punktewerte: 9=0, Bube=2, Dame=3, König=4, 10=10, Ass=11
+		// Gesamt: 8×0 + 8×2 + 8×3 + 8×4 + 8×10 + 8×11 = 240 Punkte
 		switch (card.rank) {
 			case "9":
 				return 0;
-			case "10":
-				return 10;
 			case "jack":
-				return 0; // Bube hat keine Punkte
+				return 2;
 			case "queen":
 				return 3;
 			case "king":
 				return 4;
+			case "10":
+				return 10;
 			case "ace":
 				return 11;
 			default:
