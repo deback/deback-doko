@@ -1682,9 +1682,13 @@ export default class Server implements Party.Server {
 			return;
 		}
 
-		// Block auto-play during bidding phase
+		// During bidding phase: auto-bid "gesund" for current bidder
 		if (gameState.biddingPhase?.active) {
-			this.sendGameError(sender, "Vorbehaltsabfrage läuft noch.");
+			const currentBidder =
+				gameState.players[gameState.biddingPhase.currentBidderIndex];
+			if (currentBidder) {
+				await this.handleBid(currentBidder.id, "gesund", sender);
+			}
 			return;
 		}
 

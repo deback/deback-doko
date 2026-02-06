@@ -81,22 +81,14 @@ export function BiddingSelect({
 	useEffect(() => {
 		if (isMyTurn && isReady && !myBid && !hasSentBid.current) {
 			hasSentBid.current = true;
-			if (selectedBid === "vorbehalt" && canDeclareHochzeit) {
-				onBid("vorbehalt");
-			} else {
-				onBid("gesund");
-			}
+			onBid(selectedBid);
 		}
-	}, [isMyTurn, isReady, myBid, selectedBid, canDeclareHochzeit, onBid]);
+	}, [isMyTurn, isReady, myBid, selectedBid, onBid]);
 
 	const handleConfirm = () => {
 		if (isMyTurn) {
 			// Send immediately if it's my turn
-			if (selectedBid === "vorbehalt" && canDeclareHochzeit) {
-				onBid("vorbehalt");
-			} else {
-				onBid("gesund");
-			}
+			onBid(selectedBid);
 		} else {
 			// Mark as ready, will auto-send when it's my turn
 			setIsReady(true);

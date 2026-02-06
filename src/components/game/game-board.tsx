@@ -139,17 +139,35 @@ function sortHand(
 			if (aIsHearts10 && !bIsHearts10 && !bIsSchweinerei) return -1;
 			if (!aIsHearts10 && bIsHearts10 && !aIsSchweinerei) return 1;
 
-			// Trump value sorting
+			// Trump value sorting - Doppelkopf Reihenfolge
 			const trumpValue = (card: Card): number => {
+				// Schweinerei (beide Karo-Asse) sind höchster Trumpf
 				if (card.suit === "diamonds" && card.rank === "ace" && hasSchweinerei)
 					return 1200;
+				// Herz 10 (Dulle) ist zweithöchster Trumpf
 				if (card.suit === "hearts" && card.rank === "10") return 1100;
-				if (card.rank === "queen") return 1000;
-				if (card.rank === "jack") return 900;
+
+				// Damen nach Farbe: Kreuz > Pik > Herz > Karo
+				if (card.rank === "queen") {
+					if (card.suit === "clubs") return 1040;
+					if (card.suit === "spades") return 1030;
+					if (card.suit === "hearts") return 1020;
+					if (card.suit === "diamonds") return 1010;
+				}
+
+				// Buben nach Farbe: Kreuz > Pik > Herz > Karo
+				if (card.rank === "jack") {
+					if (card.suit === "clubs") return 940;
+					if (card.suit === "spades") return 930;
+					if (card.suit === "hearts") return 920;
+					if (card.suit === "diamonds") return 910;
+				}
+
+				// Karo-Karten (restlicher Trumpf)
 				if (card.suit === "diamonds") {
 					if (card.rank === "ace") return 850;
-					if (card.rank === "king") return 840;
-					if (card.rank === "10") return 830;
+					if (card.rank === "10") return 840;
+					if (card.rank === "king") return 830;
 					if (card.rank === "9") return 820;
 				}
 				return 0;
