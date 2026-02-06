@@ -4,9 +4,11 @@ import PartySocket from "partysocket";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
 	AnnouncementType,
+	ContractType,
 	GameEvent,
 	GameMessage,
 	GameState,
+	ReservationType,
 } from "@/types/game";
 import type { Player } from "@/types/tables";
 
@@ -25,6 +27,8 @@ interface UseGameConnectionReturn {
 	autoPlay: () => void;
 	announce: (announcement: AnnouncementType) => void;
 	resetGame: () => void;
+	bid: (bid: ReservationType) => void;
+	declareContract: (contract: ContractType) => void;
 }
 
 export function useGameConnection({
@@ -161,6 +165,36 @@ export function useGameConnection({
 		socketRef.current.send(JSON.stringify(event));
 	}, [gameState]);
 
+	const bid = useCallback(
+		(bidType: ReservationType) => {
+			if (!socketRef.current || !gameState) return;
+
+			const event: GameEvent = {
+				type: "bid",
+				playerId: player.id,
+				bid: bidType,
+			};
+
+			socketRef.current.send(JSON.stringify(event));
+		},
+		[gameState, player.id],
+	);
+
+	const declareContract = useCallback(
+		(contract: ContractType) => {
+			if (!socketRef.current || !gameState) return;
+
+			const event: GameEvent = {
+				type: "declare-contract",
+				playerId: player.id,
+				contract,
+			};
+
+			socketRef.current.send(JSON.stringify(event));
+		},
+		[gameState, player.id],
+	);
+
 	return {
 		gameState,
 		error,
@@ -170,5 +204,7 @@ export function useGameConnection({
 		autoPlay,
 		announce,
 		resetGame,
+		bid,
+		declareContract,
 	};
 }

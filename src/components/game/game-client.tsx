@@ -27,6 +27,8 @@ export function GameClient({
 		autoPlay,
 		announce,
 		resetGame,
+		bid,
+		declareContract,
 	} = useGameConnection({
 		gameId,
 		player,
@@ -76,7 +78,9 @@ export function GameClient({
 			<GameBoard
 				announce={announce}
 				autoPlay={autoPlay}
+				bid={bid}
 				currentPlayer={player}
+				declareContract={declareContract}
 				gameState={gameState}
 				playCard={playCard}
 				resetGame={resetGame}

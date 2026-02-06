@@ -32,6 +32,24 @@ export interface Announcements {
 export type Suit = "hearts" | "diamonds" | "clubs" | "spades";
 export type Rank = "9" | "10" | "jack" | "queen" | "king" | "ace";
 
+// Vorbehaltsabfrage (Bidding) Typen
+export type ReservationType = "gesund" | "vorbehalt";
+export type ContractType = "normal" | "hochzeit";
+
+export interface BiddingPhase {
+	active: boolean;
+	currentBidderIndex: number;
+	bids: Record<string, ReservationType>; // playerId -> "gesund" | "vorbehalt"
+	awaitingContractDeclaration?: string; // playerId der Vorbehalt-Deklaration machen muss
+}
+
+export interface HochzeitState {
+	active: boolean;
+	seekerPlayerId: string; // Spieler mit beiden Kreuz-Damen
+	partnerPlayerId?: string; // Partner (erster Fehl-Stich-Gewinner)
+	clarificationTrickNumber: number; // Spätestens im 3. Stich muss Partner gefunden sein
+}
+
 // Volles 52-Karten-Deck (für französisches Kartenspiel)
 export type FullRank =
 	| "2"
@@ -86,6 +104,10 @@ export interface GameState {
 	spectatorCount: number; // Number of spectators watching the game
 	spectators: Array<{ id: string; name: string; image?: string | null }>; // List of spectators
 	announcements: Announcements; // Ansagen (Re, Kontra, keine 90, etc.)
+	// Vorbehaltsabfrage (Bidding)
+	biddingPhase?: BiddingPhase;
+	contractType: ContractType;
+	hochzeit?: HochzeitState;
 }
 
 export type GameEvent =
@@ -109,6 +131,16 @@ export type GameEvent =
 			type: "announce";
 			announcement: AnnouncementType;
 			playerId: string;
+	  }
+	| {
+			type: "bid";
+			playerId: string;
+			bid: ReservationType;
+	  }
+	| {
+			type: "declare-contract";
+			playerId: string;
+			contract: ContractType;
 	  };
 
 export type GameMessage =

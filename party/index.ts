@@ -50,6 +50,24 @@ type Rank = "9" | "10" | "jack" | "queen" | "king" | "ace";
 type AnnouncementType = "re" | "kontra" | "no90" | "no60" | "no30" | "schwarz";
 type PointAnnouncementType = "no90" | "no60" | "no30" | "schwarz";
 
+// Vorbehaltsabfrage (Bidding) Typen
+type ReservationType = "gesund" | "vorbehalt";
+type ContractType = "normal" | "hochzeit";
+
+interface BiddingPhase {
+	active: boolean;
+	currentBidderIndex: number;
+	bids: Record<string, ReservationType>;
+	awaitingContractDeclaration?: string;
+}
+
+interface HochzeitState {
+	active: boolean;
+	seekerPlayerId: string;
+	partnerPlayerId?: string;
+	clarificationTrickNumber: number;
+}
+
 interface PointAnnouncement {
 	type: PointAnnouncementType;
 	by: string; // playerId
@@ -100,6 +118,10 @@ interface GameState {
 	spectatorCount: number;
 	spectators: Array<{ id: string; name: string; image?: string | null }>; // List of spectators
 	announcements: Announcements; // Ansagen (Re, Kontra, keine 90, etc.)
+	// Vorbehaltsabfrage (Bidding)
+	biddingPhase?: BiddingPhase;
+	contractType: ContractType;
+	hochzeit?: HochzeitState;
 }
 
 type GameEvent =
@@ -115,7 +137,9 @@ type GameEvent =
 			spectatorName: string;
 			spectatorImage?: string | null;
 	  }
-	| { type: "announce"; announcement: AnnouncementType; playerId: string };
+	| { type: "announce"; announcement: AnnouncementType; playerId: string }
+	| { type: "bid"; playerId: string; bid: ReservationType }
+	| { type: "declare-contract"; playerId: string; contract: ContractType };
 
 type GameMessage =
 	| { type: "state"; state: GameState; isSpectator?: boolean }
@@ -461,6 +485,18 @@ export default class Server implements Party.Server {
 			case "reset-game":
 				await this.handleResetGame(sender);
 				break;
+
+			case "bid":
+				await this.handleBid(event.playerId, event.bid, sender);
+				break;
+
+			case "declare-contract":
+				await this.handleDeclareContract(
+					event.playerId,
+					event.contract,
+					sender,
+				);
+				break;
 		}
 	}
 
@@ -473,6 +509,209 @@ export default class Server implements Party.Server {
 
 		// Restart the game immediately
 		await this.restartGame(gameState);
+	}
+
+	// Vorbehaltsabfrage (Bidding) Logik
+	async handleBid(
+		playerId: string,
+		bid: ReservationType,
+		sender: Party.Connection,
+	) {
+		const gameState = this.games.get(this.room.id);
+		if (!gameState || !gameState.biddingPhase?.active) {
+			this.sendGameError(sender, "Keine aktive Vorbehaltsabfrage.");
+			return;
+		}
+
+		// Prüfe ob der Spieler an der Reihe ist
+		const currentBidder =
+			gameState.players[gameState.biddingPhase.currentBidderIndex];
+		if (!currentBidder || currentBidder.id !== playerId) {
+			this.sendGameError(sender, "Du bist nicht an der Reihe.");
+			return;
+		}
+
+		// Speichere das Gebot
+		gameState.biddingPhase.bids[playerId] = bid;
+
+		if (bid === "vorbehalt") {
+			// Spieler muss seinen Vorbehalt-Typ deklarieren
+			gameState.biddingPhase.awaitingContractDeclaration = playerId;
+			await this.persistGameState(gameState);
+			this.broadcastGameState(gameState);
+			this.broadcastToSpectators(gameState);
+			return;
+		}
+
+		// Gesund: Nächster Spieler
+		await this.advanceBidding(gameState);
+	}
+
+	async handleDeclareContract(
+		playerId: string,
+		contract: ContractType,
+		sender: Party.Connection,
+	) {
+		const gameState = this.games.get(this.room.id);
+		if (!gameState || !gameState.biddingPhase?.active) {
+			this.sendGameError(sender, "Keine aktive Vorbehaltsabfrage.");
+			return;
+		}
+
+		// Prüfe ob dieser Spieler seinen Vorbehalt deklarieren soll
+		if (gameState.biddingPhase.awaitingContractDeclaration !== playerId) {
+			this.sendGameError(sender, "Du musst keinen Vorbehalt deklarieren.");
+			return;
+		}
+
+		// Validiere Hochzeit: Spieler muss beide Kreuz-Damen haben
+		if (contract === "hochzeit") {
+			const hand = gameState.hands[playerId];
+			if (!hand) {
+				this.sendGameError(sender, "Spieler nicht gefunden.");
+				return;
+			}
+			const clubsQueens = hand.filter(
+				(card) => card.suit === "clubs" && card.rank === "queen",
+			);
+			if (clubsQueens.length !== 2) {
+				this.sendGameError(
+					sender,
+					"Du brauchst beide Kreuz-Damen für eine Hochzeit.",
+				);
+				return;
+			}
+		}
+
+		// Speichere den Contract temporär (wird bei Bidding-Ende ausgewertet)
+		gameState.biddingPhase.awaitingContractDeclaration = undefined;
+
+		// Wenn Hochzeit gewählt, merken wir uns das im bids-Objekt mit einem Marker
+		// (Einfachheitshalber speichern wir den Contract-Typ als zusätzliches Feld)
+		(
+			gameState.biddingPhase as BiddingPhase & {
+				pendingContract?: ContractType;
+			}
+		).pendingContract = contract;
+		(
+			gameState.biddingPhase as BiddingPhase & {
+				pendingContractPlayer?: string;
+			}
+		).pendingContractPlayer = playerId;
+
+		// Nächster Spieler
+		await this.advanceBidding(gameState);
+	}
+
+	async advanceBidding(gameState: GameState) {
+		if (!gameState.biddingPhase) return;
+
+		// Nächster Spieler
+		gameState.biddingPhase.currentBidderIndex++;
+
+		// Prüfe ob alle Spieler gefragt wurden
+		if (gameState.biddingPhase.currentBidderIndex >= gameState.players.length) {
+			// Bidding abgeschlossen
+			await this.resolveBidding(gameState);
+			return;
+		}
+
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
+	}
+
+	async resolveBidding(gameState: GameState) {
+		if (!gameState.biddingPhase) return;
+
+		const biddingPhase = gameState.biddingPhase as BiddingPhase & {
+			pendingContract?: ContractType;
+			pendingContractPlayer?: string;
+		};
+
+		// Prüfe ob jemand Vorbehalt hat
+		const hasVorbehalt = Object.values(biddingPhase.bids).includes("vorbehalt");
+
+		if (
+			hasVorbehalt &&
+			biddingPhase.pendingContract === "hochzeit" &&
+			biddingPhase.pendingContractPlayer
+		) {
+			// Hochzeit wurde angesagt
+			await this.setupHochzeit(gameState, biddingPhase.pendingContractPlayer);
+		} else {
+			// Normales Spiel: Teams durch Kreuz-Dame
+			await this.setupNormalGame(gameState);
+		}
+	}
+
+	async setupNormalGame(gameState: GameState) {
+		// Teams sind bereits durch Kreuz-Dame bestimmt (in startGameRoom/restartGame)
+		gameState.contractType = "normal";
+		gameState.biddingPhase = undefined;
+
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
+	}
+
+	async setupHochzeit(gameState: GameState, seekerPlayerId: string) {
+		gameState.contractType = "hochzeit";
+		gameState.hochzeit = {
+			active: true,
+			seekerPlayerId,
+			clarificationTrickNumber: 3, // Spätestens im 3. Stich
+		};
+
+		// Hochzeiter ist zunächst allein im Re-Team
+		// Alle anderen sind Kontra, bis Partner gefunden
+		for (const player of gameState.players) {
+			gameState.teams[player.id] =
+				player.id === seekerPlayerId ? "re" : "kontra";
+		}
+
+		gameState.biddingPhase = undefined;
+
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
+	}
+
+	// Hochzeit: Prüfe ob Partner gefunden wurde
+	checkHochzeitPartner(
+		gameState: GameState,
+		trick: Trick,
+		winnerId: string,
+		trickNumber: number,
+	) {
+		if (!gameState.hochzeit) return;
+
+		const seekerId = gameState.hochzeit.seekerPlayerId;
+
+		// Prüfe ob es ein Fehl-Stich ist (Nicht-Trumpf angespielt)
+		const firstCard = trick.cards[0]?.card;
+		if (!firstCard) return;
+
+		const isFehlStich = !this.isTrump(firstCard, gameState.trump);
+
+		if (isFehlStich && winnerId !== seekerId) {
+			// Partner gefunden: Gewinner des Fehl-Stichs
+			gameState.hochzeit.partnerPlayerId = winnerId;
+			gameState.hochzeit.active = false;
+
+			// Teams aktualisieren: Hochzeiter + Partner = Re
+			gameState.teams[seekerId] = "re";
+			gameState.teams[winnerId] = "re";
+			for (const player of gameState.players) {
+				if (player.id !== seekerId && player.id !== winnerId) {
+					gameState.teams[player.id] = "kontra";
+				}
+			}
+		} else if (trickNumber >= gameState.hochzeit.clarificationTrickNumber) {
+			// Kein Partner gefunden bis Stich 3: Hochzeiter spielt allein (wie Solo)
+			gameState.hochzeit.active = false;
+			// Teams bleiben wie sie sind: Hochzeiter = Re, alle anderen = Kontra
+		}
 	}
 
 	// Ansagen-Logik
@@ -937,6 +1176,13 @@ export default class Server implements Party.Server {
 				rePointAnnouncements: [],
 				kontraPointAnnouncements: [],
 			},
+			// Bidding-Phase: Spieler werden der Reihe nach gefragt
+			biddingPhase: {
+				active: true,
+				currentBidderIndex: 0,
+				bids: {},
+			},
+			contractType: "normal",
 		};
 
 		this.games.set(gameId, gameState);
@@ -948,6 +1194,12 @@ export default class Server implements Party.Server {
 		const gameState = this.games.get(this.room.id);
 		if (!gameState || !gameState.gameStarted || gameState.gameEnded) {
 			this.sendGameError(sender, "Spiel wurde noch nicht gestartet.");
+			return;
+		}
+
+		// Block play during bidding phase
+		if (gameState.biddingPhase?.active) {
+			this.sendGameError(sender, "Vorbehaltsabfrage läuft noch.");
 			return;
 		}
 
@@ -1016,6 +1268,7 @@ export default class Server implements Party.Server {
 	async completeTrick(gameState: GameState) {
 		const trick = gameState.currentTrick;
 		const isLastTrick = gameState.completedTricks.length === 11; // 12. Stich
+		const trickNumber = gameState.completedTricks.length + 1;
 		const winner = this.determineTrickWinner(
 			trick,
 			gameState.trump,
@@ -1024,6 +1277,11 @@ export default class Server implements Party.Server {
 		);
 		trick.winnerId = winner;
 		trick.completed = true;
+
+		// Hochzeit-Partner-Ermittlung
+		if (gameState.hochzeit?.active && !gameState.hochzeit.partnerPlayerId) {
+			this.checkHochzeitPartner(gameState, trick, winner, trickNumber);
+		}
 
 		// Berechne und speichere Punkte des Stichs
 		const trickPoints = this.calculateTrickPoints(trick);
@@ -1156,6 +1414,13 @@ export default class Server implements Party.Server {
 				rePointAnnouncements: [],
 				kontraPointAnnouncements: [],
 			},
+			// Bidding-Phase: Spieler werden der Reihe nach gefragt
+			biddingPhase: {
+				active: true,
+				currentBidderIndex: 0,
+				bids: {},
+			},
+			contractType: "normal",
 		};
 
 		this.games.set(gameId, gameState);
@@ -1414,6 +1679,12 @@ export default class Server implements Party.Server {
 		const gameState = this.games.get(this.room.id);
 		if (!gameState || !gameState.gameStarted || gameState.gameEnded) {
 			this.sendGameError(sender, "Spiel läuft nicht.");
+			return;
+		}
+
+		// Block auto-play during bidding phase
+		if (gameState.biddingPhase?.active) {
+			this.sendGameError(sender, "Vorbehaltsabfrage läuft noch.");
 			return;
 		}
 

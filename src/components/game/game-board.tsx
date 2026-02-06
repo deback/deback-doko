@@ -22,9 +22,17 @@ import {
 } from "@/components/ui/dialog";
 import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
-import type { AnnouncementType, Card, GameState, Suit } from "@/types/game";
+import type {
+	AnnouncementType,
+	Card,
+	ContractType,
+	GameState,
+	ReservationType,
+	Suit,
+} from "@/types/game";
 import type { Player } from "@/types/tables";
 import { AnnouncementButtons } from "./announcement-buttons";
+import { BiddingSelect } from "./bidding-select";
 import { CARD_SIZE, type CardOrigin } from "./card";
 import { GameSettingsMenu } from "./game-settings-menu";
 import { OpponentHand } from "./opponent-hand";
@@ -40,6 +48,8 @@ interface GameBoardProps {
 	autoPlay: () => void;
 	announce: (announcement: AnnouncementType) => void;
 	resetGame: () => void;
+	bid: (bid: ReservationType) => void;
+	declareContract: (contract: ContractType) => void;
 }
 
 // Sortier- und Spiellogik aus game-client.tsx
@@ -180,6 +190,8 @@ export function GameBoard({
 	autoPlay,
 	announce,
 	resetGame,
+	bid,
+	declareContract,
 }: GameBoardProps) {
 	const dndContextId = useId();
 
@@ -685,6 +697,17 @@ export function GameBoard({
 					)}
 				</DialogContent>
 			</Dialog>
+			{/* Bidding Select */}
+			{gameState.biddingPhase?.active && (
+				<BiddingSelect
+					biddingPhase={gameState.biddingPhase}
+					currentPlayerId={currentPlayer.id}
+					onBid={bid}
+					onDeclareContract={declareContract}
+					playerHand={sortedHand}
+					players={gameState.players}
+				/>
+			)}
 		</DndContext>
 	);
 }
