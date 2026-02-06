@@ -340,9 +340,11 @@ export function TrickArea({
 	const cardsToRender = isAnimating ? cachedTrickCards : trickCards;
 
 	// Calculate winner position for animation
-	const winnerPosition = cachedWinnerId
+	// Use cachedWinnerId if available, otherwise fall back to trickWinnerId
+	const effectiveWinnerId = cachedWinnerId || trickWinnerId;
+	const winnerPosition = effectiveWinnerId
 		? getRelativePosition(
-				players.findIndex((p) => p.id === cachedWinnerId),
+				players.findIndex((p) => p.id === effectiveWinnerId),
 				currentPlayerIndex,
 				players.length,
 			)
@@ -455,29 +457,43 @@ export function TrickArea({
 									opacity: 1,
 								};
 							} else if (animationPhase === "collecting") {
+								// Rotate 90° when winner is left or right so narrow side faces winner
+								const collectRotate =
+									winnerPosition === "left" || winnerPosition === "right"
+										? 90
+										: 0;
 								// Cards move to center
 								animateProps = {
 									x: "0%",
 									y: "0%",
 									scale: 1,
-									rotate: 0,
+									rotate: collectRotate,
 									opacity: 1,
 								};
 							} else if (animationPhase === "toWinner") {
+								// Keep same rotation as collecting phase
+								const toWinnerRotate =
+									winnerPosition === "left" || winnerPosition === "right"
+										? 90
+										: 0;
 								animateProps = {
 									x: winnerOffset.x,
 									y: winnerOffset.y,
 									scale: 1,
-									rotate: 0,
+									rotate: toWinnerRotate,
 									opacity: 0,
 								};
 							} else {
-								// flipping phase
+								// flipping phase - also use winner rotation
+								const flipRotate =
+									winnerPosition === "left" || winnerPosition === "right"
+										? 90
+										: 0;
 								animateProps = {
 									x: "0%",
 									y: "0%",
 									scale: 1,
-									rotate: 0,
+									rotate: flipRotate,
 									opacity: 1,
 								};
 							}

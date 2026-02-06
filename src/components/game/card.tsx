@@ -147,7 +147,7 @@ export default function Card({
 						selected,
 				},
 				// Disabled state
-				{ "opacity-40 cursor-not-allowed": disabled },
+				{ "grayscale brightness-75 cursor-not-allowed": disabled },
 				// Ghost/Dragging states
 				{ "invisible pointer-events-none": isGhost || isDragging },
 				{ "transition-none!": isDragging },

@@ -10,10 +10,16 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { Bot, Eye, X } from "lucide-react";
+import { Bot, Eye } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
 import type { Card, GameState, Suit } from "@/types/game";
@@ -179,6 +185,8 @@ export function GameBoard({
 	const [activeDragCard, setActiveDragCard] = useState<Card | null>(null);
 	const [dragPlayedCard, setDragPlayedCard] = useState<string | null>(null);
 	const [showGameEndDialog, setShowGameEndDialog] = useState(true);
+	const [cachedEndGameState, setCachedEndGameState] =
+		useState<GameState | null>(null);
 
 	const mouseSensor = useSensor(MouseSensor, {
 		activationConstraint: {
@@ -325,12 +333,22 @@ export function GameBoard({
 		prevTrickLengthRef.current = currentLength;
 	}, [gameState.currentTrick.cards.length]);
 
-	// Reset game end dialog when a new game starts
+	// Cache game state when game ends, reset dialog when new game starts
 	useEffect(() => {
-		if (!gameState.gameEnded) {
+		if (gameState.gameEnded) {
+			// Cache the game state when game ends
+			setCachedEndGameState(gameState);
+		} else if (cachedEndGameState?.gameEnded) {
+			// Reset dialog visibility for next game end (but keep cached state for current dialog)
 			setShowGameEndDialog(true);
 		}
-	}, [gameState.gameEnded]);
+	}, [gameState.gameEnded, gameState, cachedEndGameState?.gameEnded]);
+
+	// Clear cached state when dialog is closed
+	const handleCloseGameEndDialog = useCallback(() => {
+		setShowGameEndDialog(false);
+		setCachedEndGameState(null);
+	}, []);
 
 	return (
 		<DndContext
@@ -522,26 +540,24 @@ export function GameBoard({
 				</button>
 			)}
 
-			{/* Spielende */}
-			{gameState.gameEnded && showGameEndDialog && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-					<div className="relative rounded-xl bg-white/90 p-8 text-center shadow-2xl">
-						<button
-							className="absolute top-2 right-2 rounded-full p-1 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
-							onClick={() => setShowGameEndDialog(false)}
-							type="button"
-						>
-							<X className="h-5 w-5" />
-						</button>
-						<h2 className="mb-4 font-bold text-2xl text-emerald-600">
+			{/* Spielende - use cached state to keep dialog open during new game start */}
+			<Dialog
+				onOpenChange={(open) => !open && handleCloseGameEndDialog()}
+				open={!!cachedEndGameState && showGameEndDialog}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className="text-center text-2xl text-emerald-600">
 							Spiel beendet!
-						</h2>
+						</DialogTitle>
+					</DialogHeader>
+					{cachedEndGameState && (
 						<div className="space-y-2">
-							{gameState.players
+							{cachedEndGameState.players
 								.sort(
 									(a, b) =>
-										(gameState.scores[b.id] || 0) -
-										(gameState.scores[a.id] || 0),
+										(cachedEndGameState.scores[b.id] || 0) -
+										(cachedEndGameState.scores[a.id] || 0),
 								)
 								.map((player, index) => (
 									<div
@@ -557,14 +573,14 @@ export function GameBoard({
 											{index + 1}. {player.name}
 										</span>
 										<span className="font-bold">
-											{gameState.scores[player.id] || 0} Pkt.
+											{cachedEndGameState.scores[player.id] || 0} Pkt.
 										</span>
 									</div>
 								))}
 						</div>
-					</div>
-				</div>
-			)}
+					)}
+				</DialogContent>
+			</Dialog>
 		</DndContext>
 	);
 }
