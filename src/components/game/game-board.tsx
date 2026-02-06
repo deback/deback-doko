@@ -516,6 +516,7 @@ export function GameBoard({
 					<PlayerHand
 						activeDragCard={dragPlayedCard}
 						cards={sortedHand}
+						disabled={gameState.biddingPhase?.active}
 						hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
 						isMyTurn={isMyTurn}
 						onPlayCard={handlePlayCard}

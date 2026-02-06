@@ -18,6 +18,7 @@ interface PlayerHandProps {
 	onPlayCard: (cardId: string, origin: CardOrigin) => void;
 	onRemoveCard?: (cardId: string) => void;
 	className?: string;
+	disabled?: boolean;
 }
 
 export function PlayerHand({
@@ -29,6 +30,7 @@ export function PlayerHand({
 	onPlayCard,
 	onRemoveCard,
 	className,
+	disabled,
 }: PlayerHandProps) {
 	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 	const [ghostCardId, setGhostCardId] = useState<string | null>(null);
@@ -174,6 +176,7 @@ export function PlayerHand({
 		<div
 			className={cn(
 				"fixed bottom-0 translate-y-1/3 -translate-x-1/2 sm:translate-y-1/2 left-1/2 landscape:translate-y-2/5 lg:landscape:translate-y-1/2",
+				disabled && "pointer-events-none",
 				className,
 			)}
 		>
