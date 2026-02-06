@@ -386,7 +386,7 @@ export function GameBoard({
 			{/* Linker Gegner */}
 			{leftPlayer && (
 				<>
-					<div className="fixed left-4 top-1/2 z-10 -translate-y-1/2">
+					<div className="fixed left-0 top-1/2 z-10 -translate-y-1/2">
 						<PlayerInfo
 							cardCount={gameState.hands[leftPlayer.id]?.length || 0}
 							isCurrentPlayer={false}

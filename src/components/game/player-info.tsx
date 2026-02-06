@@ -30,12 +30,17 @@ export function PlayerInfo({
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-2 rounded-t-[1.2rem] bg-black/40 px-2 py-2 backdrop-blur-sm",
-				isCurrentTurn &&
-					"ring-2 ring-primary ring-offset-2 ring-offset-transparent",
-				isVertical && "flex-col px-1 py-1",
+				"flex items-center gap-2 rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
+				{
+					"ring-4 ring-primary": isCurrentTurn,
+				},
+
 				className,
 			)}
+			style={{
+				transformOrigin: position === "left" ? "top center" : "top center",
+				transform: position === "left" ? "-rotate-90" : "rotate-90",
+			}}
 		>
 			<Avatar
 				alt={player.name}
@@ -44,7 +49,7 @@ export function PlayerInfo({
 				src={player.image}
 			/>
 			<div className={cn("flex flex-col", isVertical && "items-center")}>
-				<span className="font-medium text-sm text-white pr-1">
+				<span className="font-medium text-white text-sm pr-1">
 					{player.name}
 				</span>
 			</div>

@@ -173,7 +173,7 @@ export function PlayerHand({
 	return (
 		<div
 			className={cn(
-				"fixed bottom-0 translate-y-1/3 -translate-x-1/2 sm:translate-y-1/2 left-1/2 landscape:translate-y-2/3 lg:landscape:translate-y-1/2",
+				"fixed bottom-0 translate-y-1/3 -translate-x-1/2 sm:translate-y-1/2 left-1/2 landscape:translate-y-2/5 lg:landscape:translate-y-1/2",
 				className,
 			)}
 		>
