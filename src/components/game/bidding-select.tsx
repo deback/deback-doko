@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Circle, Clock } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -70,24 +70,36 @@ export function BiddingSelect({
 	// Default selection based on hand
 	const defaultValue = canDeclareHochzeit ? "vorbehalt" : "gesund";
 	const [selectedBid, setSelectedBid] = useState<ReservationType>(defaultValue);
+	const [isReady, setIsReady] = useState(false); // Player has confirmed their choice
+	const hasSentBid = useRef(false);
 
 	// Check if we're awaiting contract declaration
 	const awaitingDeclaration =
 		biddingPhase.awaitingContractDeclaration === currentPlayerId;
 
-	const handleConfirm = () => {
-		if (selectedBid === "vorbehalt") {
-			// When selecting Vorbehalt, automatically declare Hochzeit if possible
-			if (canDeclareHochzeit) {
+	// Auto-send bid when it's my turn and I'm ready
+	useEffect(() => {
+		if (isMyTurn && isReady && !myBid && !hasSentBid.current) {
+			hasSentBid.current = true;
+			if (selectedBid === "vorbehalt" && canDeclareHochzeit) {
 				onBid("vorbehalt");
-				// The server will handle the contract declaration phase
 			} else {
-				// No Hochzeit possible, Solo not yet implemented
-				// For now, fall back to Gesund
+				onBid("gesund");
+			}
+		}
+	}, [isMyTurn, isReady, myBid, selectedBid, canDeclareHochzeit, onBid]);
+
+	const handleConfirm = () => {
+		if (isMyTurn) {
+			// Send immediately if it's my turn
+			if (selectedBid === "vorbehalt" && canDeclareHochzeit) {
+				onBid("vorbehalt");
+			} else {
 				onBid("gesund");
 			}
 		} else {
-			onBid("gesund");
+			// Mark as ready, will auto-send when it's my turn
+			setIsReady(true);
 		}
 	};
 
@@ -132,32 +144,46 @@ export function BiddingSelect({
 				</div>
 			)}
 
-			{/* My turn to bid */}
-			{isMyTurn && !myBid && !awaitingDeclaration && (
-				<div className="flex w-full items-center gap-3">
-					<Select
-						defaultValue={defaultValue}
-						onValueChange={(value) => setSelectedBid(value as ReservationType)}
-					>
-						<SelectTrigger className="flex-1 bg-white/10 text-white border-white/20">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="gesund">Gesund</SelectItem>
-							<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
-						</SelectContent>
-					</Select>
-					<Button onClick={handleConfirm} size="default">
-						OK
-					</Button>
-				</div>
-			)}
+			{/* Bid selection - always visible until bid is submitted */}
+			{!myBid && !awaitingDeclaration && (
+				<>
+					<div className="flex w-full items-center gap-3">
+						<Select
+							defaultValue={defaultValue}
+							disabled={isReady}
+							onValueChange={(value) =>
+								setSelectedBid(value as ReservationType)
+							}
+						>
+							<SelectTrigger className="flex-1 bg-white/10 text-white border-white/20">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="gesund">Gesund</SelectItem>
+								<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
+							</SelectContent>
+						</Select>
+						{!isReady ? (
+							<Button onClick={handleConfirm} size="default">
+								OK
+							</Button>
+						) : (
+							<span className="text-xs text-emerald-400">Bereit</span>
+						)}
+					</div>
 
-			{/* Waiting for others */}
-			{!isMyTurn && !awaitingDeclaration && (
-				<p className="text-sm text-white/70">
-					Warte auf {currentBidder?.name}...
-				</p>
+					{/* Waiting message */}
+					{!isMyTurn && !isReady && (
+						<p className="text-xs text-white/50">
+							Warte auf {currentBidder?.name}...
+						</p>
+					)}
+					{!isMyTurn && isReady && (
+						<p className="text-xs text-emerald-400">
+							Deine Auswahl wird gesendet wenn du dran bist...
+						</p>
+					)}
+				</>
 			)}
 
 			{/* Player status row */}
