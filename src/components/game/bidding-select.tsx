@@ -73,6 +73,13 @@ export function BiddingSelect({
 	const [isReady, setIsReady] = useState(false); // Player has confirmed their choice
 	const hasSentBid = useRef(false);
 
+	// Reset state when default value changes (e.g., after game reset with new hand)
+	useEffect(() => {
+		setSelectedBid(defaultValue);
+		setIsReady(false);
+		hasSentBid.current = false;
+	}, [defaultValue]);
+
 	// Check if we're awaiting contract declaration
 	const awaitingDeclaration =
 		biddingPhase.awaitingContractDeclaration === currentPlayerId;
@@ -141,11 +148,11 @@ export function BiddingSelect({
 				<>
 					<div className="flex w-full items-center gap-3">
 						<Select
-							defaultValue={defaultValue}
 							disabled={isReady}
 							onValueChange={(value) =>
 								setSelectedBid(value as ReservationType)
 							}
+							value={selectedBid}
 						>
 							<SelectTrigger className="flex-1 bg-white/10 text-white border-white/20">
 								<SelectValue />
