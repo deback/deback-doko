@@ -1,5 +1,34 @@
 import type { Player } from "./tables";
 
+// Ansagen-Typen für Doppelkopf
+export type AnnouncementType =
+	| "re"
+	| "kontra"
+	| "no90"
+	| "no60"
+	| "no30"
+	| "schwarz";
+
+export type PointAnnouncementType = "no90" | "no60" | "no30" | "schwarz";
+
+export interface PointAnnouncement {
+	type: PointAnnouncementType;
+	by: string; // playerId
+}
+
+export interface Announcements {
+	re: {
+		announced: boolean;
+		by?: string; // playerId
+	};
+	kontra: {
+		announced: boolean;
+		by?: string;
+	};
+	rePointAnnouncements: PointAnnouncement[]; // z.B. [{type: "no90", by: "player1"}]
+	kontraPointAnnouncements: PointAnnouncement[];
+}
+
 export type Suit = "hearts" | "diamonds" | "clubs" | "spades";
 export type Rank = "9" | "10" | "jack" | "queen" | "king" | "ace";
 
@@ -56,12 +85,14 @@ export interface GameState {
 	teams: Record<string, "re" | "kontra">; // playerId -> Team-Zuordnung
 	spectatorCount: number; // Number of spectators watching the game
 	spectators: Array<{ id: string; name: string; image?: string | null }>; // List of spectators
+	announcements: Announcements; // Ansagen (Re, Kontra, keine 90, etc.)
 }
 
 export type GameEvent =
 	| { type: "get-state" }
 	| { type: "play-card"; cardId: string; playerId: string }
 	| { type: "auto-play" }
+	| { type: "reset-game" }
 	| {
 			type: "start-game";
 			players: Array<{ id: string; name: string }>;
@@ -73,6 +104,11 @@ export type GameEvent =
 			spectatorId: string;
 			spectatorName: string;
 			spectatorImage?: string | null;
+	  }
+	| {
+			type: "announce";
+			announcement: AnnouncementType;
+			playerId: string;
 	  };
 
 export type GameMessage =

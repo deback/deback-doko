@@ -10,7 +10,7 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { Bot, Eye } from "lucide-react";
+import { Bot, Eye, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/dialog";
 import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
-import type { Card, GameState, Suit } from "@/types/game";
+import type { AnnouncementType, Card, GameState, Suit } from "@/types/game";
 import type { Player } from "@/types/tables";
+import { AnnouncementButtons } from "./announcement-buttons";
 import { CARD_SIZE, type CardOrigin } from "./card";
 import { GameSettingsMenu } from "./game-settings-menu";
 import { OpponentHand } from "./opponent-hand";
@@ -37,6 +38,8 @@ interface GameBoardProps {
 	currentPlayer: Player;
 	playCard: (cardId: string) => void;
 	autoPlay: () => void;
+	announce: (announcement: AnnouncementType) => void;
+	resetGame: () => void;
 }
 
 // Sortier- und Spiellogik aus game-client.tsx
@@ -175,6 +178,8 @@ export function GameBoard({
 	currentPlayer,
 	playCard,
 	autoPlay,
+	announce,
+	resetGame,
 }: GameBoardProps) {
 	const dndContextId = useId();
 
@@ -252,6 +257,47 @@ export function GameBoard({
 	const hasPlayerPlayedInTrick = gameState.currentTrick.cards.some(
 		(tc) => tc.playerId === currentPlayer.id,
 	);
+
+	// Helper-Funktion für Ansagen-Props (nur Ansagen die dieser Spieler gemacht hat)
+	const getPlayerAnnouncements = (playerId: string) => {
+		const team = gameState.teams[playerId];
+		if (!team || !gameState.announcements) return undefined;
+
+		// Punkt-Ansagen: Nur die, die dieser Spieler gemacht hat
+		const allTeamPointAnnouncements =
+			team === "re"
+				? (gameState.announcements.rePointAnnouncements ?? [])
+				: (gameState.announcements.kontraPointAnnouncements ?? []);
+
+		// Filtere nur die Ansagen, die dieser Spieler gemacht hat
+		const playerPointAnnouncements = allTeamPointAnnouncements
+			.filter((pa) => pa.by === playerId)
+			.map((pa) => pa.type);
+
+		// Zeige Re/Kontra wenn:
+		// 1. Dieser Spieler es selbst angesagt hat, ODER
+		// 2. Dieser Spieler eine Punkt-Ansage gemacht hat (dann muss das Team sichtbar sein)
+		const playerAnnouncedReKontra =
+			(team === "re" && gameState.announcements.re?.by === playerId) ||
+			(team === "kontra" && gameState.announcements.kontra?.by === playerId);
+
+		const hasPointAnnouncements = playerPointAnnouncements.length > 0;
+
+		// Zeige Re/Kontra Badge wenn der Spieler es angesagt hat ODER Punkt-Ansagen hat
+		const reOrKontra =
+			playerAnnouncedReKontra || hasPointAnnouncements
+				? (team as "re" | "kontra")
+				: undefined;
+
+		if (!reOrKontra && !hasPointAnnouncements) return undefined;
+
+		return {
+			reOrKontra,
+			pointAnnouncements: hasPointAnnouncements
+				? playerPointAnnouncements
+				: undefined,
+		};
+	};
 
 	function handleDragStart(event: DragStartEvent) {
 		const cardData = event.active.data.current?.card as Card | undefined;
@@ -363,16 +409,13 @@ export function GameBoard({
 			{topPlayer && (
 				<>
 					<PlayerInfo
-						cardCount={gameState.hands[topPlayer.id]?.length || 0}
-						isCurrentPlayer={false}
+						announcements={getPlayerAnnouncements(topPlayer.id)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							topPlayer.id
 						}
 						player={topPlayer}
 						position="top"
-						score={gameState.scores[topPlayer.id] || 0}
-						team={gameState.teams[topPlayer.id]}
 					/>
 					<OpponentHand
 						cardCount={gameState.hands[topPlayer.id]?.length || 0}
@@ -385,16 +428,13 @@ export function GameBoard({
 			{leftPlayer && (
 				<>
 					<PlayerInfo
-						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
-						isCurrentPlayer={false}
+						announcements={getPlayerAnnouncements(leftPlayer.id)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							leftPlayer.id
 						}
 						player={leftPlayer}
 						position="left"
-						score={gameState.scores[leftPlayer.id] || 0}
-						team={gameState.teams[leftPlayer.id]}
 					/>
 
 					<OpponentHand
@@ -408,16 +448,13 @@ export function GameBoard({
 			{rightPlayer && (
 				<>
 					<PlayerInfo
-						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
-						isCurrentPlayer={false}
+						announcements={getPlayerAnnouncements(rightPlayer.id)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							rightPlayer.id
 						}
 						player={rightPlayer}
 						position="right"
-						score={gameState.scores[rightPlayer.id] || 0}
-						team={gameState.teams[rightPlayer.id]}
 					/>
 
 					<OpponentHand
@@ -441,13 +478,10 @@ export function GameBoard({
 			{bottomPlayer && (
 				<>
 					<PlayerInfo
-						cardCount={sortedHand.length}
-						isCurrentPlayer
+						announcements={getPlayerAnnouncements(bottomPlayer.id)}
 						isCurrentTurn={isMyTurn}
 						player={bottomPlayer}
 						position="bottom"
-						score={gameState.scores[bottomPlayer.id] || 0}
-						team={gameState.teams[bottomPlayer.id]}
 					/>
 					<PlayerHand
 						activeDragCard={dragPlayedCard}
@@ -525,16 +559,34 @@ export function GameBoard({
 				)}
 			</div>
 
-			{/* Auto-Play Test-Button */}
+			{/* Ansagen-Buttons */}
+			<AnnouncementButtons
+				className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2"
+				currentPlayer={currentPlayer}
+				gameState={gameState}
+				onAnnounce={announce}
+			/>
+
+			{/* Auto-Play & Reset Game Buttons */}
 			{process.env.NODE_ENV === "development" && (
-				<button
-					className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-full bg-amber-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-amber-600"
-					onClick={autoPlay}
-					type="button"
-				>
-					<Bot className="h-4 w-4" />
-					Auto-Play
-				</button>
+				<div className="fixed bottom-4 left-4 z-50 flex items-center gap-2">
+					<button
+						className="flex items-center gap-2 rounded-full bg-amber-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-amber-600"
+						onClick={autoPlay}
+						type="button"
+					>
+						<Bot className="h-4 w-4" />
+						Auto-Play
+					</button>
+					<button
+						className="flex items-center gap-2 rounded-full bg-slate-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-slate-600"
+						onClick={resetGame}
+						type="button"
+					>
+						<RotateCcw className="h-4 w-4" />
+						Reset
+					</button>
+				</div>
 			)}
 
 			{/* Spielende - use cached state to keep dialog open during new game start */}

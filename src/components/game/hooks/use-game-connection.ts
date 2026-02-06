@@ -2,7 +2,12 @@
 
 import PartySocket from "partysocket";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GameEvent, GameMessage, GameState } from "@/types/game";
+import type {
+	AnnouncementType,
+	GameEvent,
+	GameMessage,
+	GameState,
+} from "@/types/game";
 import type { Player } from "@/types/tables";
 
 interface UseGameConnectionOptions {
@@ -18,6 +23,8 @@ interface UseGameConnectionReturn {
 	isSpectator: boolean;
 	playCard: (cardId: string) => void;
 	autoPlay: () => void;
+	announce: (announcement: AnnouncementType) => void;
+	resetGame: () => void;
 }
 
 export function useGameConnection({
@@ -132,6 +139,28 @@ export function useGameConnection({
 		socketRef.current.send(JSON.stringify(event));
 	}, [gameState]);
 
+	const announce = useCallback(
+		(announcement: AnnouncementType) => {
+			if (!socketRef.current || !gameState) return;
+
+			const event: GameEvent = {
+				type: "announce",
+				announcement,
+				playerId: player.id,
+			};
+
+			socketRef.current.send(JSON.stringify(event));
+		},
+		[gameState, player.id],
+	);
+
+	const resetGame = useCallback(() => {
+		if (!socketRef.current || !gameState) return;
+
+		const event: GameEvent = { type: "reset-game" };
+		socketRef.current.send(JSON.stringify(event));
+	}, [gameState]);
+
 	return {
 		gameState,
 		error,
@@ -139,5 +168,7 @@ export function useGameConnection({
 		isSpectator: spectatorMode,
 		playCard,
 		autoPlay,
+		announce,
+		resetGame,
 	};
 }
