@@ -397,7 +397,9 @@ export function TrickArea({
 							players.length,
 						);
 						const shortScreenOffset =
-							isShortScreen && position === "top" ? 90 : 0;
+							isShortScreen && (position === "top" || position === "bottom")
+								? 90
+								: 0;
 
 						// Check if this card should be animated (just played by local player)
 						const snapshot = snapshotRef.current;

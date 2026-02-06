@@ -57,18 +57,13 @@ export function GameSettingsMenu() {
 							<DropdownMenuRadioItem value="doko">
 								Doppelkopf
 							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="poker">
-								Poker
-							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="poker">Poker</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 
 						<DropdownMenuSeparator />
 
 						<DropdownMenuLabel>Theme</DropdownMenuLabel>
-						<DropdownMenuRadioGroup
-							onValueChange={setTheme}
-							value={theme}
-						>
+						<DropdownMenuRadioGroup onValueChange={setTheme} value={theme}>
 							<DropdownMenuRadioItem value="light">
 								<Sun className="mr-2 h-4 w-4" />
 								Hell
@@ -101,9 +96,7 @@ export function GameSettingsMenu() {
 							<DropdownMenuRadioItem value="inverted">
 								Invertiert
 							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="sepia">
-								Sepia
-							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="sepia">Sepia</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 					</DropdownMenuSubContent>
 				</DropdownMenuSub>

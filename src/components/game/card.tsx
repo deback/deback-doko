@@ -90,8 +90,8 @@ export default function Card({
 	const darkModeClasses = {
 		normal: "",
 		dimmed: "dark:brightness-85 dark:contrast-110",
-		inverted: "dark:invert dark:hue-rotate-180",
-		sepia: "dark:sepia-[0.2] dark:brightness-90",
+		inverted: "dark:invert dark:hue-rotate-180 dark:brightness-100",
+		sepia: "dark:sepia-[0.5] dark:brightness-80",
 	};
 
 	// Flip animation: when flipProgress > 0.5, show the back

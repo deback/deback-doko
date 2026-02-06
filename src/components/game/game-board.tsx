@@ -556,31 +556,86 @@ export function GameBoard({
 						</DialogTitle>
 					</DialogHeader>
 					{cachedEndGameState && (
-						<div className="space-y-2">
-							{cachedEndGameState.players
-								.sort(
-									(a, b) =>
-										(cachedEndGameState.scores[b.id] || 0) -
-										(cachedEndGameState.scores[a.id] || 0),
-								)
-								.map((player, index) => (
-									<div
-										className="flex items-center justify-between gap-4"
-										key={player.id}
-									>
-										<span
+						<div className="space-y-3">
+							{(() => {
+								const reScore = cachedEndGameState.players
+									.filter((p) => cachedEndGameState.teams[p.id] === "re")
+									.reduce(
+										(sum, p) => sum + (cachedEndGameState.scores[p.id] || 0),
+										0,
+									);
+
+								const kontraScore = cachedEndGameState.players
+									.filter((p) => cachedEndGameState.teams[p.id] === "kontra")
+									.reduce(
+										(sum, p) => sum + (cachedEndGameState.scores[p.id] || 0),
+										0,
+									);
+
+								const reWon = reScore > kontraScore;
+
+								return (
+									<>
+										<div
 											className={cn(
-												"font-medium",
-												index === 0 && "text-yellow-600",
+												"rounded-lg p-3",
+												reWon ? "bg-emerald-500/20" : "bg-muted",
 											)}
 										>
-											{index + 1}. {player.name}
-										</span>
-										<span className="font-bold">
-											{cachedEndGameState.scores[player.id] || 0} Pkt.
-										</span>
-									</div>
-								))}
+											<div className="mb-1 flex items-center justify-between">
+												<span
+													className={cn(
+														"font-bold",
+														reWon && "text-emerald-600",
+													)}
+												>
+													Re {reWon && "🏆"}
+												</span>
+												<span className="font-bold text-lg">
+													{reScore} Pkt.
+												</span>
+											</div>
+											<div className="text-muted-foreground text-sm">
+												{cachedEndGameState.players
+													.filter(
+														(p) => cachedEndGameState.teams[p.id] === "re",
+													)
+													.map((p) => p.name)
+													.join(", ")}
+											</div>
+										</div>
+
+										<div
+											className={cn(
+												"rounded-lg p-3",
+												!reWon ? "bg-emerald-500/20" : "bg-muted",
+											)}
+										>
+											<div className="mb-1 flex items-center justify-between">
+												<span
+													className={cn(
+														"font-bold",
+														!reWon && "text-emerald-600",
+													)}
+												>
+													Kontra {!reWon && "🏆"}
+												</span>
+												<span className="font-bold text-lg">
+													{kontraScore} Pkt.
+												</span>
+											</div>
+											<div className="text-muted-foreground text-sm">
+												{cachedEndGameState.players
+													.filter(
+														(p) => cachedEndGameState.teams[p.id] === "kontra",
+													)
+													.map((p) => p.name)
+													.join(", ")}
+											</div>
+										</div>
+									</>
+								);
+							})()}
 						</div>
 					)}
 				</DialogContent>

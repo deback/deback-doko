@@ -2,12 +2,12 @@
 
 import {
 	createContext,
+	type ReactNode,
 	useCallback,
 	useContext,
 	useEffect,
 	useMemo,
 	useState,
-	type ReactNode,
 } from "react";
 
 export type CardDesign = "doko" | "poker";
@@ -30,8 +30,9 @@ const CardDesignContext = createContext<CardDesignContextValue | null>(null);
 
 export function CardDesignProvider({ children }: { children: ReactNode }) {
 	const [cardDesign, setCardDesignState] = useState<CardDesign>(DEFAULT_DESIGN);
-	const [darkModeStyle, setDarkModeStyleState] =
-		useState<DarkModeCardStyle>(DEFAULT_DARK_MODE_STYLE);
+	const [darkModeStyle, setDarkModeStyleState] = useState<DarkModeCardStyle>(
+		DEFAULT_DARK_MODE_STYLE,
+	);
 
 	// Load from localStorage on mount
 	useEffect(() => {
