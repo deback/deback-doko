@@ -6,8 +6,8 @@ import type {
 	Suit,
 } from "@/types/game";
 
-// Basis-Pfad für Karten-SVGs
-export const SVG_CARDS_BASE_PATH = "/poker";
+// Default Basis-Pfad für Karten-SVGs
+export const SVG_CARDS_BASE_PATH = "/doko";
 
 // Mapping von Suit zu Dateinamens-Code
 const SUIT_TO_CODE: Record<Suit, string> = {
@@ -34,25 +34,35 @@ const RANK_TO_CODE: Record<string, string> = {
 	ace: "A",
 };
 
-// Erstellt den Pfad für eine Karte (z.B. "/poker/AH.svg" für Ace of Hearts)
-export function getCardImagePath(suit: Suit, rank: Rank | FullRank): string {
+// Erstellt den Pfad für eine Karte (z.B. "/doko/AH.svg" für Ace of Hearts)
+export function getCardImagePath(
+	suit: Suit,
+	rank: Rank | FullRank,
+	basePath: string = SVG_CARDS_BASE_PATH,
+): string {
 	const rankCode = RANK_TO_CODE[rank] || rank;
 	const suitCode = SUIT_TO_CODE[suit];
-	return `${SVG_CARDS_BASE_PATH}/${rankCode}${suitCode}.svg`;
+	return `${basePath}/${rankCode}${suitCode}.svg`;
 }
 
 // Erstellt den Pfad für einen Kartenrücken
-export function getCardBackPath(design: CardBackDesign): string {
+export function getCardBackPath(
+	design: CardBackDesign,
+	basePath: string = SVG_CARDS_BASE_PATH,
+): string {
 	// 1B.svg = blau, 2B.svg = alternativ
 	const backFile = design === "blue" ? "1B" : "2B";
-	return `${SVG_CARDS_BASE_PATH}/${backFile}.svg`;
+	return `${basePath}/${backFile}.svg`;
 }
 
 // Erstellt den Pfad für einen Joker
-export function getJokerPath(color: "red" | "black"): string {
+export function getJokerPath(
+	color: "red" | "black",
+	basePath: string = SVG_CARDS_BASE_PATH,
+): string {
 	// 1J.svg = rot, 2J.svg = schwarz
 	const jokerFile = color === "red" ? "1J" : "2J";
-	return `${SVG_CARDS_BASE_PATH}/${jokerFile}.svg`;
+	return `${basePath}/${jokerFile}.svg`;
 }
 
 // Deutsche Rang-Bezeichnungen für die Anzeige

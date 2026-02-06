@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { CardDesignProvider } from "@/lib/hooks/use-card-design";
 import type { Player } from "@/types/tables";
 import { GameBoard } from "./game-board";
 import { useGameConnection } from "./hooks/use-game-connection";
@@ -61,15 +62,21 @@ export function GameClient({
 
 	// Render spectator view if in spectator mode
 	if (spectatorMode) {
-		return <SpectatorBoard gameState={gameState} />;
+		return (
+			<CardDesignProvider>
+				<SpectatorBoard gameState={gameState} />
+			</CardDesignProvider>
+		);
 	}
 
 	return (
-		<GameBoard
-			autoPlay={autoPlay}
-			currentPlayer={player}
-			gameState={gameState}
-			playCard={playCard}
-		/>
+		<CardDesignProvider>
+			<GameBoard
+				autoPlay={autoPlay}
+				currentPlayer={player}
+				gameState={gameState}
+				playCard={playCard}
+			/>
+		</CardDesignProvider>
 	);
 }

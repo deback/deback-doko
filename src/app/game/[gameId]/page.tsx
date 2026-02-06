@@ -41,7 +41,7 @@ export default async function GamePage({
 	};
 
 	return (
-		<main className="min-h-screen">
+		<main>
 			<GameClient gameId={gameId} isSpectator={isSpectator} player={player} />
 		</main>
 	);

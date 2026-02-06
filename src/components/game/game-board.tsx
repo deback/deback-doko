@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import type { Card, GameState, Suit } from "@/types/game";
 import type { Player } from "@/types/tables";
 import { CARD_SIZE, type CardOrigin } from "./card";
+import { GameSettingsMenu } from "./game-settings-menu";
 import { OpponentHand } from "./opponent-hand";
 import { PlayerHand } from "./player-hand";
 import { PlayerInfo } from "./player-info";
@@ -492,14 +493,17 @@ export function GameBoard({
 
 			{/* Verbindungsstatus & Zuschauer */}
 			<div className="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
-				<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
-					<div
-						className={cn(
-							"h-2 w-2 rounded-full",
-							"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
-						)}
-					/>
-					<span className="text-white/70 text-xs">Verbunden</span>
+				<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+						<div
+							className={cn(
+								"h-2 w-2 rounded-full",
+								"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
+							)}
+						/>
+						<span className="text-white/70 text-xs">Verbunden</span>
+					</div>
+					<GameSettingsMenu />
 				</div>
 
 				{/* Zuschauer-Liste */}

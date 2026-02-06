@@ -8,6 +8,7 @@ import { motion, type TargetAndTransition } from "framer-motion";
 import Image from "next/image";
 import type { Ref } from "react";
 import { getCardBackPath, getCardImagePath } from "@/lib/card-config";
+import { useCardDesign } from "@/lib/hooks/use-card-design";
 import { cn } from "@/lib/utils";
 import type { Card as CardType, Rank, Suit } from "@/types/game";
 
@@ -83,6 +84,8 @@ export default function Card({
 	dragListeners,
 	dragAttributes,
 }: CardProps) {
+	const { basePath } = useCardDesign();
+
 	// Flip animation: when flipProgress > 0.5, show the back
 	const isFlipped = flipProgress > 0.5;
 	const showBackSide = showBack || isFlipped;
@@ -90,15 +93,15 @@ export default function Card({
 	// Determine image paths for front and back
 	let frontImagePath: string;
 	if (file) {
-		frontImagePath = `/doko/${file}`;
+		frontImagePath = `${basePath}/${file}`;
 	} else if (card) {
-		frontImagePath = getCardImagePath(card.suit, card.rank);
+		frontImagePath = getCardImagePath(card.suit, card.rank, basePath);
 	} else if (suit && rank) {
-		frontImagePath = getCardImagePath(suit, rank);
+		frontImagePath = getCardImagePath(suit, rank, basePath);
 	} else {
-		frontImagePath = getCardBackPath(backDesign);
+		frontImagePath = getCardBackPath(backDesign, basePath);
 	}
-	const backImagePath = getCardBackPath(backDesign);
+	const backImagePath = getCardBackPath(backDesign, basePath);
 
 	// Choose which image to show based on flip state
 	const imagePath = showBackSide ? backImagePath : frontImagePath;

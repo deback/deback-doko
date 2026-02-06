@@ -22,6 +22,7 @@ todos:
   - id: structure
     content: "Struktur: Middleware und Error-Handling-Utilities hinzufügen (optional)"
     status: pending
+isProject: false
 ---
 
 # Projekt-Verbesserungen für deback-doko
@@ -127,33 +128,33 @@ Das Projekt ist eine Next.js-App mit Better-Auth, Drizzle ORM und Magic-Link-Aut
 - Toast/Alert-Komponente hinzufügen (`src/components/ui/toast.tsx` oder `alert.tsx`)
 - Error Boundary Component erstellen (`src/components/error-boundary.tsx`)
 
-2. **Code-Qualität**
+1. **Code-Qualität**
 
 - Unbenutzte Variablen in `google-button.tsx` und `github-button.tsx` entfernen
 - Kommentierten Code in `github-button.tsx` entfernen
 - Type Assertions in `config.ts` korrigieren
 - Code formatieren mit Biome
 
-3. **UX Verbesserungen**
+1. **UX Verbesserungen**
 
 - Home-Seite (`src/app/page.tsx`) mit benutzerfreundlichem UI umgestalten
 - `lang="de"` in `src/app/layout.tsx` setzen
 - Loading-States für Social Login Buttons verbessern
 - Fehleranzeige für Social Login implementieren
 
-4. **Email-Template**
+1. **Email-Template**
 
 - Email-Template-Dateien erstellen (`src/server/email/templates/magic-link.tsx` oder `.html`)
 - Text-Version der E-Mail hinzufügen
 - `resend.ts` refactoren um Templates zu verwenden
 
-5. **Dokumentation**
+1. **Dokumentation**
 
 - README.md mit Projekt-Beschreibung aktualisieren
 - Setup-Anleitung hinzufügen
 - Features dokumentieren
 
-6. **Struktur**
+1. **Struktur**
 
 - Middleware für Auth-Checks (`src/middleware.ts`)
 - Zentrale Error-Handling-Utilities (`src/lib/errors.ts`)
