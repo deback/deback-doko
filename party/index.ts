@@ -1,5 +1,11 @@
 import type * as Party from "partykit/server";
 import { env } from "@/env";
+import {
+	canPlayCard,
+	getPlayableCards,
+	getTrickPoints,
+	isTrump,
+} from "../src/lib/game/rules";
 
 interface Player {
 	id: string;
@@ -692,7 +698,7 @@ export default class Server implements Party.Server {
 		const firstCard = trick.cards[0]?.card;
 		if (!firstCard) return;
 
-		const isFehlStich = !this.isTrump(firstCard, gameState.trump);
+		const isFehlStich = !isTrump(firstCard, gameState.trump);
 
 		if (isFehlStich && winnerId !== seekerId) {
 			// Partner gefunden: Gewinner des Fehl-Stichs
@@ -879,7 +885,10 @@ export default class Server implements Party.Server {
 
 		// Während der Vorbehaltsabfrage sind keine Ansagen erlaubt
 		if (gameState.biddingPhase?.active) {
-			this.sendGameError(sender, "Ansagen sind während der Vorbehaltsabfrage nicht erlaubt.");
+			this.sendGameError(
+				sender,
+				"Ansagen sind während der Vorbehaltsabfrage nicht erlaubt.",
+			);
 			return;
 		}
 
@@ -1268,9 +1277,7 @@ export default class Server implements Party.Server {
 		}
 
 		// Validierung: Prüfe Bedien-Regeln
-		if (
-			!this.canPlayCard(card, hand, gameState.currentTrick, gameState.trump)
-		) {
+		if (!canPlayCard(card, hand, gameState.currentTrick, gameState.trump)) {
 			this.sendGameError(sender, "Du musst die angespielte Farbe bedienen.");
 			return;
 		}
@@ -1571,10 +1578,10 @@ export default class Server implements Party.Server {
 		playerId: string,
 		schweinereiPlayers: string[],
 	): number {
-		const isTrump = this.isTrump(card, trump);
+		const cardIsTrump = isTrump(card, trump);
 		const isLeadSuit = card.suit === leadSuit;
 
-		if (isTrump) {
+		if (cardIsTrump) {
 			// Schweinerei: Karo-Assen sind höher als Herz 10, wenn Spieler beide hat
 			if (
 				card.suit === "diamonds" &&
@@ -1596,7 +1603,7 @@ export default class Server implements Party.Server {
 			}
 		}
 
-		if (isLeadSuit && !isTrump) {
+		if (isLeadSuit && !cardIsTrump) {
 			if (card.rank === "ace") return 800;
 			if (card.rank === "king") return 700;
 			if (card.rank === "queen") return 600;
@@ -1607,103 +1614,8 @@ export default class Server implements Party.Server {
 		return 0;
 	}
 
-	isTrump(card: Card, trump: Suit | "jacks" | "queens"): boolean {
-		// In Doppelkopf sind Herz 10, Buben, Damen und Karo Trumpf
-		// Herz 10 ist immer der höchste Trumpf
-		if (card.suit === "hearts" && card.rank === "10") return true;
-
-		if (trump === "jacks") {
-			// Buben und Damen sind immer Trumpf
-			if (card.rank === "jack" || card.rank === "queen") return true;
-			// Karo (Diamonds) ist auch Trumpf
-			if (card.suit === "diamonds") return true;
-		}
-		if (trump === "queens") {
-			if (card.rank === "queen") return true;
-			if (card.suit === "diamonds") return true;
-		}
-		return card.suit === trump;
-	}
-
-	getCardPoints(card: Card): number {
-		// Doppelkopf Punktewerte: 9=0, Bube=2, Dame=3, König=4, 10=10, Ass=11
-		// Gesamt: 8×0 + 8×2 + 8×3 + 8×4 + 8×10 + 8×11 = 240 Punkte
-		switch (card.rank) {
-			case "9":
-				return 0;
-			case "jack":
-				return 2;
-			case "queen":
-				return 3;
-			case "king":
-				return 4;
-			case "10":
-				return 10;
-			case "ace":
-				return 11;
-			default:
-				return 0;
-		}
-	}
-
 	calculateTrickPoints(trick: Trick): number {
-		let totalPoints = 0;
-		for (const cardEntry of trick.cards) {
-			if (cardEntry.card) {
-				totalPoints += this.getCardPoints(cardEntry.card);
-			}
-		}
-		return totalPoints;
-	}
-
-	getPlayableCards(
-		hand: Card[],
-		currentTrick: Trick,
-		trump: Suit | "jacks" | "queens",
-	): Card[] {
-		// Erste Karte im Stich: Alle Karten spielbar
-		if (currentTrick.cards.length === 0) {
-			return hand;
-		}
-
-		// Bestimme angespielte Farbe/Trumpf
-		const firstCard = currentTrick.cards[0]?.card;
-		if (!firstCard) return hand;
-
-		const firstCardIsTrump = this.isTrump(firstCard, trump);
-		const leadSuit = firstCard.suit;
-
-		// Prüfe, ob Spieler passende Karten hat
-		if (firstCardIsTrump) {
-			// Trumpf angespielt: Prüfe ob Spieler Trumpf hat
-			const trumpCards = hand.filter((card) => this.isTrump(card, trump));
-			if (trumpCards.length > 0) {
-				return trumpCards;
-			}
-			// Keine Trumpf-Karten: Alle Karten spielbar
-			return hand;
-		} else {
-			// Fehlfarbe angespielt: Prüfe ob Spieler diese Farbe hat
-			const suitCards = hand.filter((card) => {
-				// Nicht-Trumpf-Karten dieser Farbe
-				return card.suit === leadSuit && !this.isTrump(card, trump);
-			});
-			if (suitCards.length > 0) {
-				return suitCards;
-			}
-			// Keine passende Farbe: Alle Karten spielbar
-			return hand;
-		}
-	}
-
-	canPlayCard(
-		card: Card,
-		hand: Card[],
-		currentTrick: Trick,
-		trump: Suit | "jacks" | "queens",
-	): boolean {
-		const playableCards = this.getPlayableCards(hand, currentTrick, trump);
-		return playableCards.some((c) => c.id === card.id);
+		return getTrickPoints(trick);
 	}
 
 	async autoPlay(sender: Party.Connection) {
@@ -1735,7 +1647,7 @@ export default class Server implements Party.Server {
 			return;
 		}
 
-		const playableCards = this.getPlayableCards(
+		const playableCards = getPlayableCards(
 			hand,
 			gameState.currentTrick,
 			gameState.trump,

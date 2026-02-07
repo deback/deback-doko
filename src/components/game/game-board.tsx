@@ -21,6 +21,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { getCardImagePath } from "@/lib/card-config";
+import { getPlayableCards, isTrump } from "@/lib/game/rules";
 import { cn } from "@/lib/utils";
 import type {
 	AnnouncementType,
@@ -50,62 +51,6 @@ interface GameBoardProps {
 	resetGame: () => void;
 	bid: (bid: ReservationType) => void;
 	declareContract: (contract: ContractType) => void;
-}
-
-// Sortier- und Spiellogik aus game-client.tsx
-function isTrump(card: Card, trump: Suit | "jacks" | "queens"): boolean {
-	// Herz 10 ist immer der höchste Trumpf
-	if (card.suit === "hearts" && card.rank === "10") return true;
-
-	if (trump === "jacks") {
-		return (
-			card.rank === "jack" || card.rank === "queen" || card.suit === "diamonds"
-		);
-	}
-	if (trump === "queens") {
-		return card.rank === "queen" || card.suit === "diamonds";
-	}
-	return card.suit === trump;
-}
-
-function getPlayableCards(
-	hand: Card[],
-	currentTrick: GameState["currentTrick"],
-	trump: Suit | "jacks" | "queens",
-): Card[] {
-	// Erste Karte im Stich: Alle Karten spielbar
-	if (currentTrick.cards.length === 0) {
-		return hand;
-	}
-
-	const firstCard = currentTrick.cards[0]?.card;
-	if (!firstCard) return hand;
-
-	const firstCardIsTrump = isTrump(firstCard, trump);
-	const leadSuit = firstCard.suit;
-
-	if (firstCardIsTrump) {
-		// Trumpf angespielt: Prüfe ob Spieler Trumpf hat
-		const trumpCards = hand.filter((card) => isTrump(card, trump));
-		if (trumpCards.length > 0) {
-			return trumpCards;
-		}
-		return hand;
-	}
-
-	// Fehlfarbe angespielt
-	const suitCards = hand.filter((card) => {
-		return (
-			card.suit === leadSuit &&
-			!(card.suit === "hearts" && card.rank === "10") &&
-			!isTrump(card, trump)
-		);
-	});
-
-	if (suitCards.length > 0) {
-		return suitCards;
-	}
-	return hand;
 }
 
 function sortHand(
