@@ -493,8 +493,15 @@ export default class Server implements Party.Server {
 			Object.keys(gameState.biddingPhase.bids).length >=
 			gameState.players.length
 		) {
-			// Bidding abgeschlossen
-			await this.resolveBidding(gameState);
+			// Finalen Zustand broadcasten, damit der letzte Bid sichtbar wird
+			await this.persistGameState(gameState);
+			this.broadcastGameState(gameState);
+			this.broadcastToSpectators(gameState);
+
+			// Bidding nach 2s auflösen, damit der Dialog sichtbar bleibt
+			setTimeout(() => {
+				this.resolveBidding(gameState);
+			}, 2000);
 			return;
 		}
 
