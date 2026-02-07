@@ -1,15 +1,15 @@
 "use client";
 
 import PartySocket from "partysocket";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type {
-	AnnouncementType,
-	ContractType,
-	GameEvent,
-	GameMessage,
-	GameState,
-	ReservationType,
-} from "@/types/game";
+import { useEffect, useRef } from "react";
+import {
+	useSetConnected,
+	useSetError,
+	useSetGameActions,
+	useSetGameState,
+	useSetSpectatorMode,
+} from "@/stores/game-selectors";
+import type { GameEvent, GameMessage } from "@/types/game";
 import type { Player } from "@/types/tables";
 
 interface UseGameConnectionOptions {
@@ -18,29 +18,29 @@ interface UseGameConnectionOptions {
 	isSpectator?: boolean;
 }
 
-interface UseGameConnectionReturn {
-	gameState: GameState | null;
-	error: string | null;
-	isConnected: boolean;
-	isSpectator: boolean;
-	playCard: (cardId: string) => void;
-	autoPlay: () => void;
-	announce: (announcement: AnnouncementType) => void;
-	resetGame: () => void;
-	bid: (bid: ReservationType) => void;
-	declareContract: (contract: ContractType) => void;
-}
-
+/**
+ * Hook to manage WebSocket connection to the game server.
+ *
+ * This hook:
+ * 1. Establishes a PartySocket connection
+ * 2. Syncs game state to the Zustand store
+ * 3. Registers game actions in the store
+ *
+ * Components can then use store selectors to access state and actions.
+ */
 export function useGameConnection({
 	gameId,
 	player,
 	isSpectator = false,
-}: UseGameConnectionOptions): UseGameConnectionReturn {
-	const [gameState, setGameState] = useState<GameState | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [isConnected, setIsConnected] = useState(false);
-	const [spectatorMode, setSpectatorMode] = useState(isSpectator);
+}: UseGameConnectionOptions): void {
 	const socketRef = useRef<PartySocket | null>(null);
+
+	// Store setters
+	const setGameState = useSetGameState();
+	const setError = useSetError();
+	const setConnected = useSetConnected();
+	const setSpectatorMode = useSetSpectatorMode();
+	const setGameActions = useSetGameActions();
 
 	useEffect(() => {
 		const host = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
@@ -52,8 +52,9 @@ export function useGameConnection({
 
 		socketRef.current = socket;
 
+		// Connection opened
 		socket.addEventListener("open", () => {
-			setIsConnected(true);
+			setConnected(true);
 
 			if (isSpectator) {
 				// Spectator mode: send spectate-game event
@@ -92,10 +93,12 @@ export function useGameConnection({
 			}
 		});
 
+		// Connection closed
 		socket.addEventListener("close", () => {
-			setIsConnected(false);
+			setConnected(false);
 		});
 
+		// Message received
 		socket.addEventListener("message", (event) => {
 			try {
 				const message: GameMessage = JSON.parse(event.data as string);
@@ -116,95 +119,75 @@ export function useGameConnection({
 			}
 		});
 
+		// Register game actions in store
+		setGameActions({
+			playCard: (cardId: string) => {
+				if (!socket) return;
+				const event: GameEvent = {
+					type: "play-card",
+					cardId,
+					playerId: player.id,
+				};
+				socket.send(JSON.stringify(event));
+			},
+
+			announce: (announcement) => {
+				if (!socket) return;
+				const event: GameEvent = {
+					type: "announce",
+					announcement,
+					playerId: player.id,
+				};
+				socket.send(JSON.stringify(event));
+			},
+
+			bid: (bid) => {
+				if (!socket) return;
+				const event: GameEvent = {
+					type: "bid",
+					playerId: player.id,
+					bid,
+				};
+				socket.send(JSON.stringify(event));
+			},
+
+			declareContract: (contract) => {
+				if (!socket) return;
+				const event: GameEvent = {
+					type: "declare-contract",
+					playerId: player.id,
+					contract,
+				};
+				socket.send(JSON.stringify(event));
+			},
+
+			autoPlay: () => {
+				if (!socket) return;
+				const event: GameEvent = { type: "auto-play" };
+				socket.send(JSON.stringify(event));
+			},
+
+			resetGame: () => {
+				if (!socket) return;
+				const event: GameEvent = { type: "reset-game" };
+				socket.send(JSON.stringify(event));
+			},
+		});
+
+		// Cleanup
 		return () => {
 			socket.close();
 		};
-	}, [gameId, isSpectator, player.id, player.name, player.image]);
-
-	const playCard = useCallback(
-		(cardId: string) => {
-			if (!socketRef.current || !gameState) return;
-
-			const event: GameEvent = {
-				type: "play-card",
-				cardId,
-				playerId: player.id,
-			};
-
-			socketRef.current.send(JSON.stringify(event));
-		},
-		[gameState, player.id],
-	);
-
-	const autoPlay = useCallback(() => {
-		if (!socketRef.current || !gameState) return;
-
-		const event: GameEvent = { type: "auto-play" };
-		socketRef.current.send(JSON.stringify(event));
-	}, [gameState]);
-
-	const announce = useCallback(
-		(announcement: AnnouncementType) => {
-			if (!socketRef.current || !gameState) return;
-
-			const event: GameEvent = {
-				type: "announce",
-				announcement,
-				playerId: player.id,
-			};
-
-			socketRef.current.send(JSON.stringify(event));
-		},
-		[gameState, player.id],
-	);
-
-	const resetGame = useCallback(() => {
-		if (!socketRef.current || !gameState) return;
-
-		const event: GameEvent = { type: "reset-game" };
-		socketRef.current.send(JSON.stringify(event));
-	}, [gameState]);
-
-	const bid = useCallback(
-		(bidType: ReservationType) => {
-			if (!socketRef.current || !gameState) return;
-
-			const event: GameEvent = {
-				type: "bid",
-				playerId: player.id,
-				bid: bidType,
-			};
-
-			socketRef.current.send(JSON.stringify(event));
-		},
-		[gameState, player.id],
-	);
-
-	const declareContract = useCallback(
-		(contract: ContractType) => {
-			if (!socketRef.current || !gameState) return;
-
-			const event: GameEvent = {
-				type: "declare-contract",
-				playerId: player.id,
-				contract,
-			};
-
-			socketRef.current.send(JSON.stringify(event));
-		},
-		[gameState, player.id],
-	);
-
-	return {
-		gameState,
-		error,
-		isConnected,
-		isSpectator: spectatorMode,
-		playCard,
-		autoPlay,
-		announce,
-		resetGame,
-		bid,
-		declareContract,
-	};
+	}, [
+		gameId,
+		isSpectator,
+		player.id,
+		player.name,
+		player.image,
+		setGameState,
+		setError,
+		setConnected,
+		setSpectatorMode,
+		setGameActions,
+	]);
 }

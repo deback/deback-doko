@@ -21,17 +21,26 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { getCardImagePath } from "@/lib/card-config";
-import { getPlayableCards, isTrump } from "@/lib/game/rules";
 import { cn } from "@/lib/utils";
-import type {
-	AnnouncementType,
-	Card,
-	ContractType,
-	GameState,
-	ReservationType,
-	Suit,
-} from "@/types/game";
-import type { Player } from "@/types/tables";
+import {
+	useAnnounce,
+	useAutoPlay,
+	useBid,
+	useCurrentPlayer,
+	useDeclareContract,
+	useGameState,
+	useHasPlayerPlayedInTrick,
+	useHasTrickStarted,
+	useIsBiddingActive,
+	useIsMyTurn,
+	usePlayableCardIds,
+	usePlayCard,
+	usePlayerAnnouncements,
+	usePlayerAtPosition,
+	useResetGame,
+	useSortedHand,
+} from "@/stores/game-selectors";
+import type { Card, GameState } from "@/types/game";
 import { AnnouncementButtons } from "./announcement-buttons";
 import { BiddingSelect } from "./bidding-select";
 import { CARD_SIZE, type CardOrigin } from "./card";
@@ -42,123 +51,52 @@ import { PlayerInfo } from "./player-info";
 import { TrickArea } from "./trick-area";
 import { TurnIndicator } from "./turn-indicator";
 
-interface GameBoardProps {
-	gameState: GameState;
-	currentPlayer: Player;
-	playCard: (cardId: string) => void;
-	autoPlay: () => void;
-	announce: (announcement: AnnouncementType) => void;
-	resetGame: () => void;
-	bid: (bid: ReservationType) => void;
-	declareContract: (contract: ContractType) => void;
-}
-
-function sortHand(
-	hand: Card[],
-	trump: Suit | "jacks" | "queens",
-	schweinereiPlayerId: string | null,
-	playerId: string,
-): Card[] {
-	return [...hand].sort((a, b) => {
-		const aIsHearts10 = a.suit === "hearts" && a.rank === "10";
-		const bIsHearts10 = b.suit === "hearts" && b.rank === "10";
-		const aIsTrump = isTrump(a, trump);
-		const bIsTrump = isTrump(b, trump);
-
-		// Trump cards come first
-		if (aIsTrump && !bIsTrump) return -1;
-		if (!aIsTrump && bIsTrump) return 1;
-
-		if (aIsTrump && bIsTrump) {
-			// Schweinerei
-			const hasSchweinerei = schweinereiPlayerId === playerId;
-			const aIsSchweinerei =
-				a.suit === "diamonds" && a.rank === "ace" && hasSchweinerei;
-			const bIsSchweinerei =
-				b.suit === "diamonds" && b.rank === "ace" && hasSchweinerei;
-
-			if (aIsSchweinerei && !bIsSchweinerei) return -1;
-			if (!aIsSchweinerei && bIsSchweinerei) return 1;
-
-			// Herz 10 ist höchster Trumpf
-			if (aIsHearts10 && !bIsHearts10 && !bIsSchweinerei) return -1;
-			if (!aIsHearts10 && bIsHearts10 && !aIsSchweinerei) return 1;
-
-			// Trump value sorting - Doppelkopf Reihenfolge
-			const trumpValue = (card: Card): number => {
-				// Schweinerei (beide Karo-Asse) sind höchster Trumpf
-				if (card.suit === "diamonds" && card.rank === "ace" && hasSchweinerei)
-					return 1200;
-				// Herz 10 (Dulle) ist zweithöchster Trumpf
-				if (card.suit === "hearts" && card.rank === "10") return 1100;
-
-				// Damen nach Farbe: Kreuz > Pik > Herz > Karo
-				if (card.rank === "queen") {
-					if (card.suit === "clubs") return 1040;
-					if (card.suit === "spades") return 1030;
-					if (card.suit === "hearts") return 1020;
-					if (card.suit === "diamonds") return 1010;
-				}
-
-				// Buben nach Farbe: Kreuz > Pik > Herz > Karo
-				if (card.rank === "jack") {
-					if (card.suit === "clubs") return 940;
-					if (card.suit === "spades") return 930;
-					if (card.suit === "hearts") return 920;
-					if (card.suit === "diamonds") return 910;
-				}
-
-				// Karo-Karten (restlicher Trumpf)
-				if (card.suit === "diamonds") {
-					if (card.rank === "ace") return 850;
-					if (card.rank === "10") return 840;
-					if (card.rank === "king") return 830;
-					if (card.rank === "9") return 820;
-				}
-				return 0;
-			};
-
-			return trumpValue(b) - trumpValue(a);
-		}
-
-		// Nicht-Trumpf Sortierung
-		const suitOrder: Record<Suit, number> = {
-			clubs: 1,
-			hearts: 2,
-			spades: 3,
-			diamonds: 4,
-		};
-
-		if (a.suit !== b.suit) {
-			return (suitOrder[a.suit] ?? 99) - (suitOrder[b.suit] ?? 99);
-		}
-
-		const rankOrder: Record<string, number> = {
-			ace: 1,
-			"10": 2,
-			king: 3,
-			jack: 4,
-			queen: 5,
-			"9": 6,
-		};
-
-		return (rankOrder[a.rank] ?? 99) - (rankOrder[b.rank] ?? 99);
-	});
-}
-
-export function GameBoard({
-	gameState,
-	currentPlayer,
-	playCard,
-	autoPlay,
-	announce,
-	resetGame,
-	bid,
-	declareContract,
-}: GameBoardProps) {
+/**
+ * GameBoard - Hauptspielfeld
+ *
+ * Verwendet Zustand Store-Selektoren für State-Management.
+ * Kein Prop Drilling mehr - alle Daten kommen aus dem Store.
+ */
+export function GameBoard() {
 	const dndContextId = useId();
 
-	// Animation state
+	// =========================================================================
+	// Store Selectors - State
+	// =========================================================================
+	const gameState = useGameState();
+	const currentPlayer = useCurrentPlayer();
+	const sortedHand = useSortedHand();
+	const playableCardIds = usePlayableCardIds();
+	const isMyTurn = useIsMyTurn();
+	const hasTrickStarted = useHasTrickStarted();
+	const hasPlayerPlayedInTrick = useHasPlayerPlayedInTrick();
+	const isBiddingActive = useIsBiddingActive();
+
+	// Player positions (relative to current player)
+	const bottomPlayer = usePlayerAtPosition(0);
+	const leftPlayer = usePlayerAtPosition(1);
+	const topPlayer = usePlayerAtPosition(2);
+	const rightPlayer = usePlayerAtPosition(3);
+
+	// Player announcements
+	const bottomAnnouncements = usePlayerAnnouncements(bottomPlayer?.id ?? "");
+	const leftAnnouncements = usePlayerAnnouncements(leftPlayer?.id ?? "");
+	const topAnnouncements = usePlayerAnnouncements(topPlayer?.id ?? "");
+	const rightAnnouncements = usePlayerAnnouncements(rightPlayer?.id ?? "");
+
+	// =========================================================================
+	// Store Selectors - Actions
+	// =========================================================================
+	const playCard = usePlayCard();
+	const announce = useAnnounce();
+	const bid = useBid();
+	const declareContract = useDeclareContract();
+	const autoPlay = useAutoPlay();
+	const resetGame = useResetGame();
+
+	// =========================================================================
+	// Local State (UI-only)
+	// =========================================================================
 	const [playedCard, setPlayedCard] = useState<{
 		card: Card;
 		playerId: string;
@@ -170,6 +108,9 @@ export function GameBoard({
 	const [cachedEndGameState, setCachedEndGameState] =
 		useState<GameState | null>(null);
 
+	// =========================================================================
+	// DnD Sensors
+	// =========================================================================
 	const mouseSensor = useSensor(MouseSensor, {
 		activationConstraint: {
 			distance: 10,
@@ -185,95 +126,9 @@ export function GameBoard({
 
 	const sensors = useSensors(mouseSensor, touchSensor);
 
-	// Spieler-Positionen berechnen (aktueller Spieler ist immer unten)
-	const currentPlayerIndex = gameState.players.findIndex(
-		(p) => p.id === currentPlayer.id,
-	);
-
-	const getPlayerAtPosition = (
-		relativePosition: number,
-	): Player | undefined => {
-		const index =
-			(currentPlayerIndex + relativePosition) % gameState.players.length;
-		return gameState.players[index];
-	};
-
-	const bottomPlayer = getPlayerAtPosition(0); // Aktueller Spieler
-	const leftPlayer = getPlayerAtPosition(1);
-	const topPlayer = getPlayerAtPosition(2);
-	const rightPlayer = getPlayerAtPosition(3);
-
-	// Spiellogik
-	const myHand = gameState.hands[currentPlayer.id] || [];
-	const isMyTurn =
-		gameState.players[gameState.currentPlayerIndex]?.id === currentPlayer.id;
-	const schweinereiPlayerId = gameState.schweinereiPlayers[0] || null;
-
-	const sortedHand = sortHand(
-		myHand,
-		gameState.trump,
-		schweinereiPlayerId,
-		currentPlayer.id,
-	);
-
-	// Berechne spielbare Karten immer (auch wenn nicht am Zug),
-	// damit der Spieler sehen kann welche Karten er spielen könnte
-	const playableCards = getPlayableCards(
-		sortedHand,
-		gameState.currentTrick,
-		gameState.trump,
-	);
-	const playableCardIds = playableCards.map((c) => c.id);
-
-	// Prüfe ob bereits eine Karte im Stich liegt
-	const hasTrickStarted = gameState.currentTrick.cards.length > 0;
-
-	// Prüfe ob der Spieler bereits im aktuellen Stich gespielt hat
-	const hasPlayerPlayedInTrick = gameState.currentTrick.cards.some(
-		(tc) => tc.playerId === currentPlayer.id,
-	);
-
-	// Helper-Funktion für Ansagen-Props (nur Ansagen die dieser Spieler gemacht hat)
-	const getPlayerAnnouncements = (playerId: string) => {
-		const team = gameState.teams[playerId];
-		if (!team || !gameState.announcements) return undefined;
-
-		// Punkt-Ansagen: Nur die, die dieser Spieler gemacht hat
-		const allTeamPointAnnouncements =
-			team === "re"
-				? (gameState.announcements.rePointAnnouncements ?? [])
-				: (gameState.announcements.kontraPointAnnouncements ?? []);
-
-		// Filtere nur die Ansagen, die dieser Spieler gemacht hat
-		const playerPointAnnouncements = allTeamPointAnnouncements
-			.filter((pa) => pa.by === playerId)
-			.map((pa) => pa.type);
-
-		// Zeige Re/Kontra wenn:
-		// 1. Dieser Spieler es selbst angesagt hat, ODER
-		// 2. Dieser Spieler eine Punkt-Ansage gemacht hat (dann muss das Team sichtbar sein)
-		const playerAnnouncedReKontra =
-			(team === "re" && gameState.announcements.re?.by === playerId) ||
-			(team === "kontra" && gameState.announcements.kontra?.by === playerId);
-
-		const hasPointAnnouncements = playerPointAnnouncements.length > 0;
-
-		// Zeige Re/Kontra Badge wenn der Spieler es angesagt hat ODER Punkt-Ansagen hat
-		const reOrKontra =
-			playerAnnouncedReKontra || hasPointAnnouncements
-				? (team as "re" | "kontra")
-				: undefined;
-
-		if (!reOrKontra && !hasPointAnnouncements) return undefined;
-
-		return {
-			reOrKontra,
-			pointAnnouncements: hasPointAnnouncements
-				? playerPointAnnouncements
-				: undefined,
-		};
-	};
-
+	// =========================================================================
+	// Event Handlers
+	// =========================================================================
 	function handleDragStart(event: DragStartEvent) {
 		const cardData = event.active.data.current?.card as Card | undefined;
 		if (cardData) {
@@ -291,7 +146,7 @@ export function GameBoard({
 		if (!playableCardIds.includes(cardId)) return;
 
 		const cardData = active.data.current?.card as Card | undefined;
-		if (!cardData) return;
+		if (!cardData || !currentPlayer) return;
 
 		const initialRect = active.rect.current.initial;
 		if (!initialRect) return;
@@ -318,7 +173,7 @@ export function GameBoard({
 
 	const handlePlayCard = useCallback(
 		(cardId: string, origin: CardOrigin) => {
-			if (!playableCardIds.includes(cardId)) return;
+			if (!playableCardIds.includes(cardId) || !currentPlayer) return;
 
 			const card = sortedHand.find((c) => c.id === cardId);
 			if (!card) return;
@@ -330,20 +185,27 @@ export function GameBoard({
 			// Actually play the card
 			playCard(cardId);
 		},
-		[playableCardIds, sortedHand, currentPlayer.id, playCard],
+		[playableCardIds, sortedHand, currentPlayer, playCard],
 	);
 
 	const handleRemoveCard = useCallback(() => {
-		// Card removal is handled by server state update
-		// Just clear the drag played card state
 		setDragPlayedCard(null);
 	}, []);
 
-	// Track trick card count to detect when a new trick starts
-	const prevTrickLengthRef = useRef(gameState.currentTrick.cards.length);
+	const handleCloseGameEndDialog = useCallback(() => {
+		setShowGameEndDialog(false);
+		setCachedEndGameState(null);
+	}, []);
 
-	// Reset animation state when trick is cleared (new trick starts)
+	// =========================================================================
+	// Effects
+	// =========================================================================
+
+	// Track trick card count to detect when a new trick starts
+	const prevTrickLengthRef = useRef(gameState?.currentTrick.cards.length ?? 0);
+
 	useEffect(() => {
+		if (!gameState) return;
 		const currentLength = gameState.currentTrick.cards.length;
 		const prevLength = prevTrickLengthRef.current;
 
@@ -354,25 +216,49 @@ export function GameBoard({
 		}
 
 		prevTrickLengthRef.current = currentLength;
-	}, [gameState.currentTrick.cards.length]);
+	}, [gameState?.currentTrick.cards.length, gameState]);
 
-	// Cache game state when game ends, reset dialog when new game starts
+	// Cache game state when game ends
 	useEffect(() => {
+		if (!gameState) return;
+
 		if (gameState.gameEnded) {
-			// Cache the game state when game ends
 			setCachedEndGameState(gameState);
 		} else if (cachedEndGameState?.gameEnded) {
-			// Reset dialog visibility for next game end (but keep cached state for current dialog)
 			setShowGameEndDialog(true);
 		}
-	}, [gameState.gameEnded, gameState, cachedEndGameState?.gameEnded]);
+	}, [gameState?.gameEnded, gameState, cachedEndGameState?.gameEnded]);
 
-	// Clear cached state when dialog is closed
-	const handleCloseGameEndDialog = useCallback(() => {
-		setShowGameEndDialog(false);
-		setCachedEndGameState(null);
-	}, []);
+	// =========================================================================
+	// Helper Functions
+	// =========================================================================
 
+	// Format announcements for PlayerInfo component
+	const formatAnnouncements = (
+		announcements: ReturnType<typeof usePlayerAnnouncements>,
+	) => {
+		if (!announcements) return undefined;
+		return {
+			reOrKontra: announcements.teamHasAnnounced
+				? (announcements.team as "re" | "kontra")
+				: undefined,
+			pointAnnouncements:
+				announcements.pointAnnouncements.length > 0
+					? announcements.pointAnnouncements.map((a) => a.type)
+					: undefined,
+		};
+	};
+
+	// =========================================================================
+	// Early Return if no data
+	// =========================================================================
+	if (!gameState || !currentPlayer) {
+		return null;
+	}
+
+	// =========================================================================
+	// Render
+	// =========================================================================
 	return (
 		<DndContext
 			id={dndContextId}
@@ -384,7 +270,7 @@ export function GameBoard({
 			{topPlayer && (
 				<>
 					<PlayerInfo
-						announcements={getPlayerAnnouncements(topPlayer.id)}
+						announcements={formatAnnouncements(topAnnouncements)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							topPlayer.id
@@ -403,7 +289,7 @@ export function GameBoard({
 			{leftPlayer && (
 				<>
 					<PlayerInfo
-						announcements={getPlayerAnnouncements(leftPlayer.id)}
+						announcements={formatAnnouncements(leftAnnouncements)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							leftPlayer.id
@@ -411,7 +297,6 @@ export function GameBoard({
 						player={leftPlayer}
 						position="left"
 					/>
-
 					<OpponentHand
 						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
 						position="left"
@@ -423,7 +308,7 @@ export function GameBoard({
 			{rightPlayer && (
 				<>
 					<PlayerInfo
-						announcements={getPlayerAnnouncements(rightPlayer.id)}
+						announcements={formatAnnouncements(rightAnnouncements)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							rightPlayer.id
@@ -431,7 +316,6 @@ export function GameBoard({
 						player={rightPlayer}
 						position="right"
 					/>
-
 					<OpponentHand
 						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
 						position="right"
@@ -453,7 +337,7 @@ export function GameBoard({
 			{bottomPlayer && (
 				<>
 					<PlayerInfo
-						announcements={getPlayerAnnouncements(bottomPlayer.id)}
+						announcements={formatAnnouncements(bottomAnnouncements)}
 						isCurrentTurn={isMyTurn}
 						player={bottomPlayer}
 						position="bottom"
@@ -461,7 +345,7 @@ export function GameBoard({
 					<PlayerHand
 						activeDragCard={dragPlayedCard}
 						cards={sortedHand}
-						disabled={gameState.biddingPhase?.active}
+						disabled={isBiddingActive}
 						hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
 						isMyTurn={isMyTurn}
 						onPlayCard={handlePlayCard}
@@ -486,7 +370,7 @@ export function GameBoard({
 				)}
 			</DragOverlay>
 
-			{/* Turn-Indikator (ein-/ausblendbar) */}
+			{/* Turn-Indikator */}
 			<TurnIndicator
 				currentPlayerName={
 					gameState.players[gameState.currentPlayerIndex]?.name ?? ""
@@ -536,7 +420,7 @@ export function GameBoard({
 			</div>
 
 			{/* Ansagen-Buttons (nicht während Vorbehaltsabfrage) */}
-			{!gameState.biddingPhase?.active && (
+			{!isBiddingActive && (
 				<AnnouncementButtons
 					className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2"
 					currentPlayer={currentPlayer}
@@ -545,7 +429,7 @@ export function GameBoard({
 				/>
 			)}
 
-			{/* Auto-Play & Reset Game Buttons */}
+			{/* Auto-Play & Reset Game Buttons (Development only) */}
 			{process.env.NODE_ENV === "development" && (
 				<div className="fixed bottom-4 left-4 z-50 flex items-center gap-2">
 					<button
@@ -567,7 +451,7 @@ export function GameBoard({
 				</div>
 			)}
 
-			{/* Spielende - use cached state to keep dialog open during new game start */}
+			{/* Spielende Dialog */}
 			<Dialog
 				onOpenChange={(open) => !open && handleCloseGameEndDialog()}
 				open={!!cachedEndGameState && showGameEndDialog}
@@ -663,6 +547,7 @@ export function GameBoard({
 					)}
 				</DialogContent>
 			</Dialog>
+
 			{/* Bidding Select */}
 			{gameState.biddingPhase?.active && (
 				<BiddingSelect
