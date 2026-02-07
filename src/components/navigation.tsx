@@ -1,6 +1,6 @@
 "use client";
 
-import { Table2, User, Users } from "lucide-react";
+import { History, Table2, User, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
@@ -32,6 +32,11 @@ export function Navigation({ user }: NavigationProps) {
 			href: "/tables",
 			icon: Table2,
 			label: "Tische",
+		},
+		{
+			href: "/history",
+			icon: History,
+			label: "Historie",
 		},
 	];
 

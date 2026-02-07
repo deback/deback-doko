@@ -112,6 +112,7 @@ interface GameState {
 	currentPlayerIndex: number;
 	hands: Record<string, Card[]>;
 	handCounts: Record<string, number>; // For spectators: card count per player
+	initialHands?: Record<string, Card[]>; // Initial hands at deal time - for game history
 	currentTrick: Trick;
 	completedTricks: Trick[];
 	trump: Suit | "jacks" | "queens";
@@ -1059,6 +1060,7 @@ export default class Server implements Party.Server {
 			...gameState,
 			hands: {}, // Don't send actual cards to spectators
 			handCounts, // Send card counts instead
+			initialHands: {}, // Don't send initial hands to spectators
 		};
 	}
 
@@ -1196,6 +1198,7 @@ export default class Server implements Party.Server {
 			currentPlayerIndex: 0,
 			hands,
 			handCounts,
+			initialHands: structuredClone(hands),
 			currentTrick: {
 				cards: [],
 				completed: false,
@@ -1432,6 +1435,7 @@ export default class Server implements Party.Server {
 			currentPlayerIndex: 0,
 			hands,
 			handCounts,
+			initialHands: structuredClone(hands),
 			currentTrick: {
 				cards: [],
 				completed: false,
@@ -1507,6 +1511,15 @@ export default class Server implements Party.Server {
 					gameId: gameState.id,
 					tableId: gameState.tableId,
 					players: playerResults,
+					tricks: gameState.completedTricks.map((trick) => ({
+						cards: trick.cards,
+						winnerId: trick.winnerId,
+						points: trick.points ?? 0,
+					})),
+					initialHands: gameState.initialHands ?? {},
+					announcements: gameState.announcements,
+					contractType: gameState.contractType,
+					schweinereiPlayers: gameState.schweinereiPlayers,
 				}),
 			});
 		} catch (error) {
@@ -1592,8 +1605,14 @@ export default class Server implements Party.Server {
 			}
 			// In Doppelkopf: Herz 10 ist höchster Trumpf, dann Damen, dann Buben, dann Karo
 			if (card.suit === "hearts" && card.rank === "10") return 1100;
-			if (card.rank === "queen") return 1000;
-			if (card.rank === "jack") return 900;
+			if (card.rank === "queen") {
+				const queenSuitOrder = { clubs: 4, spades: 3, hearts: 2, diamonds: 1 };
+				return 1000 + queenSuitOrder[card.suit];
+			}
+			if (card.rank === "jack") {
+				const jackSuitOrder = { clubs: 4, spades: 3, hearts: 2, diamonds: 1 };
+				return 900 + jackSuitOrder[card.suit];
+			}
 			// Karo (Diamonds) ist auch Trumpf
 			if (card.suit === "diamonds") {
 				if (card.rank === "ace") return 850;
@@ -1622,6 +1641,14 @@ export default class Server implements Party.Server {
 		const gameState = this.games.get(this.room.id);
 		if (!gameState || !gameState.gameStarted || gameState.gameEnded) {
 			this.sendGameError(sender, "Spiel läuft nicht.");
+			return;
+		}
+
+		// Block during trick completion animation
+		if (
+			gameState.currentTrick.completed ||
+			gameState.currentTrick.cards.length >= 4
+		) {
 			return;
 		}
 

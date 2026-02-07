@@ -56,6 +56,8 @@ export interface PlayersState {
 	hands: Record<string, Card[]>;
 	/** Anzahl Karten auf der Hand - für Zuschauer (playerId -> count) */
 	handCounts: Record<string, number>;
+	/** Startblätter beim Austeilen - für Spielhistorie (playerId -> Card[]) */
+	initialHands?: Record<string, Card[]>;
 }
 
 // =============================================================================

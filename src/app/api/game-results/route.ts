@@ -16,6 +16,11 @@ interface GameResultPayload {
 	gameId: string;
 	tableId: string;
 	players: PlayerResult[];
+	tricks?: unknown;
+	initialHands?: unknown;
+	announcements?: unknown;
+	contractType?: string;
+	schweinereiPlayers?: unknown;
 }
 
 export async function POST(request: NextRequest) {
@@ -34,6 +39,11 @@ export async function POST(request: NextRequest) {
 		await db.insert(gameResult).values({
 			id: body.gameId,
 			tableId: body.tableId,
+			tricks: body.tricks,
+			initialHands: body.initialHands,
+			announcements: body.announcements,
+			contractType: body.contractType,
+			schweinereiPlayers: body.schweinereiPlayers,
 		});
 
 		// Save player results and update user stats

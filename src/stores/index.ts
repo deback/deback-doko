@@ -2,6 +2,41 @@
  * Stores - Re-exports
  */
 
+// Game Selectors
+export {
+	// Action Hooks
+	useAnnounce,
+	useAutoPlay,
+	useBid,
+	// Basis-Selektoren
+	useCurrentPlayer,
+	useDeclareContract,
+	useError,
+	useGameState,
+	// Abgeleitete Selektoren
+	useHasPlayerPlayedInTrick,
+	useHasTrickStarted,
+	useIsBiddingActive,
+	useIsConnected,
+	useIsMyTurn,
+	useIsSpectator,
+	useMyHand,
+	useMyTeam,
+	usePlayableCardIds,
+	usePlayCard,
+	usePlayerAnnouncements,
+	usePlayerAtPosition,
+	useResetGame,
+	useSchweinereiPlayerId,
+	// Store Setter Hooks
+	useSetConnected,
+	useSetCurrentPlayer,
+	useSetError,
+	useSetGameActions,
+	useSetGameState,
+	useSetSpectatorMode,
+	useSortedHand,
+} from "./game-selectors";
 // Game Store
 export {
 	createGameStore,
@@ -12,42 +47,6 @@ export {
 	type GameStoreApi,
 	type GameStoreState,
 } from "./game-store";
-
-// Game Selectors
-export {
-	// Basis-Selektoren
-	useCurrentPlayer,
-	useError,
-	useGameState,
-	useIsConnected,
-	useIsSpectator,
-	// Abgeleitete Selektoren
-	useHasPlayerPlayedInTrick,
-	useHasTrickStarted,
-	useIsBiddingActive,
-	useIsMyTurn,
-	useMyHand,
-	useMyTeam,
-	usePlayableCardIds,
-	usePlayerAnnouncements,
-	usePlayerAtPosition,
-	useSchweinereiPlayerId,
-	useSortedHand,
-	// Action Hooks
-	useAnnounce,
-	useAutoPlay,
-	useBid,
-	useDeclareContract,
-	usePlayCard,
-	useResetGame,
-	// Store Setter Hooks
-	useSetConnected,
-	useSetCurrentPlayer,
-	useSetError,
-	useSetGameActions,
-	useSetGameState,
-	useSetSpectatorMode,
-} from "./game-selectors";
 
 // Sort Hand Utility
 export { sortHand } from "./sort-hand";

@@ -7,8 +7,8 @@
 
 // Re-export aller Basis-Typen
 export type {
-	AnnouncementType,
 	Announcements,
+	AnnouncementType,
 	BiddingPhase,
 	Card,
 	CardBackDesign,
@@ -79,7 +79,11 @@ export interface GameState
 // Game Events - WebSocket-Nachrichten vom Client
 // =============================================================================
 
-import type { AnnouncementType, ContractType, ReservationType } from "./game/base";
+import type {
+	AnnouncementType,
+	ContractType,
+	ReservationType,
+} from "./game/base";
 
 export type GameEvent =
 	| { type: "get-state" }

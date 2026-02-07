@@ -6,11 +6,11 @@
  */
 
 import { useMemo } from "react";
-import { useGameStore } from "@/providers/game-store-provider";
 import { getPlayableCards } from "@/lib/game/rules";
-import { sortHand } from "./sort-hand";
+import { useGameStore } from "@/providers/game-store-provider";
 import type { Card } from "@/types/game";
 import type { Player } from "@/types/tables";
+import { sortHand } from "./sort-hand";
 
 // =============================================================================
 // Basis-Selektoren (direkte Store-Zugriffe)
@@ -161,7 +161,8 @@ export function usePlayerAnnouncements(playerId: string) {
 		return {
 			team,
 			badge: team === "re" ? "Re" : "Kontra",
-			hasAnnounced: teamAnnouncement.announced && teamAnnouncement.by === playerId,
+			hasAnnounced:
+				teamAnnouncement.announced && teamAnnouncement.by === playerId,
 			teamHasAnnounced: teamAnnouncement.announced,
 			pointAnnouncements: playerPointAnnouncements,
 		};
@@ -245,8 +246,10 @@ export const useResetGame = () => useGameStore((s) => s.resetGame);
 
 /** State Setter für useGameConnection */
 export const useSetGameState = () => useGameStore((s) => s.setGameState);
-export const useSetCurrentPlayer = () => useGameStore((s) => s.setCurrentPlayer);
-export const useSetSpectatorMode = () => useGameStore((s) => s.setSpectatorMode);
+export const useSetCurrentPlayer = () =>
+	useGameStore((s) => s.setCurrentPlayer);
+export const useSetSpectatorMode = () =>
+	useGameStore((s) => s.setSpectatorMode);
 export const useSetConnected = () => useGameStore((s) => s.setConnected);
 export const useSetError = () => useGameStore((s) => s.setError);
 export const useSetGameActions = () => useGameStore((s) => s.setGameActions);

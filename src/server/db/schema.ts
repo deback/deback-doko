@@ -3,6 +3,7 @@ import {
 	boolean,
 	index,
 	integer,
+	jsonb,
 	pgTableCreator,
 	primaryKey,
 	text,
@@ -98,6 +99,11 @@ export const verification = createTable("verification", {
 export const gameResult = createTable("game_result", {
 	id: text("id").primaryKey(),
 	tableId: text("table_id").notNull(),
+	tricks: jsonb("tricks"),
+	initialHands: jsonb("initial_hands"),
+	announcements: jsonb("announcements"),
+	contractType: text("contract_type"),
+	schweinereiPlayers: jsonb("schweinerei_players"),
 	createdAt: timestamp("created_at")
 		.$defaultFn(() => new Date())
 		.notNull(),

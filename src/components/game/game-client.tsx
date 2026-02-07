@@ -27,8 +27,8 @@ export function GameClient({
 			<CardDesignProvider>
 				<GameContent
 					gameId={gameId}
-					player={player}
 					isSpectator={isSpectator}
+					player={player}
 				/>
 			</CardDesignProvider>
 		</GameStoreProvider>

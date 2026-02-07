@@ -9,7 +9,7 @@
  * @see https://zustand.docs.pmnd.rs/guides/nextjs
  */
 
-import { createContext, useContext, useRef, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext, useRef } from "react";
 import { useStore } from "zustand";
 import {
 	createGameStore,

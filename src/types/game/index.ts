@@ -4,10 +4,12 @@
  * Re-exportiert alle Typen aus dem game/-Verzeichnis.
  */
 
+// GameState und Events aus der Haupt-Datei
+export type { GameEvent, GameMessage, GameState } from "../game";
 // Basis-Typen (Karten, Stiche, Ansagen, etc.)
 export type {
-	AnnouncementType,
 	Announcements,
+	AnnouncementType,
 	BiddingPhase,
 	Card,
 	CardBackDesign,
@@ -23,18 +25,6 @@ export type {
 	Trick,
 } from "./base";
 
-// Sub-Interfaces (logische Gruppierungen)
-export type {
-	AnnouncementsState,
-	GameBiddingState,
-	GameFlowState,
-	GameIdentity,
-	PlayersState,
-	SpectatorsState,
-	TeamsState,
-	TricksState,
-} from "./state";
-
 // Helper Types für Components
 export type {
 	AnnouncementButtonsProps,
@@ -47,6 +37,14 @@ export type {
 	TrickAreaProps,
 	TrickUpdate,
 } from "./props";
-
-// GameState und Events aus der Haupt-Datei
-export type { GameEvent, GameMessage, GameState } from "../game";
+// Sub-Interfaces (logische Gruppierungen)
+export type {
+	AnnouncementsState,
+	GameBiddingState,
+	GameFlowState,
+	GameIdentity,
+	PlayersState,
+	SpectatorsState,
+	TeamsState,
+	TricksState,
+} from "./state";

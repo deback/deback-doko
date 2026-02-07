@@ -6,10 +6,7 @@ import type { Card, Suit, Trick } from "@/types/game";
  * - Damen und Buben sind Trumpf
  * - Karo ist Trumpffarbe
  */
-export function isTrump(
-	card: Card,
-	trump: Suit | "jacks" | "queens",
-): boolean {
+export function isTrump(card: Card, trump: Suit | "jacks" | "queens"): boolean {
 	// Herz 10 ist immer der höchste Trumpf
 	if (card.suit === "hearts" && card.rank === "10") return true;
 
