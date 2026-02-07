@@ -207,25 +207,36 @@ export function BiddingSelect({
 					);
 				})}
 			</div>
-			{!myBid && !isReady && !awaitingDeclaration && (
-				<div className="flex w-full items-center gap-3">
-					<Select
-						onValueChange={(value) => setSelectedBid(value as ReservationType)}
-						value={selectedBid}
-					>
-						<SelectTrigger className="min-w-30">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="gesund">Gesund</SelectItem>
-							<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
-						</SelectContent>
-					</Select>
-					<Button onClick={handleConfirm} size="default">
-						OK
-					</Button>
+			{/* Form with animated collapse */}
+			<div
+				className="grid w-full transition-[grid-template-rows] duration-300 ease-in-out"
+				style={{
+					gridTemplateRows:
+						!myBid && !isReady && !awaitingDeclaration ? "1fr" : "0fr",
+				}}
+			>
+				<div className="overflow-hidden">
+					<div className="flex w-full items-center gap-3 pt-1">
+						<Select
+							onValueChange={(value) =>
+								setSelectedBid(value as ReservationType)
+							}
+							value={selectedBid}
+						>
+							<SelectTrigger className="min-w-30">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="gesund">Gesund</SelectItem>
+								<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
+							</SelectContent>
+						</Select>
+						<Button onClick={handleConfirm} size="default">
+							OK
+						</Button>
+					</div>
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }
