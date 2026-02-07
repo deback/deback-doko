@@ -1,114 +1,85 @@
-import type { Player } from "./tables";
+/**
+ * Game Types - Hauptexport-Datei
+ *
+ * Diese Datei exportiert alle Spiel-bezogenen Typen und definiert GameState
+ * als Intersection Type der logischen Sub-Interfaces.
+ */
 
-// Ansagen-Typen für Doppelkopf
-export type AnnouncementType =
-	| "re"
-	| "kontra"
-	| "no90"
-	| "no60"
-	| "no30"
-	| "schwarz";
+// Re-export aller Basis-Typen
+export type {
+	AnnouncementType,
+	Announcements,
+	BiddingPhase,
+	Card,
+	CardBackDesign,
+	CardRenderMode,
+	ContractType,
+	FullRank,
+	HochzeitState,
+	PointAnnouncement,
+	PointAnnouncementType,
+	Rank,
+	ReservationType,
+	Suit,
+	Trick,
+} from "./game/base";
 
-export type PointAnnouncementType = "no90" | "no60" | "no30" | "schwarz";
+// Re-export der Sub-Interfaces (für Dokumentation und Selektoren)
+export type {
+	AnnouncementsState,
+	GameBiddingState,
+	GameFlowState,
+	GameIdentity,
+	PlayersState,
+	SpectatorsState,
+	TeamsState,
+	TricksState,
+} from "./game/state";
 
-export interface PointAnnouncement {
-	type: PointAnnouncementType;
-	by: string; // playerId
-}
+// Import für GameState Definition
+import type {
+	AnnouncementsState,
+	GameBiddingState,
+	GameFlowState,
+	GameIdentity,
+	PlayersState,
+	SpectatorsState,
+	TeamsState,
+	TricksState,
+} from "./game/state";
 
-export interface Announcements {
-	re: {
-		announced: boolean;
-		by?: string; // playerId
-	};
-	kontra: {
-		announced: boolean;
-		by?: string;
-	};
-	rePointAnnouncements: PointAnnouncement[]; // z.B. [{type: "no90", by: "player1"}]
-	kontraPointAnnouncements: PointAnnouncement[];
-}
+// =============================================================================
+// GameState - Vollständiger Spielzustand
+// =============================================================================
 
-export type Suit = "hearts" | "diamonds" | "clubs" | "spades";
-export type Rank = "9" | "10" | "jack" | "queen" | "king" | "ace";
+/**
+ * Vollständiger Spielzustand
+ *
+ * Zusammengesetzt aus logischen Sub-Interfaces:
+ * - GameIdentity: Spiel- und Tisch-ID
+ * - GameFlowState: Spielfluss (started, ended, round, currentPlayer)
+ * - PlayersState: Spieler und Hände
+ * - TeamsState: Teams, Punkte, Schweinerei
+ * - TricksState: Aktueller und abgeschlossene Stiche
+ * - GameBiddingState: Vorbehaltsabfrage, Spielart, Hochzeit
+ * - SpectatorsState: Zuschauer
+ * - AnnouncementsState: Ansagen
+ */
+export interface GameState
+	extends GameIdentity,
+		GameFlowState,
+		PlayersState,
+		TeamsState,
+		TricksState,
+		GameBiddingState,
+		SpectatorsState,
+		AnnouncementsState {}
 
-// Vorbehaltsabfrage (Bidding) Typen
-export type ReservationType = "gesund" | "vorbehalt";
-export type ContractType = "normal" | "hochzeit";
+// =============================================================================
+// Game Events - WebSocket-Nachrichten vom Client
+// =============================================================================
 
-export interface BiddingPhase {
-	active: boolean;
-	currentBidderIndex: number;
-	bids: Record<string, ReservationType>; // playerId -> "gesund" | "vorbehalt"
-	awaitingContractDeclaration?: string; // playerId der Vorbehalt-Deklaration machen muss
-}
-
-export interface HochzeitState {
-	active: boolean;
-	seekerPlayerId: string; // Spieler mit beiden Kreuz-Damen
-	partnerPlayerId?: string; // Partner (erster Fehl-Stich-Gewinner)
-	clarificationTrickNumber: number; // Spätestens im 3. Stich muss Partner gefunden sein
-}
-
-// Volles 52-Karten-Deck (für französisches Kartenspiel)
-export type FullRank =
-	| "2"
-	| "3"
-	| "4"
-	| "5"
-	| "6"
-	| "7"
-	| "8"
-	| "9"
-	| "10"
-	| "jack"
-	| "queen"
-	| "king"
-	| "ace";
-
-// Kartenrücken-Designs
-export type CardBackDesign = "blue" | "red" | "pattern";
-
-// Darstellungsmodus
-export type CardRenderMode = "svg" | "text";
-
-export interface Card {
-	suit: Suit;
-	rank: Rank;
-	id: string;
-}
-
-export interface Trick {
-	cards: Array<{ card: Card; playerId: string }>;
-	winnerId?: string;
-	completed: boolean;
-	points?: number;
-}
-
-export interface GameState {
-	id: string;
-	tableId: string;
-	players: Player[];
-	currentPlayerIndex: number;
-	hands: Record<string, Card[]>; // playerId -> cards
-	handCounts: Record<string, number>; // playerId -> card count (for spectators)
-	currentTrick: Trick;
-	completedTricks: Trick[];
-	trump: Suit | "jacks" | "queens"; // In Doppelkopf: Buben oder Damen sind Trumpf
-	gameStarted: boolean;
-	gameEnded: boolean;
-	round: number;
-	scores: Record<string, number>; // playerId -> Gesamtpunkte
-	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
-	teams: Record<string, "re" | "kontra">; // playerId -> Team-Zuordnung
-	spectatorCount: number; // Number of spectators watching the game
-	spectators: Array<{ id: string; name: string; image?: string | null }>; // List of spectators
-	announcements: Announcements; // Ansagen (Re, Kontra, keine 90, etc.)
-	// Vorbehaltsabfrage (Bidding)
-	biddingPhase?: BiddingPhase;
-	contractType: ContractType;
-	hochzeit?: HochzeitState;
-}
+import type { AnnouncementType, ContractType, ReservationType } from "./game/base";
 
 export type GameEvent =
 	| { type: "get-state" }
@@ -142,6 +113,10 @@ export type GameEvent =
 			playerId: string;
 			contract: ContractType;
 	  };
+
+// =============================================================================
+// Game Messages - WebSocket-Nachrichten vom Server
+// =============================================================================
 
 export type GameMessage =
 	| { type: "state"; state: GameState; isSpectator?: boolean }
