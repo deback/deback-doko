@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+	useHasPlayerPlayedInTrick,
+	useHasTrickStarted,
+	useIsBiddingActive,
+	useIsMyTurn,
+	usePlayableCardIds,
+	usePlayCard,
+	useSortedHand,
+} from "@/stores/game-selectors";
 import type { Card } from "@/types/game";
 import { CARD_SIZE, type CardOrigin } from "./card";
 import { DraggableCard } from "./draggable-card";
@@ -10,32 +19,44 @@ import { DraggableCard } from "./draggable-card";
 const CLOSE_GAP_DELAY = 600;
 
 interface PlayerHandProps {
-	cards: Card[];
-	playableCardIds: string[];
-	isMyTurn: boolean;
-	hasTrickStarted: boolean;
+	/** Card being dragged (from DnD context) */
 	activeDragCard?: string | null;
-	onPlayCard: (cardId: string, origin: CardOrigin) => void;
+	/** Callback when ghost card should be removed (for DnD coordination) */
 	onRemoveCard?: (cardId: string) => void;
+	/** Callback when card is played with animation origin (for TrickArea animation) */
+	onPlayCardWithOrigin?: (cardId: string, origin: CardOrigin) => void;
 	className?: string;
-	disabled?: boolean;
 }
 
+/**
+ * PlayerHand - Die Hand des aktuellen Spielers
+ *
+ * Verwendet Store-Selektoren für Game-State.
+ * UI-Animation Props werden weiterhin von GameBoard übergeben.
+ */
 export function PlayerHand({
-	cards,
-	playableCardIds,
-	isMyTurn,
-	hasTrickStarted,
 	activeDragCard,
-	onPlayCard,
 	onRemoveCard,
+	onPlayCardWithOrigin,
 	className,
-	disabled,
 }: PlayerHandProps) {
+	// Store Selectors - Game State
+	const cards = useSortedHand();
+	const playableCardIds = usePlayableCardIds();
+	const isMyTurn = useIsMyTurn();
+	const hasTrickStarted = useHasTrickStarted();
+	const hasPlayerPlayedInTrick = useHasPlayerPlayedInTrick();
+	const isBiddingActive = useIsBiddingActive();
+	const playCard = usePlayCard();
+
+	// Local UI State
 	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 	const [ghostCardId, setGhostCardId] = useState<string | null>(null);
 	const cardRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 	const ghostTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+	// Computed: Should show trick-started restrictions
+	const showTrickRestrictions = hasTrickStarted && !hasPlayerPlayedInTrick;
 
 	const setCardRef = useCallback(
 		(cardId: string) => (el: HTMLButtonElement | null) => {
@@ -82,13 +103,18 @@ export function PlayerHand({
 				const t = index - (cards.length - 1) / 2;
 				const angle = t * 1.2;
 
-				onPlayCard(selectedCardId, {
+				const origin: CardOrigin = {
 					x: rect.x,
 					y: rect.y,
 					width: rect.width,
 					height: rect.height,
 					rotate: angle,
-				});
+				};
+
+				// Notify parent for animation
+				onPlayCardWithOrigin?.(selectedCardId, origin);
+				// Actually play the card
+				playCard(selectedCardId);
 
 				setGhostCardId(selectedCardId);
 				ghostTimerRef.current = setTimeout(() => {
@@ -103,7 +129,8 @@ export function PlayerHand({
 		selectedCardId,
 		playableCardIds,
 		cards,
-		onPlayCard,
+		playCard,
+		onPlayCardWithOrigin,
 		onRemoveCard,
 		ghostCardId,
 	]);
@@ -112,13 +139,13 @@ export function PlayerHand({
 	// deselektiere sie
 	useEffect(() => {
 		if (
-			hasTrickStarted &&
+			showTrickRestrictions &&
 			selectedCardId &&
 			!playableCardIds.includes(selectedCardId)
 		) {
 			setSelectedCardId(null);
 		}
-	}, [hasTrickStarted, selectedCardId, playableCardIds]);
+	}, [showTrickRestrictions, selectedCardId, playableCardIds]);
 
 	const handleCardClick = (card: Card, index: number) => {
 		if (ghostCardId !== null) return;
@@ -126,7 +153,7 @@ export function PlayerHand({
 		const isCardPlayable = playableCardIds.includes(card.id);
 
 		// Wenn Stich begonnen hat und Karte nicht spielbar: ignorieren
-		if (hasTrickStarted && !isCardPlayable) {
+		if (showTrickRestrictions && !isCardPlayable) {
 			return;
 		}
 
@@ -155,13 +182,18 @@ export function PlayerHand({
 			const t = index - (cards.length - 1) / 2;
 			const angle = t * 1.2;
 
-			onPlayCard(card.id, {
+			const origin: CardOrigin = {
 				x: rect.x,
 				y: rect.y,
 				width: rect.width,
 				height: rect.height,
 				rotate: angle,
-			});
+			};
+
+			// Notify parent for animation
+			onPlayCardWithOrigin?.(card.id, origin);
+			// Actually play the card
+			playCard(card.id);
 
 			setGhostCardId(card.id);
 			ghostTimerRef.current = setTimeout(() => {
@@ -176,7 +208,7 @@ export function PlayerHand({
 		<div
 			className={cn(
 				"fixed bottom-0 translate-y-1/3 -translate-x-1/2 sm:translate-y-1/2 left-1/2 landscape:translate-y-2/5 lg:landscape:translate-y-1/2",
-				disabled && "pointer-events-none",
+				isBiddingActive && "pointer-events-none",
 				className,
 			)}
 		>
@@ -187,7 +219,7 @@ export function PlayerHand({
 
 					const isCardPlayable = playableCardIds.includes(card.id);
 					const isPlayable = isMyTurn && isCardPlayable;
-					const isDisabled = hasTrickStarted && !isCardPlayable;
+					const isDisabled = showTrickRestrictions && !isCardPlayable;
 					const isSelected = selectedCardId === card.id;
 					const isGhost = ghostCardId === card.id;
 					const isDragging =

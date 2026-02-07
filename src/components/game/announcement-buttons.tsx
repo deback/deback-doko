@@ -2,13 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { AnnouncementType, GameState } from "@/types/game";
-import type { Player } from "@/types/tables";
+import {
+	useAnnounce,
+	useCurrentPlayer,
+	useGameState,
+	useMyHand,
+	useMyTeam,
+} from "@/stores/game-selectors";
+import type { AnnouncementType } from "@/types/game";
 
 interface AnnouncementButtonsProps {
-	gameState: GameState;
-	currentPlayer: Player;
-	onAnnounce: (announcement: AnnouncementType) => void;
 	className?: string;
 }
 
@@ -32,17 +35,29 @@ const ANNOUNCEMENT_LABELS: Record<AnnouncementType, string> = {
 	schwarz: "Schwarz",
 };
 
-export function AnnouncementButtons({
-	gameState,
-	currentPlayer,
-	onAnnounce,
-	className,
-}: AnnouncementButtonsProps) {
-	const playerTeam = gameState.teams[currentPlayer.id];
-	const hand = gameState.hands[currentPlayer.id];
-	const cardCount = hand?.length ?? 0;
+/**
+ * AnnouncementButtons - Buttons für Re/Kontra und Punkt-Ansagen
+ *
+ * Verwendet Store-Selektoren für Game-State.
+ */
+export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
+	// Store Selectors
+	const gameState = useGameState();
+	const currentPlayer = useCurrentPlayer();
+	const playerTeam = useMyTeam();
+	const hand = useMyHand();
+	const announce = useAnnounce();
 
-	if (!playerTeam || gameState.gameEnded || !gameState.announcements) {
+	const cardCount = hand.length;
+
+	// Early return if no valid state
+	if (
+		!gameState ||
+		!currentPlayer ||
+		!playerTeam ||
+		gameState.gameEnded ||
+		!gameState.announcements
+	) {
 		return null;
 	}
 
@@ -136,7 +151,7 @@ export function AnnouncementButtons({
 							: "bg-rose-600 hover:bg-rose-700 disabled:bg-rose-600/30",
 					)}
 					disabled={!canAnnounce(teamAnnouncement)}
-					onClick={() => onAnnounce(teamAnnouncement)}
+					onClick={() => announce(teamAnnouncement)}
 					size="sm"
 					variant={canAnnounce(teamAnnouncement) ? "default" : "outline"}
 				>
@@ -154,7 +169,7 @@ export function AnnouncementButtons({
 							className="h-7 px-2 text-xs"
 							disabled={!canMake}
 							key={announcement}
-							onClick={() => onAnnounce(announcement)}
+							onClick={() => announce(announcement)}
 							size="sm"
 							variant={canMake ? "secondary" : "outline"}
 						>

@@ -23,14 +23,11 @@ import {
 import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
 import {
-	useAnnounce,
 	useAutoPlay,
 	useBid,
 	useCurrentPlayer,
 	useDeclareContract,
 	useGameState,
-	useHasPlayerPlayedInTrick,
-	useHasTrickStarted,
 	useIsBiddingActive,
 	useIsMyTurn,
 	usePlayableCardIds,
@@ -68,8 +65,6 @@ export function GameBoard() {
 	const sortedHand = useSortedHand();
 	const playableCardIds = usePlayableCardIds();
 	const isMyTurn = useIsMyTurn();
-	const hasTrickStarted = useHasTrickStarted();
-	const hasPlayerPlayedInTrick = useHasPlayerPlayedInTrick();
 	const isBiddingActive = useIsBiddingActive();
 
 	// Player positions (relative to current player)
@@ -88,7 +83,6 @@ export function GameBoard() {
 	// Store Selectors - Actions
 	// =========================================================================
 	const playCard = usePlayCard();
-	const announce = useAnnounce();
 	const bid = useBid();
 	const declareContract = useDeclareContract();
 	const autoPlay = useAutoPlay();
@@ -171,9 +165,13 @@ export function GameBoard() {
 		playCard(cardId);
 	}
 
-	const handlePlayCard = useCallback(
+	/**
+	 * Handler for animation origin when card is played from PlayerHand.
+	 * Only sets animation state - the actual playCard is called by PlayerHand.
+	 */
+	const handlePlayCardWithOrigin = useCallback(
 		(cardId: string, origin: CardOrigin) => {
-			if (!playableCardIds.includes(cardId) || !currentPlayer) return;
+			if (!currentPlayer) return;
 
 			const card = sortedHand.find((c) => c.id === cardId);
 			if (!card) return;
@@ -181,11 +179,8 @@ export function GameBoard() {
 			// Set animation state
 			setCardOrigin(origin);
 			setPlayedCard({ card, playerId: currentPlayer.id });
-
-			// Actually play the card
-			playCard(cardId);
 		},
-		[playableCardIds, sortedHand, currentPlayer, playCard],
+		[sortedHand, currentPlayer],
 	);
 
 	const handleRemoveCard = useCallback(() => {
@@ -344,13 +339,8 @@ export function GameBoard() {
 					/>
 					<PlayerHand
 						activeDragCard={dragPlayedCard}
-						cards={sortedHand}
-						disabled={isBiddingActive}
-						hasTrickStarted={hasTrickStarted && !hasPlayerPlayedInTrick}
-						isMyTurn={isMyTurn}
-						onPlayCard={handlePlayCard}
+						onPlayCardWithOrigin={handlePlayCardWithOrigin}
 						onRemoveCard={handleRemoveCard}
-						playableCardIds={playableCardIds}
 					/>
 				</>
 			)}
@@ -421,12 +411,7 @@ export function GameBoard() {
 
 			{/* Ansagen-Buttons (nicht während Vorbehaltsabfrage) */}
 			{!isBiddingActive && (
-				<AnnouncementButtons
-					className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2"
-					currentPlayer={currentPlayer}
-					gameState={gameState}
-					onAnnounce={announce}
-				/>
+				<AnnouncementButtons className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2" />
 			)}
 
 			{/* Auto-Play & Reset Game Buttons (Development only) */}
