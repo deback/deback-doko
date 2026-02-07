@@ -24,6 +24,7 @@ interface BiddingSelectProps {
 	players: Player[];
 	currentPlayerId: string;
 	playerHand: Card[];
+	startingPlayerIndex: number;
 	onBid: (bid: ReservationType) => void;
 	onDeclareContract: (contract: ContractType) => void;
 }
@@ -59,6 +60,7 @@ export function BiddingSelect({
 	players,
 	currentPlayerId,
 	playerHand,
+	startingPlayerIndex,
 	onBid,
 	onDeclareContract,
 }: BiddingSelectProps) {
@@ -111,8 +113,10 @@ export function BiddingSelect({
 	};
 
 	return (
-		<div className="fixed left-1/2 top-1/2 z-50 -mt-8 mx-auto flex max-w-md -translate-y-1/2 -translate-x-1/2 flex-col items-center gap-3 lg:gap-4 rounded-xl bg-background p-4 text-foreground">
-			<h3 className="font-semibold hidden lg:block">Vorbehaltsabfrage</h3>
+		<div className="fixed shadow-lg left-1/2 top-1/2 z-50 -mt-8 mx-auto flex max-w-md -translate-y-1/2 -translate-x-1/2 flex-col items-center gap-3 lg:gap-4 rounded-xl bg-background p-4 text-foreground">
+			<h3 className="font-semibold font-serif text-lg hidden lg:block">
+				Vorbehaltsabfrage
+			</h3>
 
 			{/* Awaiting contract declaration (after Vorbehalt) */}
 			{awaitingDeclaration && (
@@ -143,47 +147,24 @@ export function BiddingSelect({
 				</div>
 			)}
 
-			{/* Bid selection - always visible until bid is submitted */}
-			{!myBid && !awaitingDeclaration && (
-				<>
-					<div className="flex w-full items-center gap-3">
-						<Select
-							disabled={isReady}
-							onValueChange={(value) =>
-								setSelectedBid(value as ReservationType)
-							}
-							value={selectedBid}
-						>
-							<SelectTrigger className="min-w-30">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="gesund">Gesund</SelectItem>
-								<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
-							</SelectContent>
-						</Select>
-						<Button onClick={handleConfirm} size="default">
-							OK
-						</Button>
-					</div>
-
-					{/* Waiting message */}
-					{!isMyTurn && !isReady && (
-						<p className="text-xs text-white/50">
-							Warte auf {currentBidder?.name}...
-						</p>
-					)}
-					{!isMyTurn && isReady && (
-						<p className="text-xs text-emerald-400">
-							Deine Auswahl wird gesendet wenn du dran bist...
-						</p>
-					)}
-				</>
+			{/* Status message */}
+			{!myBid && !isReady && !awaitingDeclaration && (
+				<p className="text-xs text-foreground/50">
+					Bitte wähle Gesund/Vorbehalt
+				</p>
+			)}
+			{(myBid || isReady) && !awaitingDeclaration && (
+				<p className="text-xs text-foreground/50">
+					Warte auf {currentBidder?.name}...
+				</p>
 			)}
 
-			{/* Player status row */}
+			{/* Player status row - rotated to start with the starting player */}
 			<div className="flex flex-col w-full items-start justify-center gap-2">
-				{players.map((player, index) => {
+				{players.map((_, i) => {
+					const index = (startingPlayerIndex + i) % players.length;
+					const player = players[index];
+					if (!player) return null;
 					const playerBid = biddingPhase.bids[player.id];
 					const isCurrent = index === biddingPhase.currentBidderIndex;
 					const hasBid = playerBid !== undefined;
@@ -226,6 +207,25 @@ export function BiddingSelect({
 					);
 				})}
 			</div>
+			{!myBid && !isReady && !awaitingDeclaration && (
+				<div className="flex w-full items-center gap-3">
+					<Select
+						onValueChange={(value) => setSelectedBid(value as ReservationType)}
+						value={selectedBid}
+					>
+						<SelectTrigger className="min-w-30">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="gesund">Gesund</SelectItem>
+							<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
+						</SelectContent>
+					</Select>
+					<Button onClick={handleConfirm} size="default">
+						OK
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }

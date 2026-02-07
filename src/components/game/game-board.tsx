@@ -542,6 +542,7 @@ export function GameBoard() {
 					onDeclareContract={declareContract}
 					playerHand={sortedHand}
 					players={gameState.players}
+					startingPlayerIndex={gameState.currentPlayerIndex}
 				/>
 			)}
 		</DndContext>

@@ -613,11 +613,16 @@ export default class Server implements Party.Server {
 	async advanceBidding(gameState: GameState) {
 		if (!gameState.biddingPhase) return;
 
-		// Nächster Spieler
-		gameState.biddingPhase.currentBidderIndex++;
+		// Nächster Spieler (im Uhrzeigersinn)
+		gameState.biddingPhase.currentBidderIndex =
+			(gameState.biddingPhase.currentBidderIndex + 1) %
+			gameState.players.length;
 
 		// Prüfe ob alle Spieler gefragt wurden
-		if (gameState.biddingPhase.currentBidderIndex >= gameState.players.length) {
+		if (
+			Object.keys(gameState.biddingPhase.bids).length >=
+			gameState.players.length
+		) {
 			// Bidding abgeschlossen
 			await this.resolveBidding(gameState);
 			return;
@@ -1432,7 +1437,7 @@ export default class Server implements Party.Server {
 			id: gameId,
 			tableId,
 			players,
-			currentPlayerIndex: 0,
+			currentPlayerIndex: (newRound - 1) % 4,
 			hands,
 			handCounts,
 			initialHands: structuredClone(hands),
@@ -1459,7 +1464,7 @@ export default class Server implements Party.Server {
 			// Bidding-Phase: Spieler werden der Reihe nach gefragt
 			biddingPhase: {
 				active: true,
-				currentBidderIndex: 0,
+				currentBidderIndex: (newRound - 1) % 4,
 				bids: {},
 			},
 			contractType: "normal",
@@ -1508,7 +1513,7 @@ export default class Server implements Party.Server {
 					Authorization: `Bearer ${apiSecret}`,
 				},
 				body: JSON.stringify({
-					gameId: gameState.id,
+					gameId: `${gameState.id}-r${gameState.round}`,
 					tableId: gameState.tableId,
 					players: playerResults,
 					tricks: gameState.completedTricks.map((trick) => ({
