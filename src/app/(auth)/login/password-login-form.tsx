@@ -56,7 +56,12 @@ export function PasswordLoginForm() {
 							<FormItem>
 								<FormLabel>E-Mail-Adresse</FormLabel>
 								<FormControl>
-									<Input placeholder="deine@email.de" type="email" {...field} />
+									<Input
+										autoComplete="email"
+										placeholder="deine@email.de"
+										type="email"
+										{...field}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -70,7 +75,12 @@ export function PasswordLoginForm() {
 							<FormItem>
 								<FormLabel>Passwort</FormLabel>
 								<FormControl>
-									<Input placeholder="********" type="password" {...field} />
+									<Input
+										autoComplete="current-password"
+										placeholder="********"
+										type="password"
+										{...field}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
