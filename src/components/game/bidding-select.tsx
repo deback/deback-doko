@@ -155,7 +155,9 @@ export function BiddingSelect({
 			)}
 			{(myBid || isReady) && !awaitingDeclaration && (
 				<p className="text-xs text-foreground/50">
-					Warte auf {currentBidder?.name}...
+					{Object.keys(biddingPhase.bids).length >= players.length
+						? "Es geht los!"
+						: `Warte auf ${currentBidder?.name}...`}
 				</p>
 			)}
 
