@@ -1,157 +1,27 @@
 import type * as Party from "partykit/server";
 import { env } from "@/env";
-import {
-	canPlayCard,
-	getPlayableCards,
-	getTrickPoints,
-	isTrump,
-} from "../src/lib/game/rules";
-
-interface Player {
-	id: string;
-	name: string;
-	email?: string;
-	image?: string | null;
-	gamesPlayed: number;
-	gamesWon: number;
-	balance: number;
-}
-
-interface Table {
-	id: string;
-	name: string;
-	players: Player[];
-	createdAt: number;
-	gameId?: string;
-	gameStarted: boolean;
-	spectatorCount?: number;
-}
-
-interface TablesState {
-	tables: Table[];
-}
-
-type TableEvent =
-	| { type: "create-table"; name: string; player: Player }
-	| { type: "join-table"; tableId: string; player: Player }
-	| { type: "leave-table"; tableId: string; playerId: string }
-	| { type: "delete-table"; tableId: string; playerId: string }
-	| { type: "get-state" };
-
-type TableMessage =
-	| { type: "state"; state: TablesState }
-	| { type: "error"; message: string }
-	| {
-			type: "game-started";
-			gameId: string;
-			tableId: string;
-			players: Player[];
-	  };
-
-// Game types
-type Suit = "hearts" | "diamonds" | "clubs" | "spades";
-type Rank = "9" | "10" | "jack" | "queen" | "king" | "ace";
-
-// Ansagen-Typen
-type AnnouncementType = "re" | "kontra" | "no90" | "no60" | "no30" | "schwarz";
-type PointAnnouncementType = "no90" | "no60" | "no30" | "schwarz";
-
-// Vorbehaltsabfrage (Bidding) Typen
-type ReservationType = "gesund" | "vorbehalt";
-type ContractType = "normal" | "hochzeit";
-
-interface BiddingPhase {
-	active: boolean;
-	currentBidderIndex: number;
-	bids: Record<string, ReservationType>;
-	awaitingContractDeclaration?: string;
-}
-
-interface HochzeitState {
-	active: boolean;
-	seekerPlayerId: string;
-	partnerPlayerId?: string;
-	clarificationTrickNumber: number;
-}
-
-interface PointAnnouncement {
-	type: PointAnnouncementType;
-	by: string; // playerId
-}
-
-interface Announcements {
-	re: {
-		announced: boolean;
-		by?: string;
-	};
-	kontra: {
-		announced: boolean;
-		by?: string;
-	};
-	rePointAnnouncements: PointAnnouncement[];
-	kontraPointAnnouncements: PointAnnouncement[];
-}
-
-interface Card {
-	suit: Suit;
-	rank: Rank;
-	id: string;
-}
-
-interface Trick {
-	cards: Array<{ card: Card; playerId: string }>;
-	winnerId?: string;
-	completed: boolean;
-	points?: number;
-}
-
-interface GameState {
-	id: string;
-	tableId: string;
-	players: Player[];
-	currentPlayerIndex: number;
-	hands: Record<string, Card[]>;
-	handCounts: Record<string, number>; // For spectators: card count per player
-	initialHands?: Record<string, Card[]>; // Initial hands at deal time - for game history
-	currentTrick: Trick;
-	completedTricks: Trick[];
-	trump: Suit | "jacks" | "queens";
-	gameStarted: boolean;
-	gameEnded: boolean;
-	round: number;
-	scores: Record<string, number>;
-	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
-	teams: Record<string, "re" | "kontra">; // playerId -> Team-Zuordnung
-	spectatorCount: number;
-	spectators: Array<{ id: string; name: string; image?: string | null }>; // List of spectators
-	announcements: Announcements; // Ansagen (Re, Kontra, keine 90, etc.)
-	// Vorbehaltsabfrage (Bidding)
-	biddingPhase?: BiddingPhase;
-	contractType: ContractType;
-	hochzeit?: HochzeitState;
-}
-
-type GameEvent =
-	| { type: "get-state" }
-	| { type: "play-card"; cardId: string; playerId: string }
-	| { type: "auto-play" }
-	| { type: "reset-game" }
-	| { type: "start-game"; players: Player[]; tableId: string }
-	| {
-			type: "spectate-game";
-			gameId: string;
-			spectatorId: string;
-			spectatorName: string;
-			spectatorImage?: string | null;
-	  }
-	| { type: "announce"; announcement: AnnouncementType; playerId: string }
-	| { type: "bid"; playerId: string; bid: ReservationType }
-	| { type: "declare-contract"; playerId: string; contract: ContractType };
-
-type GameMessage =
-	| { type: "state"; state: GameState; isSpectator?: boolean }
-	| { type: "error"; message: string }
-	| { type: "spectator-count"; gameId: string; count: number };
+import { canPlayCard, getPlayableCards, isTrump } from "../src/lib/game/rules";
+import { canMakeAnnouncement } from "./announcements";
+import { createDeck, dealCards } from "./deck";
+import { calculateTrickPoints, determineTrickWinner } from "./trick-scoring";
+import type {
+	AnnouncementType,
+	BiddingPhase,
+	ContractType,
+	GameEvent,
+	GameMessage,
+	GameState,
+	Player,
+	PointAnnouncement,
+	PointAnnouncementType,
+	ReservationType,
+	Suit,
+	Table,
+	TableEvent,
+	TableMessage,
+	TablesState,
+	Trick,
+} from "./types";
 
 export default class Server implements Party.Server {
 	tables: Map<string, Table> = new Map();
@@ -726,158 +596,6 @@ export default class Server implements Party.Server {
 		}
 	}
 
-	// Ansagen-Logik
-	getPlayerCardCount(gameState: GameState, playerId: string): number {
-		const hand = gameState.hands[playerId];
-		return hand ? hand.length : 0;
-	}
-
-	getMinCardsForAnnouncement(announcement: AnnouncementType): number {
-		// Zeitfenster basierend auf Kartenanzahl
-		switch (announcement) {
-			case "re":
-			case "kontra":
-				return 11; // Mit 11 Karten (erster Stich = Freistich)
-			case "no90":
-				return 10;
-			case "no60":
-				return 9;
-			case "no30":
-				return 8;
-			case "schwarz":
-				return 7;
-			default:
-				return 12;
-		}
-	}
-
-	canMakeAnnouncement(
-		gameState: GameState,
-		playerId: string,
-		announcement: AnnouncementType,
-	): { allowed: boolean; reason?: string } {
-		const playerTeam = gameState.teams[playerId];
-		if (!playerTeam) {
-			return { allowed: false, reason: "Spieler hat kein Team." };
-		}
-
-		const cardCount = this.getPlayerCardCount(gameState, playerId);
-		const minCards = this.getMinCardsForAnnouncement(announcement);
-
-		if (cardCount < minCards) {
-			return {
-				allowed: false,
-				reason: `Zu spät! Du brauchst mindestens ${minCards} Karten.`,
-			};
-		}
-
-		// Re/Kontra Ansage
-		if (announcement === "re" || announcement === "kontra") {
-			// Spieler kann nur für sein eigenes Team ansagen
-			if (playerTeam === "re" && announcement !== "re") {
-				return {
-					allowed: false,
-					reason: "Du bist im Re-Team und kannst nur Re sagen.",
-				};
-			}
-			if (playerTeam === "kontra" && announcement !== "kontra") {
-				return {
-					allowed: false,
-					reason: "Du bist im Kontra-Team und kannst nur Kontra sagen.",
-				};
-			}
-
-			// Prüfe ob bereits angesagt
-			if (announcement === "re" && gameState.announcements.re.announced) {
-				return { allowed: false, reason: "Re wurde bereits angesagt." };
-			}
-			if (
-				announcement === "kontra" &&
-				gameState.announcements.kontra.announced
-			) {
-				return { allowed: false, reason: "Kontra wurde bereits angesagt." };
-			}
-
-			return { allowed: true };
-		}
-
-		// Punkt-Ansagen (keine 90, keine 60, keine 30, schwarz)
-		const teamAnnouncement = playerTeam === "re" ? "re" : "kontra";
-		const teamHasAnnounced =
-			playerTeam === "re"
-				? gameState.announcements.re.announced
-				: gameState.announcements.kontra.announced;
-
-		if (!teamHasAnnounced) {
-			return {
-				allowed: false,
-				reason: `Du musst zuerst ${teamAnnouncement === "re" ? "Re" : "Kontra"} sagen.`,
-			};
-		}
-
-		// Prüfe ob diese Ansage bereits gemacht wurde
-		const teamPointAnnouncements =
-			playerTeam === "re"
-				? gameState.announcements.rePointAnnouncements
-				: gameState.announcements.kontraPointAnnouncements;
-
-		if (teamPointAnnouncements.some((pa) => pa.type === announcement)) {
-			return { allowed: false, reason: "Diese Ansage wurde bereits gemacht." };
-		}
-
-		// Prüfe ob übersprungene Ansagen noch legal wären (Regel 6.4.3)
-		// Man kann Stufen überspringen, aber alle übersprungenen Ansagen
-		// müssen zu diesem Zeitpunkt noch legal sein (genug Karten)
-		const announcementOrder: PointAnnouncementType[] = [
-			"no90",
-			"no60",
-			"no30",
-			"schwarz",
-		];
-		const requestedIndex = announcementOrder.indexOf(
-			announcement as PointAnnouncementType,
-		);
-
-		for (let i = 0; i < requestedIndex; i++) {
-			const skippedAnnouncement = announcementOrder[i];
-			if (
-				skippedAnnouncement &&
-				!teamPointAnnouncements.some((pa) => pa.type === skippedAnnouncement)
-			) {
-				// Diese Ansage wird übersprungen - prüfe ob genug Karten
-				const skippedMinCards =
-					this.getMinCardsForAnnouncement(skippedAnnouncement);
-				if (cardCount < skippedMinCards) {
-					return {
-						allowed: false,
-						reason: `Zu spät! Um "${this.getAnnouncementLabel(announcement)}" zu sagen, hättest du "${this.getAnnouncementLabel(skippedAnnouncement)}" noch sagen können müssen (mind. ${skippedMinCards} Karten).`,
-					};
-				}
-			}
-		}
-
-		return { allowed: true };
-	}
-
-	getAnnouncementLabel(announcement: AnnouncementType): string {
-		switch (announcement) {
-			case "re":
-				return "Re";
-			case "kontra":
-				return "Kontra";
-			case "no90":
-				return "Keine 90";
-			case "no60":
-				return "Keine 60";
-			case "no30":
-				return "Keine 30";
-			case "schwarz":
-				return "Schwarz";
-			default:
-				return announcement;
-		}
-	}
-
 	async handleAnnouncement(
 		announcement: AnnouncementType,
 		playerId: string,
@@ -899,11 +617,7 @@ export default class Server implements Party.Server {
 		}
 
 		// Validierung
-		const validation = this.canMakeAnnouncement(
-			gameState,
-			playerId,
-			announcement,
-		);
+		const validation = canMakeAnnouncement(gameState, playerId, announcement);
 		if (!validation.allowed) {
 			this.sendGameError(sender, validation.reason || "Ansage nicht erlaubt.");
 			return;
@@ -1098,64 +812,14 @@ export default class Server implements Party.Server {
 		}
 	}
 
-	createDeck(): Card[] {
-		const suits: Suit[] = ["hearts", "diamonds", "clubs", "spades"];
-		const ranks: Rank[] = ["9", "10", "jack", "queen", "king", "ace"];
-		const deck: Card[] = [];
-
-		for (const suit of suits) {
-			for (const rank of ranks) {
-				for (let i = 0; i < 2; i++) {
-					deck.push({
-						suit,
-						rank,
-						id: `${suit}-${rank}-${i}`,
-					});
-				}
-			}
-		}
-
-		return this.shuffleDeck(deck);
-	}
-
-	shuffleDeck(deck: Card[]): Card[] {
-		const shuffled = [...deck];
-		for (let i = shuffled.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			const temp = shuffled[i];
-			if (temp && shuffled[j]) {
-				shuffled[i] = shuffled[j];
-				shuffled[j] = temp;
-			}
-		}
-		return shuffled;
-	}
-
-	dealCards(deck: Card[], players: Player[]): Record<string, Card[]> {
-		const hands: Record<string, Card[]> = {};
-		const cardsPerPlayer = 12;
-
-		for (let i = 0; i < players.length; i++) {
-			const player = players[i];
-			if (player) {
-				hands[player.id] = deck.slice(
-					i * cardsPerPlayer,
-					(i + 1) * cardsPerPlayer,
-				);
-			}
-		}
-
-		return hands;
-	}
-
 	async startGameRoom(players: Player[], tableId: string) {
 		const gameId = this.room.id;
 		if (this.games.has(gameId)) {
 			return;
 		}
 
-		const deck = this.createDeck();
-		const hands = this.dealCards(deck, players);
+		const deck = createDeck();
+		const hands = dealCards(deck, players);
 		const trump: Suit | "jacks" | "queens" = "jacks";
 
 		// Prüfe, welche Spieler beide Karo-Assen haben (Schweinerei)
@@ -1315,7 +979,7 @@ export default class Server implements Party.Server {
 		const trick = gameState.currentTrick;
 		const isLastTrick = gameState.completedTricks.length === 11; // 12. Stich
 		const trickNumber = gameState.completedTricks.length + 1;
-		const winner = this.determineTrickWinner(
+		const winner = determineTrickWinner(
 			trick,
 			gameState.trump,
 			gameState.schweinereiPlayers,
@@ -1330,7 +994,7 @@ export default class Server implements Party.Server {
 		}
 
 		// Berechne und speichere Punkte des Stichs
-		const trickPoints = this.calculateTrickPoints(trick);
+		const trickPoints = calculateTrickPoints(trick);
 		trick.points = trickPoints;
 
 		// Addiere Punkte zum Gewinner
@@ -1391,8 +1055,8 @@ export default class Server implements Party.Server {
 		const newRound = oldGameState.round + 1;
 
 		// Create new deck and deal
-		const deck = this.createDeck();
-		const hands = this.dealCards(deck, players);
+		const deck = createDeck();
+		const hands = dealCards(deck, players);
 		const trump: Suit | "jacks" | "queens" = "jacks";
 
 		// Check for Schweinerei
@@ -1530,116 +1194,6 @@ export default class Server implements Party.Server {
 		} catch (error) {
 			console.error("Failed to save game results:", error);
 		}
-	}
-
-	determineTrickWinner(
-		trick: Trick,
-		trump: Suit | "jacks" | "queens",
-		schweinereiPlayers: string[],
-		isLastTrick = false,
-	): string {
-		if (trick.cards.length === 0) return "";
-
-		const firstCardEntry = trick.cards[0];
-		if (!firstCardEntry) return "";
-
-		const firstCard = firstCardEntry.card;
-		if (!firstCard) return firstCardEntry.playerId || "";
-
-		const leadSuit = firstCard.suit;
-		let winner = firstCardEntry;
-		const firstPlayerId = firstCardEntry.playerId || "";
-		let highestValue = this.getCardValue(
-			firstCard,
-			leadSuit,
-			trump,
-			firstPlayerId,
-			schweinereiPlayers,
-		);
-
-		// Sonderregel für letzten Stich: Wenn beide Herz 10 sind, gewinnt die zweite
-		if (isLastTrick) {
-			const hearts10Cards = trick.cards.filter(
-				(entry) => entry.card.suit === "hearts" && entry.card.rank === "10",
-			);
-			if (hearts10Cards.length === 2) {
-				// Zweite Herz 10 gewinnt im letzten Stich
-				return hearts10Cards[1]?.playerId || winner.playerId;
-			}
-		}
-
-		for (let i = 1; i < trick.cards.length; i++) {
-			const cardEntry = trick.cards[i];
-			if (!cardEntry) continue;
-
-			const playerId = cardEntry.playerId || "";
-			const value = this.getCardValue(
-				cardEntry.card,
-				leadSuit,
-				trump,
-				playerId,
-				schweinereiPlayers,
-			);
-			if (value > highestValue) {
-				highestValue = value;
-				winner = cardEntry;
-			}
-		}
-
-		return winner.playerId;
-	}
-
-	getCardValue(
-		card: Card,
-		leadSuit: Suit,
-		trump: Suit | "jacks" | "queens",
-		playerId: string,
-		schweinereiPlayers: string[],
-	): number {
-		const cardIsTrump = isTrump(card, trump);
-		const isLeadSuit = card.suit === leadSuit;
-
-		if (cardIsTrump) {
-			// Schweinerei: Karo-Assen sind höher als Herz 10, wenn Spieler beide hat
-			if (
-				card.suit === "diamonds" &&
-				card.rank === "ace" &&
-				schweinereiPlayers.includes(playerId)
-			) {
-				return 1200; // Höher als Herz 10 (1100)
-			}
-			// In Doppelkopf: Herz 10 ist höchster Trumpf, dann Damen, dann Buben, dann Karo
-			if (card.suit === "hearts" && card.rank === "10") return 1100;
-			if (card.rank === "queen") {
-				const queenSuitOrder = { clubs: 4, spades: 3, hearts: 2, diamonds: 1 };
-				return 1000 + queenSuitOrder[card.suit];
-			}
-			if (card.rank === "jack") {
-				const jackSuitOrder = { clubs: 4, spades: 3, hearts: 2, diamonds: 1 };
-				return 900 + jackSuitOrder[card.suit];
-			}
-			// Karo (Diamonds) ist auch Trumpf
-			if (card.suit === "diamonds") {
-				if (card.rank === "ace") return 850;
-				if (card.rank === "king") return 840;
-				if (card.rank === "10") return 830;
-				if (card.rank === "9") return 820;
-			}
-		}
-
-		if (isLeadSuit && !cardIsTrump) {
-			if (card.rank === "ace") return 800;
-			if (card.rank === "king") return 700;
-			if (card.rank === "queen") return 600;
-			if (card.rank === "10") return 500;
-			if (card.rank === "9") return 400;
-		}
-
-		return 0;
-	}
-
-	calculateTrickPoints(trick: Trick): number {
-		return getTrickPoints(trick);
 	}
 
 	async autoPlay(sender: Party.Connection) {
