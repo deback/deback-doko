@@ -17,7 +17,6 @@ interface PlayerStatusProps {
 }
 
 export function PlayerStatus({
-	position,
 	declaredContract,
 	announcements,
 	className,
@@ -32,13 +31,10 @@ export function PlayerStatus({
 		return null;
 	}
 
-	const isVertical = position === "left" || position === "right";
-
 	return (
 		<div
 			className={cn(
 				"flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm",
-				isVertical && "flex-col px-1 py-2",
 				className,
 			)}
 		>
