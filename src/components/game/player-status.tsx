@@ -34,7 +34,7 @@ export function PlayerStatus({
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm",
+				"absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm",
 				className,
 			)}
 		>

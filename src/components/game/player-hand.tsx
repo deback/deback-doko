@@ -251,11 +251,7 @@ export function PlayerHand({
 						/>
 					);
 				})}
-				{statusSlot && (
-					<div className="absolute top-0 -translate-y-full left-1/2 -translate-x-1/2">
-						{statusSlot}
-					</div>
-				)}
+				{statusSlot}
 			</div>
 		</div>
 	);

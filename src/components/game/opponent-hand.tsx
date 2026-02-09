@@ -19,13 +19,6 @@ const POSITION_STYLES: Record<Position, string> = {
 	right: "right-0 top-1/2 -translate-y-1/2 -rotate-90 translate-x-4/5",
 };
 
-// Counter-rotation so status text stays upright on screen
-const COUNTER_ROTATION: Record<Position, string> = {
-	top: "-rotate-180",
-	left: "",
-	right: "",
-};
-
 export function OpponentHand({
 	cardCount,
 	position,
@@ -49,16 +42,7 @@ export function OpponentHand({
 						/>
 					);
 				})}
-				{statusSlot && (
-					<div
-						className={cn(
-							"absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full",
-							COUNTER_ROTATION[position],
-						)}
-					>
-						{statusSlot}
-					</div>
-				)}
+				{statusSlot}
 			</div>
 		</div>
 	);
