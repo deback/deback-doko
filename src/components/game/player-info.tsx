@@ -28,11 +28,11 @@ export function PlayerInfo({
 					"bottom-0 left-1/2 -translate-x-1/2": position === "bottom",
 				},
 				{
-					"right-0 top-1/2 rounded-b-[1.2rem] rounded-t-none -translate-y-1/2 translate-x-1/2 origin-[50%_0%] rotate-90 ":
+					"right-0 top-1/2 rounded-b-[1.2rem] rounded-t-none translate-x-1/2 rotate-90 origin-[50%_0%]":
 						position === "right",
 				},
 				{
-					"rounded-b-[1.2rem] rounded-t-none top-1/2 left-0 -translate-x-1/2 -rotate-90 origin-[50%_0%]":
+					"rounded-b-[1.2rem] rounded-t-none top-1/2 left-0 -translate-x-1/2 origin-[50%_0%] -rotate-90":
 						position === "left",
 				},
 				{

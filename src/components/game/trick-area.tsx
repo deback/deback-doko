@@ -368,7 +368,7 @@ export function TrickArea({
 				// -- Bottom: matches Hand translate-y at each breakpoint --
 				"bottom-[calc(min(30vw,10rem)*1.4*2/3)]",
 				"sm:bottom-[calc(min(30vw,10rem)*1.4/2)]",
-				"landscape:bottom-[calc(min(30vh,7rem)*1.4/3)]",
+				"landscape:bottom-[calc(min(30vh,7rem)*1.4*3/5)]",
 				"lg:bottom-[calc(min(30vw,14rem)*1.4/2)]",
 				"lg:landscape:bottom-[calc(min(30vw,14rem)*1.4/2)]",
 
