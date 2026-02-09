@@ -20,7 +20,7 @@ export function PlayerInfo({
 	return (
 		<div
 			className={cn(
-				" text-balance text-nowrap z-10 absolute inline-flex items-center gap-2 rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
+				"absolute z-20 inline-flex items-center gap-2 text-balance rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
 				{
 					"ring-4 ring-primary": isCurrentTurn,
 				},
@@ -28,15 +28,15 @@ export function PlayerInfo({
 					"bottom-0 left-1/2 -translate-x-1/2": position === "bottom",
 				},
 				{
-					"right-0 top-1/2 rounded-b-[1.2rem] rounded-t-none translate-x-1/2 rotate-90 origin-[50%_0%]":
+					"top-1/2 right-0 origin-[50%_0%] translate-x-1/2 rotate-90 rounded-t-none rounded-b-[1.2rem]":
 						position === "right",
 				},
 				{
-					"rounded-b-[1.2rem] rounded-t-none top-1/2 left-0 -translate-x-1/2 origin-[50%_0%] -rotate-90":
+					"top-1/2 left-0 origin-[50%_0%] -translate-x-1/2 -rotate-90 rounded-t-none rounded-b-[1.2rem]":
 						position === "left",
 				},
 				{
-					"top-0 left-1/2 -translate-x-1/2 rounded-b-[1.2rem] rounded-t-none":
+					"top-0 left-1/2 -translate-x-1/2 rounded-t-none rounded-b-[1.2rem]":
 						position === "top",
 				},
 				className,
@@ -48,7 +48,7 @@ export function PlayerInfo({
 				size="xs"
 				src={player.image}
 			/>
-			<span className=" text-white text-balance text-nowrap font-medium lg:text-base text-sm pr-1">
+			<span className="text-balance pr-1 font-medium text-sm text-white lg:text-base">
 				{player.name}
 			</span>
 		</div>

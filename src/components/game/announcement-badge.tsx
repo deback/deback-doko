@@ -38,8 +38,8 @@ export function AnnouncementBadge({
 	return (
 		<span
 			className={cn(
-				"flex items-center justify-center rounded-full text-base font-bold text-white shadow-md",
-				isPill ? "px-2 py-0.5 whitespace-nowrap" : "size-8 uppercase",
+				"flex items-center justify-center rounded-full font-bold text-base text-white shadow-md",
+				isPill ? "whitespace-nowrap px-2 py-0.5" : "size-8 uppercase",
 				VARIANT_STYLES[variant],
 				position && POSITION_ROTATION[position],
 				className,

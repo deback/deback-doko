@@ -357,7 +357,7 @@ export function TrickArea({
 				"fixed border-2 transition-all duration-200",
 
 				isOver && canDrop
-					? "border-primary bg-primary/10 scale-[1.02]"
+					? "scale-[1.02] border-primary bg-primary/10"
 					: "border-transparent",
 
 				// -- Top --
@@ -385,7 +385,7 @@ export function TrickArea({
 			ref={mergedRef}
 		>
 			{mounted && (
-				<div className="relative w-full h-full flex items-center justify-center">
+				<div className="relative flex h-full w-full items-center justify-center">
 					{/* All trick cards - with animation phases */}
 					{cardsToRender.map((trickCard) => {
 						const playerIndex = players.findIndex(
@@ -575,14 +575,14 @@ export function TrickArea({
 			{/* Drop-Zone Hinweis */}
 			{trickCards.length === 0 && !playedCard && !isOver && !isAnimating && (
 				<div className="absolute inset-0 flex items-center justify-center">
-					<span className="text-white/30 text-sm">Karte hier ablegen</span>
+					<span className="text-sm text-white/30">Karte hier ablegen</span>
 				</div>
 			)}
 
 			{/* Hover-Effekt */}
 			{isOver && canDrop && (
 				<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-					<div className="animate-pulse text-emerald-400 text-lg font-semibold">
+					<div className="animate-pulse font-semibold text-emerald-400 text-lg">
 						Loslassen zum Spielen
 					</div>
 				</div>

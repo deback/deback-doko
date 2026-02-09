@@ -210,7 +210,7 @@ export function PlayerHand({
 	return (
 		<div
 			className={cn(
-				"fixed bottom-0 translate-y-1/3 -translate-x-1/2 sm:translate-y-1/2 left-1/2 landscape:translate-y-2/5 lg:landscape:translate-y-1/2",
+				"fixed bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/3 sm:translate-y-1/2 landscape:translate-y-2/5 lg:landscape:translate-y-1/2",
 				isBiddingActive && "pointer-events-none",
 				className,
 			)}
@@ -233,8 +233,8 @@ export function PlayerHand({
 							angle={angle}
 							card={card}
 							className={cn(
-								"top-0 left-0 w-full h-full touch-none",
-								(isGhost || isDragging) && "invisible pointer-events-none",
+								"top-0 left-0 h-full w-full touch-none",
+								(isGhost || isDragging) && "pointer-events-none invisible",
 							)}
 							isDisabled={isDisabled}
 							isDraggingDisabled={

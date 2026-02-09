@@ -26,7 +26,7 @@ export function OpponentHand({
 	className,
 }: OpponentHandProps) {
 	return (
-		<div className={cn("fixed", POSITION_STYLES[position], className)}>
+		<div className={cn("fixed z-10", POSITION_STYLES[position], className)}>
 			<div className={`@container relative ${CARD_SIZE}`}>
 				{Array.from({ length: cardCount }).map((_, index) => {
 					const t = index - (cardCount - 1) / 2;
@@ -35,7 +35,7 @@ export function OpponentHand({
 					return (
 						<Card
 							angle={angle}
-							className="top-0 left-0 w-full h-full"
+							className="top-0 left-0 h-full w-full"
 							// biome-ignore lint/suspicious/noArrayIndexKey: opponent cards are identical, no stable ID available
 							key={`opponent-card-${index}`}
 							showBack
