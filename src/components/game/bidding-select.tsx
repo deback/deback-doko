@@ -216,28 +216,38 @@ export function BiddingSelect({
 			</div>
 
 			{/* Awaiting contract declaration (after all bids are in) */}
-			{awaitingDeclaration && (
-				<div className="flex w-full items-center gap-3">
-					<Select onValueChange={handleContractChange} value={selectedContract}>
-						<SelectTrigger className="min-w-40">
-							<SelectValue placeholder="Wähle Sonderspiel" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="hochzeit">Hochzeit</SelectItem>
-							<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
-							<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
-							<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
-							<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
-							<SelectItem value="solo-queens">Damen-Solo</SelectItem>
-							<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
-							<SelectItem value="solo-aces">Fleischloser</SelectItem>
-						</SelectContent>
-					</Select>
-					<Button onClick={handleDeclareConfirm} size="default">
-						OK
-					</Button>
+			<div
+				className="grid w-full transition-[grid-template-rows] duration-300 ease-in-out"
+				style={{
+					gridTemplateRows: awaitingDeclaration ? "1fr" : "0fr",
+				}}
+			>
+				<div className="overflow-hidden">
+					<div className="flex w-full items-center gap-3 pt-1">
+						<Select
+							onValueChange={handleContractChange}
+							value={selectedContract}
+						>
+							<SelectTrigger className="min-w-40">
+								<SelectValue placeholder="Wähle Sonderspiel" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="hochzeit">Hochzeit</SelectItem>
+								<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
+								<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
+								<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
+								<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
+								<SelectItem value="solo-queens">Damen-Solo</SelectItem>
+								<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
+								<SelectItem value="solo-aces">Fleischloser</SelectItem>
+							</SelectContent>
+						</Select>
+						<Button onClick={handleDeclareConfirm} size="default">
+							OK
+						</Button>
+					</div>
 				</div>
-			)}
+			</div>
 
 			{/* Form with animated collapse */}
 			<div

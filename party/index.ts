@@ -1247,18 +1247,23 @@ export default class Server implements Party.Server {
 		const reWins = reScore >= 121;
 
 		// Balance-Änderung: Gewinner bekommen 50 Cents (0,50 $), Verlierer verlieren 50 Cents
-		const balanceChange = 50;
+		// Solo: Solo-Spieler (Re, allein) bekommt 3x, Kontra-Spieler je 1x
+		const baseChange = 50;
+		const isSolo =
+			gameState.contractType !== "normal" &&
+			gameState.contractType !== "hochzeit";
 
 		const playerResults = gameState.players.map((player) => {
 			const team = gameState.teams[player.id] || "kontra";
 			const won = team === "re" ? reWins : !reWins;
+			const change = isSolo && team === "re" ? baseChange * 3 : baseChange;
 			return {
 				id: player.id,
 				name: player.name,
 				score: gameState.scores[player.id] || 0,
 				team,
 				won,
-				balanceChange: won ? balanceChange : -balanceChange,
+				balanceChange: won ? change : -change,
 			};
 		});
 
