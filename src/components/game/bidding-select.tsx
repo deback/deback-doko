@@ -77,13 +77,15 @@ export function BiddingSelect({
 	const [selectedBid, setSelectedBid] = useState<ReservationType>(defaultValue);
 	const [isReady, setIsReady] = useState(false); // Player has confirmed their choice
 	const hasSentBid = useRef(false);
+	const setPreviewTrumpMode = useSetPreviewTrumpMode();
 
 	// Reset state when default value changes (e.g., after game reset with new hand)
 	useEffect(() => {
 		setSelectedBid(defaultValue);
 		setIsReady(false);
 		hasSentBid.current = false;
-	}, [defaultValue]);
+		setPreviewTrumpMode(null);
+	}, [defaultValue, setPreviewTrumpMode]);
 
 	// Check if we're awaiting contract declaration
 	const awaitingDeclaration =
@@ -108,7 +110,6 @@ export function BiddingSelect({
 	};
 
 	// Contract declaration state (Select + OK)
-	const setPreviewTrumpMode = useSetPreviewTrumpMode();
 	const contractDefault = canDeclareHochzeit ? "hochzeit" : "";
 	const [selectedContract, setSelectedContract] = useState(contractDefault);
 
@@ -127,9 +128,6 @@ export function BiddingSelect({
 		if (awaitingDeclaration && contractDefault) {
 			setPreviewTrumpMode(contractToTrumpMode(contractDefault));
 		}
-		return () => {
-			setPreviewTrumpMode(null);
-		};
 	}, [awaitingDeclaration, contractDefault, setPreviewTrumpMode]);
 
 	const handleDeclareConfirm = () => {
