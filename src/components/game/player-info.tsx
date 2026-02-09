@@ -20,7 +20,7 @@ export function PlayerInfo({
 	return (
 		<div
 			className={cn(
-				"absolute z-10 inline-flex items-center gap-2 rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
+				"z-10 absolute inline-flex items-center gap-2 rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
 				{
 					"ring-4 ring-primary": isCurrentTurn,
 				},
