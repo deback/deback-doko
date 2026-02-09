@@ -4,18 +4,22 @@ An online multiplayer card game application for playing Doppelkopf (a popular Ge
 
 ## Features
 
-- **User Authentication**: Multiple authentication methods including email/password, GitHub OAuth, Google OAuth, and Magic Link
-- **User Profiles**: View and edit your profile, including username customization
+- **Full Doppelkopf Gameplay**: Complete implementation of the German card game with all core rules
+- **Bidding Phase**: Gesund/Vorbehalt declaration with turn-based flow
+- **Solo Variants**: All 7 solo types (Kreuz-, Pik-, Herz-, Karo-Solo, Damen-Solo, Buben-Solo, Fleischloser)
+- **Hochzeit & Schweinerei**: Special game modes fully supported
+- **Announcements**: Re/Kontra, keine 90/60/30, schwarz
+- **Game History**: Browse past games with detailed results and trick replay
+- **Spectator Mode**: Watch ongoing games in real-time
+- **User Authentication**: Email/Password, GitHub OAuth, Google OAuth, Magic Link
 - **Game Tables**: Create, join, and leave game tables
-- **Real-time Gameplay**: Real-time game functionality powered by PartyKit
-- **User Directory**: Browse all users and view their profiles
-- **Responsive Design**: Mobile-friendly interface with bottom navigation bar
-- **Modern UI**: Built with shadcn/ui components and Tailwind CSS
+- **Real-time Gameplay**: WebSocket-powered via PartyKit
+- **Responsive Design**: Mobile-friendly interface with bottom navigation
 
 ## Tech Stack
 
-- **Framework**: [Next.js 16.1.1](https://nextjs.org) (App Router)
-- **React**: 19.2.3
+- **Framework**: [Next.js 16](https://nextjs.org) (App Router)
+- **React**: 19
 - **Language**: TypeScript
 - **Authentication**: [Better Auth](https://www.better-auth.com/)
 - **Database**: PostgreSQL with [Drizzle ORM](https://orm.drizzle.team)
@@ -23,8 +27,9 @@ An online multiplayer card game application for playing Doppelkopf (a popular Ge
 - **Styling**: [Tailwind CSS](https://tailwindcss.com)
 - **UI Components**: [shadcn/ui](https://ui.shadcn.com)
 - **Forms**: React Hook Form + Zod validation
-- **Email**: Resend API for magic link emails
-- **Code Quality**: Biome for linting and formatting
+- **State Management**: [Zustand](https://zustand.docs.pmnd.rs/)
+- **Email**: [React Email](https://react.email) + Resend API
+- **Code Quality**: [Biome](https://biomejs.dev) for linting and formatting
 
 ## Prerequisites
 
@@ -75,8 +80,9 @@ BETTER_AUTH_GOOGLE_CLIENT_SECRET="your-google-client-secret"
 AUTH_RESEND_KEY="your-resend-api-key"
 AUTH_RESEND_FROM_ADDRESS="noreply@yourdomain.com"
 
-# PartyKit (optional for local development)
+# PartyKit
 NEXT_PUBLIC_PARTYKIT_HOST="localhost:1999"
+PARTYKIT_API_SECRET="your-partykit-api-secret"
 ```
 
 ### 4. Set up the database
@@ -114,12 +120,14 @@ pnpm dev:partykit
 ## Available Scripts
 
 - `pnpm dev` - Start development servers (Next.js + PartyKit)
+- `pnpm dev:email` - Email template preview
 - `pnpm build` - Create production build
 - `pnpm start` - Start production server
 - `pnpm preview` - Build and start production server
 - `pnpm typecheck` - Run TypeScript type checking
 - `pnpm check` - Run Biome linter
 - `pnpm check:write` - Run Biome linter and fix issues
+- `pnpm check:unsafe` - Run Biome with unsafe fixes
 - `pnpm db:generate` - Generate Drizzle migrations
 - `pnpm db:migrate` - Run database migrations (use this!)
 - `pnpm db:studio` - Open Drizzle Studio
@@ -131,28 +139,34 @@ pnpm dev:partykit
 deback-doko/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
+│   │   ├── (auth)/             # Auth pages (login, register, etc.)
 │   │   ├── (with-navigation)/  # Pages with bottom navigation
-│   │   │   ├── page.tsx        # Home page
-│   │   │   ├── tables/         # Game tables page
-│   │   │   └── profile/        # User profile pages
+│   │   │   ├── tables/         # Game tables
+│   │   │   ├── history/        # Game history & replays
+│   │   │   ├── players/        # User directory
+│   │   │   └── profile/        # User profiles
 │   │   ├── api/                # API routes
-│   │   ├── game/               # Game pages
-│   │   └── login/              # Authentication pages
-│   ├── components/             # React components
-│   │   ├── game/               # Game-related components
-│   │   ├── profile/            # Profile components
-│   │   ├── tables/             # Table components
-│   │   ├── navigation.tsx      # Bottom navigation
-│   │   └── ui/                 # shadcn/ui components
-│   ├── server/                 # Server-side code
+│   │   └── game/[gameId]/      # Game page
+│   ├── components/
+│   │   ├── ui/                 # shadcn/ui components
+│   │   ├── cards/              # Card rendering
+│   │   ├── game/               # Game UI (bidding, tricks, etc.)
+│   │   ├── history/            # Game history & replay
+│   │   └── tables/             # Table management
+│   ├── stores/                 # Zustand state management
+│   ├── server/
 │   │   ├── better-auth/        # Auth configuration
-│   │   ├── db/                 # Database setup
-│   │   └── email/              # Email templates
-│   ├── lib/                    # Utility functions
+│   │   ├── db/                 # Drizzle schema & connection
+│   │   ├── actions/            # Server Actions
+│   │   └── email/              # Resend email service
+│   ├── lib/                    # Utilities & game rules
 │   └── types/                  # TypeScript types
-├── party/                      # PartyKit server code
-│   ├── index.ts                # Main PartyKit server
-│   └── game/                   # Game server logic
+├── party/                      # PartyKit server (WebSockets)
+│   ├── index.ts                # Main server & game logic
+│   ├── trick-scoring.ts        # Trick evaluation
+│   ├── announcements.ts        # Re/Kontra announcements
+│   └── deck.ts                 # Card deck generation
+├── emails/                     # React Email templates
 ├── drizzle/                    # Database migrations
 └── public/                     # Static assets
 ```
