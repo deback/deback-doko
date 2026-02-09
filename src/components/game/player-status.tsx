@@ -36,7 +36,8 @@ export function PlayerStatus({
 	return (
 		<div
 			className={cn(
-				"absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full flex items-center gap-1.5",
+				"absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full flex items-center gap-1.5 p-2",
+				(position === "top" || position === "right") && "flex-row-reverse",
 				className,
 			)}
 		>
