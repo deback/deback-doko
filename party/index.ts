@@ -427,7 +427,8 @@ export default class Server implements Party.Server {
 		}
 
 		// Prüfe ob dieser Spieler seinen Vorbehalt deklarieren soll
-		if (gameState.biddingPhase.awaitingContractDeclaration !== playerId) {
+		const awaiting = gameState.biddingPhase.awaitingContractDeclaration ?? [];
+		if (!awaiting.includes(playerId)) {
 			this.sendGameError(sender, "Du musst keinen Vorbehalt deklarieren.");
 			return;
 		}
@@ -451,14 +452,13 @@ export default class Server implements Party.Server {
 			}
 		}
 
-		// Speichere den Contract (wird bei Bidding-Ende ausgewertet)
-		gameState.biddingPhase.awaitingContractDeclaration = undefined;
+		// Speichere den Contract und entferne Spieler aus der Warteliste
 		gameState.biddingPhase.pendingContracts[playerId] = contract;
+		const remaining = awaiting.filter((id) => id !== playerId);
+		gameState.biddingPhase.awaitingContractDeclaration = remaining;
 
 		// Prüfe ob noch weitere Vorbehalt-Spieler deklarieren müssen
-		const nextUndeclared = this.findNextUndeclaredVorbehalt(gameState);
-		if (nextUndeclared) {
-			gameState.biddingPhase.awaitingContractDeclaration = nextUndeclared;
+		if (remaining.length > 0) {
 			await this.persistGameState(gameState);
 			this.broadcastGameState(gameState);
 			this.broadcastToSpectators(gameState);
@@ -466,6 +466,7 @@ export default class Server implements Party.Server {
 		}
 
 		// Alle haben deklariert — Bidding auflösen
+		gameState.biddingPhase.awaitingContractDeclaration = undefined;
 		await this.persistGameState(gameState);
 		this.broadcastGameState(gameState);
 		this.broadcastToSpectators(gameState);
@@ -475,9 +476,10 @@ export default class Server implements Party.Server {
 		}, 2000);
 	}
 
-	// Finde den nächsten Vorbehalt-Spieler der noch keinen Contract deklariert hat (in Vorhand-Reihenfolge)
-	findNextUndeclaredVorbehalt(gameState: GameState): string | undefined {
-		if (!gameState.biddingPhase) return undefined;
+	// Finde alle Vorbehalt-Spieler die noch keinen Contract deklariert haben
+	findAllUndeclaredVorbehalt(gameState: GameState): string[] {
+		if (!gameState.biddingPhase) return [];
+		const result: string[] = [];
 		const forehandIndex = (gameState.round - 1) % gameState.players.length;
 		for (let i = 0; i < gameState.players.length; i++) {
 			const index = (forehandIndex + i) % gameState.players.length;
@@ -487,10 +489,10 @@ export default class Server implements Party.Server {
 				gameState.biddingPhase.bids[player.id] === "vorbehalt" &&
 				!gameState.biddingPhase.pendingContracts[player.id]
 			) {
-				return player.id;
+				result.push(player.id);
 			}
 		}
-		return undefined;
+		return result;
 	}
 
 	async advanceBidding(gameState: GameState) {
@@ -507,9 +509,9 @@ export default class Server implements Party.Server {
 			gameState.players.length
 		) {
 			// Prüfe ob Vorbehalt-Spieler noch deklarieren müssen
-			const nextUndeclared = this.findNextUndeclaredVorbehalt(gameState);
-			if (nextUndeclared) {
-				gameState.biddingPhase.awaitingContractDeclaration = nextUndeclared;
+			const undeclared = this.findAllUndeclaredVorbehalt(gameState);
+			if (undeclared.length > 0) {
+				gameState.biddingPhase.awaitingContractDeclaration = undeclared;
 				await this.persistGameState(gameState);
 				this.broadcastGameState(gameState);
 				this.broadcastToSpectators(gameState);
@@ -1314,13 +1316,12 @@ export default class Server implements Party.Server {
 
 		// During bidding phase: auto-bid "gesund" for current bidder
 		if (gameState.biddingPhase?.active) {
-			// Falls ein Spieler seinen Vorbehalt deklarieren muss, auto-retract
-			if (gameState.biddingPhase.awaitingContractDeclaration) {
-				await this.handleDeclareContract(
-					gameState.biddingPhase.awaitingContractDeclaration,
-					"normal",
-					sender,
-				);
+			// Falls Spieler ihren Vorbehalt deklarieren müssen, auto-retract für den ersten
+			const awaitingPlayers =
+				gameState.biddingPhase.awaitingContractDeclaration;
+			const firstAwaiting = awaitingPlayers?.[0];
+			if (firstAwaiting) {
+				await this.handleDeclareContract(firstAwaiting, "normal", sender);
 				return;
 			}
 			const currentBidder =

@@ -75,7 +75,7 @@ export interface BiddingPhase {
 	active: boolean;
 	currentBidderIndex: number;
 	bids: Record<string, ReservationType>;
-	awaitingContractDeclaration?: string;
+	awaitingContractDeclaration?: string[];
 	pendingContracts: Record<string, ContractType>;
 }
 

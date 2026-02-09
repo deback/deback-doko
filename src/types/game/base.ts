@@ -111,8 +111,8 @@ export interface BiddingPhase {
 	currentBidderIndex: number;
 	/** playerId -> "gesund" | "vorbehalt" */
 	bids: Record<string, ReservationType>;
-	/** playerId der Vorbehalt-Deklaration machen muss */
-	awaitingContractDeclaration?: string;
+	/** playerIds die noch Vorbehalt-Deklaration machen müssen */
+	awaitingContractDeclaration?: string[];
 	/** Ausstehende Verträge (playerId -> ContractType) für Vorbehalt-Spieler */
 	pendingContracts: Record<string, ContractType>;
 }

@@ -99,7 +99,14 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 		...initState,
 
 		// State Setters
-		setGameState: (gameState) => set({ gameState }),
+		setGameState: (gameState) =>
+			set((state) => ({
+				gameState,
+				// Clear preview trump when bidding phase ends (resolved by server)
+				previewTrumpMode: gameState?.biddingPhase?.active
+					? state.previewTrumpMode
+					: null,
+			})),
 		setCurrentPlayer: (currentPlayer) => set({ currentPlayer }),
 		setSpectatorMode: (isSpectator) => set({ isSpectator }),
 		setConnected: (isConnected) => set({ isConnected }),

@@ -89,7 +89,8 @@ export function BiddingSelect({
 
 	// Check if we're awaiting contract declaration
 	const awaitingDeclaration =
-		biddingPhase.awaitingContractDeclaration === currentPlayerId;
+		biddingPhase.awaitingContractDeclaration?.includes(currentPlayerId) ??
+		false;
 
 	// Auto-send bid when it's my turn and I'm ready
 	useEffect(() => {
@@ -154,10 +155,16 @@ export function BiddingSelect({
 							Object.keys(biddingPhase.bids).length >= players.length;
 						if (!allBidsIn) return `Warte auf ${currentBidder?.name}...`;
 						// All bids in — check if someone else is declaring
-						const declaringId = biddingPhase.awaitingContractDeclaration;
-						if (declaringId) {
-							const declaringPlayer = players.find((p) => p.id === declaringId);
-							return `Warte auf ${declaringPlayer?.name ?? "..."}...`;
+						const declaringIds = biddingPhase.awaitingContractDeclaration ?? [];
+						if (declaringIds.length > 0) {
+							const names = declaringIds
+								.map(
+									(id) =>
+										players.find((p) => p.id === id)?.name?.split(" ")[0] ??
+										"...",
+								)
+								.join(", ");
+							return `Warte auf ${names}...`;
 						}
 						return "Es geht los!";
 					})()}
@@ -218,7 +225,7 @@ export function BiddingSelect({
 				{awaitingDeclaration && (
 					<motion.div
 						animate={{ height: "auto", opacity: 1 }}
-						className="w-full overflow-hidden"
+						className="-mx-1 -mb-1 w-[calc(100%+0.5rem)] overflow-hidden px-1 pb-1"
 						exit={{ height: 0, opacity: 0 }}
 						initial={{ height: 0, opacity: 0 }}
 						transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -255,7 +262,7 @@ export function BiddingSelect({
 				{!myBid && !isReady && !awaitingDeclaration && (
 					<motion.div
 						animate={{ height: "auto", opacity: 1 }}
-						className="w-full overflow-hidden"
+						className="-mx-1 -mb-1 w-[calc(100%+0.5rem)] overflow-hidden px-1 pb-1"
 						exit={{ height: 0, opacity: 0 }}
 						initial={{ height: 0, opacity: 0 }}
 						transition={{ duration: 0.3, ease: "easeInOut" }}
