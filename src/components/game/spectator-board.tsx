@@ -86,16 +86,12 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 				<>
 					<div className="fixed top-4 left-1/2 z-10 -translate-x-1/2 translate-y-8">
 						<PlayerInfo
-							cardCount={getCardCount(topPlayer.id)}
-							isCurrentPlayer={false}
 							isCurrentTurn={
 								gameState.players[gameState.currentPlayerIndex]?.id ===
 								topPlayer.id
 							}
 							player={topPlayer}
 							position="top"
-							score={gameState.scores[topPlayer.id] || 0}
-							team={gameState.teams[topPlayer.id]}
 						/>
 					</div>
 					<OpponentHand cardCount={getCardCount(topPlayer.id)} position="top" />
@@ -107,16 +103,12 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 				<>
 					<div className="fixed left-4 top-1/2 z-10 -translate-y-1/2">
 						<PlayerInfo
-							cardCount={getCardCount(leftPlayer.id)}
-							isCurrentPlayer={false}
 							isCurrentTurn={
 								gameState.players[gameState.currentPlayerIndex]?.id ===
 								leftPlayer.id
 							}
 							player={leftPlayer}
 							position="left"
-							score={gameState.scores[leftPlayer.id] || 0}
-							team={gameState.teams[leftPlayer.id]}
 						/>
 					</div>
 					<OpponentHand
@@ -131,16 +123,12 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 				<>
 					<div className="fixed right-4 top-1/2 z-10 -translate-y-1/2">
 						<PlayerInfo
-							cardCount={getCardCount(rightPlayer.id)}
-							isCurrentPlayer={false}
 							isCurrentTurn={
 								gameState.players[gameState.currentPlayerIndex]?.id ===
 								rightPlayer.id
 							}
 							player={rightPlayer}
 							position="right"
-							score={gameState.scores[rightPlayer.id] || 0}
-							team={gameState.teams[rightPlayer.id]}
 						/>
 					</div>
 					<OpponentHand
@@ -163,16 +151,12 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 				<>
 					<div className="fixed bottom-[25%] left-1/2 z-10 -translate-x-1/2">
 						<PlayerInfo
-							cardCount={getCardCount(bottomPlayer.id)}
-							isCurrentPlayer={false}
 							isCurrentTurn={
 								gameState.players[gameState.currentPlayerIndex]?.id ===
 								bottomPlayer.id
 							}
 							player={bottomPlayer}
 							position="bottom"
-							score={gameState.scores[bottomPlayer.id] || 0}
-							team={gameState.teams[bottomPlayer.id]}
 						/>
 					</div>
 					<OpponentHand

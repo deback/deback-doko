@@ -239,7 +239,9 @@ export function BiddingSelect({
 									<SelectValue placeholder="Sonderspiel" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="hochzeit">Hochzeit</SelectItem>
+									{canDeclareHochzeit && (
+										<SelectItem value="hochzeit">Hochzeit</SelectItem>
+									)}
 									<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
 									<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
 									<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>

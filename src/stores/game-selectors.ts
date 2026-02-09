@@ -8,7 +8,7 @@
 import { useMemo } from "react";
 import { getPlayableCards } from "@/lib/game/rules";
 import { useGameStore } from "@/providers/game-store-provider";
-import type { Card } from "@/types/game";
+import type { Card, ContractType } from "@/types/game";
 import type { Player } from "@/types/tables";
 import { sortHand } from "./sort-hand";
 
@@ -213,6 +213,45 @@ export function useSchweinereiPlayerId(): string | null {
 
 	return useMemo(() => {
 		return gameState?.schweinereiPlayers[0] ?? null;
+	}, [gameState]);
+}
+
+/**
+ * Welcher Spieler hat den aktiven Vertrag deklariert (Solo oder Hochzeit)?
+ * Gibt null zurück bei normalen Spielen.
+ */
+export function useContractDeclarer(): {
+	playerId: string;
+	contractType: ContractType;
+} | null {
+	const gameState = useGameStore((s) => s.gameState);
+
+	return useMemo(() => {
+		if (!gameState) return null;
+		const { contractType } = gameState;
+
+		if (contractType === "normal") return null;
+
+		if (contractType === "hochzeit" && gameState.hochzeit) {
+			return {
+				playerId: gameState.hochzeit.seekerPlayerId,
+				contractType,
+			};
+		}
+
+		if (contractType.startsWith("solo-")) {
+			const soloistEntry = Object.entries(gameState.teams).find(
+				([_, team]) => team === "re",
+			);
+			if (soloistEntry) {
+				return {
+					playerId: soloistEntry[0],
+					contractType,
+				};
+			}
+		}
+
+		return null;
 	}, [gameState]);
 }
 

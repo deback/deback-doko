@@ -1,18 +1,8 @@
 import { Trophy } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { CONTRACT_LABELS } from "@/lib/game/labels";
 import { cn } from "@/lib/utils";
 import type { GameHistoryDetail } from "@/types/game-history";
-
-const CONTRACT_LABELS: Record<string, string> = {
-	hochzeit: "Hochzeit",
-	"solo-clubs": "♣ Kreuz-Solo",
-	"solo-spades": "♠ Pik-Solo",
-	"solo-hearts": "♥ Herz-Solo",
-	"solo-diamonds": "♦ Karo-Solo",
-	"solo-queens": "Damen-Solo",
-	"solo-jacks": "Buben-Solo",
-	"solo-aces": "Fleischloser",
-};
 
 interface GameSummaryProps {
 	game: GameHistoryDetail;

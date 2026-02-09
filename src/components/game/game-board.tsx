@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import {
 	useAutoPlay,
 	useBid,
+	useContractDeclarer,
 	useCurrentPlayer,
 	useDeclareContract,
 	useGameState,
@@ -45,6 +46,7 @@ import { GameSettingsMenu } from "./game-settings-menu";
 import { OpponentHand } from "./opponent-hand";
 import { PlayerHand } from "./player-hand";
 import { PlayerInfo } from "./player-info";
+import { PlayerStatus } from "./player-status";
 import { TrickArea } from "./trick-area";
 import { TurnIndicator } from "./turn-indicator";
 
@@ -78,6 +80,9 @@ export function GameBoard() {
 	const leftAnnouncements = usePlayerAnnouncements(leftPlayer?.id ?? "");
 	const topAnnouncements = usePlayerAnnouncements(topPlayer?.id ?? "");
 	const rightAnnouncements = usePlayerAnnouncements(rightPlayer?.id ?? "");
+
+	// Contract declarer (solo/hochzeit)
+	const contractDeclarer = useContractDeclarer();
 
 	// =========================================================================
 	// Store Selectors - Actions
@@ -228,15 +233,17 @@ export function GameBoard() {
 	// Helper Functions
 	// =========================================================================
 
-	// Format announcements for PlayerInfo component
-	const formatAnnouncements = (
+	// Format announcements for PlayerStatus component
+	const formatAnnouncementsForStatus = (
 		announcements: ReturnType<typeof usePlayerAnnouncements>,
 	) => {
 		if (!announcements) return undefined;
 		return {
-			reOrKontra: announcements.teamHasAnnounced
-				? (announcements.team as "re" | "kontra")
-				: undefined,
+			reOrKontra:
+				announcements.hasAnnounced ||
+				announcements.pointAnnouncements.length > 0
+					? (announcements.team as "re" | "kontra")
+					: undefined,
 			pointAnnouncements:
 				announcements.pointAnnouncements.length > 0
 					? announcements.pointAnnouncements.map((a) => a.type)
@@ -265,12 +272,20 @@ export function GameBoard() {
 			{topPlayer && (
 				<>
 					<PlayerInfo
-						announcements={formatAnnouncements(topAnnouncements)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							topPlayer.id
 						}
 						player={topPlayer}
+						position="top"
+					/>
+					<PlayerStatus
+						announcements={formatAnnouncementsForStatus(topAnnouncements)}
+						declaredContract={
+							contractDeclarer?.playerId === topPlayer.id
+								? contractDeclarer.contractType
+								: undefined
+						}
 						position="top"
 					/>
 					<OpponentHand
@@ -284,12 +299,20 @@ export function GameBoard() {
 			{leftPlayer && (
 				<>
 					<PlayerInfo
-						announcements={formatAnnouncements(leftAnnouncements)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							leftPlayer.id
 						}
 						player={leftPlayer}
+						position="left"
+					/>
+					<PlayerStatus
+						announcements={formatAnnouncementsForStatus(leftAnnouncements)}
+						declaredContract={
+							contractDeclarer?.playerId === leftPlayer.id
+								? contractDeclarer.contractType
+								: undefined
+						}
 						position="left"
 					/>
 					<OpponentHand
@@ -303,12 +326,20 @@ export function GameBoard() {
 			{rightPlayer && (
 				<>
 					<PlayerInfo
-						announcements={formatAnnouncements(rightAnnouncements)}
 						isCurrentTurn={
 							gameState.players[gameState.currentPlayerIndex]?.id ===
 							rightPlayer.id
 						}
 						player={rightPlayer}
+						position="right"
+					/>
+					<PlayerStatus
+						announcements={formatAnnouncementsForStatus(rightAnnouncements)}
+						declaredContract={
+							contractDeclarer?.playerId === rightPlayer.id
+								? contractDeclarer.contractType
+								: undefined
+						}
 						position="right"
 					/>
 					<OpponentHand
@@ -332,9 +363,17 @@ export function GameBoard() {
 			{bottomPlayer && (
 				<>
 					<PlayerInfo
-						announcements={formatAnnouncements(bottomAnnouncements)}
 						isCurrentTurn={isMyTurn}
 						player={bottomPlayer}
+						position="bottom"
+					/>
+					<PlayerStatus
+						announcements={formatAnnouncementsForStatus(bottomAnnouncements)}
+						declaredContract={
+							contractDeclarer?.playerId === bottomPlayer.id
+								? contractDeclarer.contractType
+								: undefined
+						}
 						position="bottom"
 					/>
 					<PlayerHand
