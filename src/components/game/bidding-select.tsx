@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Circle, Clock } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -133,12 +134,11 @@ export function BiddingSelect({
 
 	const handleDeclareConfirm = () => {
 		if (!selectedContract) return;
-		setPreviewTrumpMode(null);
 		onDeclareContract(selectedContract as ContractType);
 	};
 
 	return (
-		<div className="fixed shadow-lg left-1/2 top-1/2 z-50 -mt-8 mx-auto flex max-w-md -translate-y-1/2 -translate-x-1/2 flex-col items-center gap-3 lg:gap-4 rounded-xl bg-background p-4 text-foreground">
+		<div className="fixed shadow-lg left-1/2 top-1/2 z-50 -mt-8 mx-auto flex min-w-72 -translate-y-1/2 -translate-x-1/2 flex-col items-center gap-3 lg:gap-4 rounded-xl bg-background p-4 text-foreground">
 			<h3 className="font-semibold font-serif text-lg hidden lg:block">
 				Vorbehaltsabfrage
 			</h3>
@@ -216,69 +216,74 @@ export function BiddingSelect({
 			</div>
 
 			{/* Awaiting contract declaration (after all bids are in) */}
-			<div
-				className="grid w-full transition-[grid-template-rows] duration-300 ease-in-out"
-				style={{
-					gridTemplateRows: awaitingDeclaration ? "1fr" : "0fr",
-				}}
-			>
-				<div className="overflow-hidden">
-					<div className="flex w-full items-center gap-3 pt-1">
-						<Select
-							onValueChange={handleContractChange}
-							value={selectedContract}
-						>
-							<SelectTrigger className="min-w-40">
-								<SelectValue placeholder="Wähle Sonderspiel" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="hochzeit">Hochzeit</SelectItem>
-								<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
-								<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
-								<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
-								<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
-								<SelectItem value="solo-queens">Damen-Solo</SelectItem>
-								<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
-								<SelectItem value="solo-aces">Fleischloser</SelectItem>
-							</SelectContent>
-						</Select>
-						<Button onClick={handleDeclareConfirm} size="default">
-							OK
-						</Button>
-					</div>
-				</div>
-			</div>
+			<AnimatePresence>
+				{awaitingDeclaration && (
+					<motion.div
+						animate={{ height: "auto", opacity: 1 }}
+						className="w-full overflow-hidden"
+						exit={{ height: 0, opacity: 0 }}
+						initial={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.3, ease: "easeInOut" }}
+					>
+						<div className="flex w-full items-center gap-3 pt-1">
+							<Select
+								onValueChange={handleContractChange}
+								value={selectedContract}
+							>
+								<SelectTrigger className="min-w-40">
+									<SelectValue placeholder="Sonderspiel" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="hochzeit">Hochzeit</SelectItem>
+									<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
+									<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
+									<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
+									<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
+									<SelectItem value="solo-queens">Damen-Solo</SelectItem>
+									<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
+									<SelectItem value="solo-aces">Fleischloser</SelectItem>
+								</SelectContent>
+							</Select>
+							<Button onClick={handleDeclareConfirm} size="default">
+								OK
+							</Button>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 
 			{/* Form with animated collapse */}
-			<div
-				className="grid w-full transition-[grid-template-rows] duration-300 ease-in-out"
-				style={{
-					gridTemplateRows:
-						!myBid && !isReady && !awaitingDeclaration ? "1fr" : "0fr",
-				}}
-			>
-				<div className="overflow-hidden">
-					<div className="flex w-full items-center gap-3 pt-1">
-						<Select
-							onValueChange={(value) =>
-								setSelectedBid(value as ReservationType)
-							}
-							value={selectedBid}
-						>
-							<SelectTrigger className="min-w-30">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="gesund">Gesund</SelectItem>
-								<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
-							</SelectContent>
-						</Select>
-						<Button onClick={handleConfirm} size="default">
-							OK
-						</Button>
-					</div>
-				</div>
-			</div>
+			<AnimatePresence>
+				{!myBid && !isReady && !awaitingDeclaration && (
+					<motion.div
+						animate={{ height: "auto", opacity: 1 }}
+						className="w-full overflow-hidden"
+						exit={{ height: 0, opacity: 0 }}
+						initial={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.3, ease: "easeInOut" }}
+					>
+						<div className="flex w-full items-center gap-3 pt-1">
+							<Select
+								onValueChange={(value) =>
+									setSelectedBid(value as ReservationType)
+								}
+								value={selectedBid}
+							>
+								<SelectTrigger className="min-w-30">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="gesund">Gesund</SelectItem>
+									<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
+								</SelectContent>
+							</Select>
+							<Button onClick={handleConfirm} size="default">
+								OK
+							</Button>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }
