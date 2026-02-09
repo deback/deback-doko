@@ -25,6 +25,8 @@ interface PlayerHandProps {
 	onRemoveCard?: (cardId: string) => void;
 	/** Callback when card is played with animation origin (for TrickArea animation) */
 	onPlayCardWithOrigin?: (cardId: string, origin: CardOrigin) => void;
+	/** Content rendered above the card fan (e.g. PlayerStatus) */
+	statusSlot?: React.ReactNode;
 	className?: string;
 }
 
@@ -38,6 +40,7 @@ export function PlayerHand({
 	activeDragCard,
 	onRemoveCard,
 	onPlayCardWithOrigin,
+	statusSlot,
 	className,
 }: PlayerHandProps) {
 	// Store Selectors - Game State
@@ -248,6 +251,11 @@ export function PlayerHand({
 						/>
 					);
 				})}
+				{statusSlot && (
+					<div className="absolute top-0 -translate-y-full left-1/2 -translate-x-1/2">
+						{statusSlot}
+					</div>
+				)}
 			</div>
 		</div>
 	);

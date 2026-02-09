@@ -37,14 +37,8 @@ export function PlayerStatus({
 	return (
 		<div
 			className={cn(
-				"fixed z-15 flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm",
+				"flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm",
 				isVertical && "flex-col px-1 py-2",
-				{
-					"bottom-12 left-1/2 -translate-x-1/2": position === "bottom",
-					"top-12 left-1/2 -translate-x-1/2": position === "top",
-					"left-12 top-1/2 -translate-y-1/2": position === "left",
-					"right-12 top-1/2 -translate-y-1/2": position === "right",
-				},
 				className,
 			)}
 		>

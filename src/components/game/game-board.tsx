@@ -279,18 +279,20 @@ export function GameBoard() {
 						player={topPlayer}
 						position="top"
 					/>
-					<PlayerStatus
-						announcements={formatAnnouncementsForStatus(topAnnouncements)}
-						declaredContract={
-							contractDeclarer?.playerId === topPlayer.id
-								? contractDeclarer.contractType
-								: undefined
-						}
-						position="top"
-					/>
 					<OpponentHand
 						cardCount={gameState.hands[topPlayer.id]?.length || 0}
 						position="top"
+						statusSlot={
+							<PlayerStatus
+								announcements={formatAnnouncementsForStatus(topAnnouncements)}
+								declaredContract={
+									contractDeclarer?.playerId === topPlayer.id
+										? contractDeclarer.contractType
+										: undefined
+								}
+								position="top"
+							/>
+						}
 					/>
 				</>
 			)}
@@ -306,18 +308,20 @@ export function GameBoard() {
 						player={leftPlayer}
 						position="left"
 					/>
-					<PlayerStatus
-						announcements={formatAnnouncementsForStatus(leftAnnouncements)}
-						declaredContract={
-							contractDeclarer?.playerId === leftPlayer.id
-								? contractDeclarer.contractType
-								: undefined
-						}
-						position="left"
-					/>
 					<OpponentHand
 						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
 						position="left"
+						statusSlot={
+							<PlayerStatus
+								announcements={formatAnnouncementsForStatus(leftAnnouncements)}
+								declaredContract={
+									contractDeclarer?.playerId === leftPlayer.id
+										? contractDeclarer.contractType
+										: undefined
+								}
+								position="left"
+							/>
+						}
 					/>
 				</>
 			)}
@@ -333,18 +337,20 @@ export function GameBoard() {
 						player={rightPlayer}
 						position="right"
 					/>
-					<PlayerStatus
-						announcements={formatAnnouncementsForStatus(rightAnnouncements)}
-						declaredContract={
-							contractDeclarer?.playerId === rightPlayer.id
-								? contractDeclarer.contractType
-								: undefined
-						}
-						position="right"
-					/>
 					<OpponentHand
 						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
 						position="right"
+						statusSlot={
+							<PlayerStatus
+								announcements={formatAnnouncementsForStatus(rightAnnouncements)}
+								declaredContract={
+									contractDeclarer?.playerId === rightPlayer.id
+										? contractDeclarer.contractType
+										: undefined
+								}
+								position="right"
+							/>
+						}
 					/>
 				</>
 			)}
@@ -367,19 +373,23 @@ export function GameBoard() {
 						player={bottomPlayer}
 						position="bottom"
 					/>
-					<PlayerStatus
-						announcements={formatAnnouncementsForStatus(bottomAnnouncements)}
-						declaredContract={
-							contractDeclarer?.playerId === bottomPlayer.id
-								? contractDeclarer.contractType
-								: undefined
-						}
-						position="bottom"
-					/>
 					<PlayerHand
 						activeDragCard={dragPlayedCard}
 						onPlayCardWithOrigin={handlePlayCardWithOrigin}
 						onRemoveCard={handleRemoveCard}
+						statusSlot={
+							<PlayerStatus
+								announcements={formatAnnouncementsForStatus(
+									bottomAnnouncements,
+								)}
+								declaredContract={
+									contractDeclarer?.playerId === bottomPlayer.id
+										? contractDeclarer.contractType
+										: undefined
+								}
+								position="bottom"
+							/>
+						}
 					/>
 				</>
 			)}
