@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 
 type BadgeVariant = "re" | "kontra" | "hochzeit" | "solo" | "points";
+type BadgePosition = "top" | "bottom" | "left" | "right";
 
 const VARIANT_STYLES: Record<BadgeVariant, string> = {
 	re: "bg-emerald-500",
@@ -10,15 +11,26 @@ const VARIANT_STYLES: Record<BadgeVariant, string> = {
 	points: "bg-amber-500",
 };
 
+/** Counter-rotation to keep badges upright inside rotated opponent hands */
+const POSITION_ROTATION: Record<BadgePosition, string> = {
+	top: "rotate-180",
+	left: "-rotate-90",
+	right: "rotate-90",
+	bottom: "",
+};
+
 interface AnnouncementBadgeProps {
 	variant: BadgeVariant;
 	label: string;
+	/** Position of the player hand — used to counter-rotate the badge */
+	position?: BadgePosition;
 	className?: string;
 }
 
 export function AnnouncementBadge({
 	variant,
 	label,
+	position,
 	className,
 }: AnnouncementBadgeProps) {
 	const isPill = variant === "hochzeit" || variant === "solo";
@@ -29,6 +41,7 @@ export function AnnouncementBadge({
 				"flex items-center justify-center rounded-full text-base font-bold text-white shadow-md",
 				isPill ? "px-2 py-0.5 whitespace-nowrap" : "size-8 uppercase",
 				VARIANT_STYLES[variant],
+				position && POSITION_ROTATION[position],
 				className,
 			)}
 		>

@@ -18,6 +18,7 @@ interface PlayerStatusProps {
 }
 
 export function PlayerStatus({
+	position,
 	declaredContract,
 	announcements,
 	className,
@@ -42,6 +43,7 @@ export function PlayerStatus({
 			{hasContract && (
 				<AnnouncementBadge
 					label={CONTRACT_LABELS[declaredContract] ?? declaredContract}
+					position={position}
 					variant={declaredContract === "hochzeit" ? "hochzeit" : "solo"}
 				/>
 			)}
@@ -49,6 +51,7 @@ export function PlayerStatus({
 			{hasReOrKontra && (
 				<AnnouncementBadge
 					label={announcements?.reOrKontra === "re" ? "Re" : "Ko"}
+					position={position}
 					variant={announcements?.reOrKontra === "re" ? "re" : "kontra"}
 				/>
 			)}
@@ -57,6 +60,7 @@ export function PlayerStatus({
 				<AnnouncementBadge
 					key={pa}
 					label={POINT_ANNOUNCEMENT_LABELS[pa]}
+					position={position}
 					variant="points"
 				/>
 			))}
