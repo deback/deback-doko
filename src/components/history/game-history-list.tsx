@@ -6,6 +6,17 @@ import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { GameHistorySummary } from "@/types/game-history";
 
+const CONTRACT_LABELS: Record<string, string> = {
+	hochzeit: "Hochzeit",
+	"solo-clubs": "♣ Kreuz-Solo",
+	"solo-spades": "♠ Pik-Solo",
+	"solo-hearts": "♥ Herz-Solo",
+	"solo-diamonds": "♦ Karo-Solo",
+	"solo-queens": "Damen-Solo",
+	"solo-jacks": "Buben-Solo",
+	"solo-aces": "Fleischloser",
+};
+
 interface GameHistoryListProps {
 	games: GameHistorySummary[];
 }
@@ -42,11 +53,20 @@ export function GameHistoryList({ games }: GameHistoryListProps) {
 							<span className="text-muted-foreground text-xs">
 								{formatDate(game.createdAt)}
 							</span>
-							{game.contractType === "hochzeit" && (
-								<span className="rounded-full bg-pink-500/10 px-2 py-0.5 text-pink-600 text-xs">
-									Hochzeit
-								</span>
-							)}
+							{game.contractType &&
+								game.contractType !== "normal" &&
+								CONTRACT_LABELS[game.contractType] && (
+									<span
+										className={cn(
+											"rounded-full px-2 py-0.5 text-xs",
+											game.contractType === "hochzeit"
+												? "bg-pink-500/10 text-pink-600"
+												: "bg-violet-500/10 text-violet-600",
+										)}
+									>
+										{CONTRACT_LABELS[game.contractType]}
+									</span>
+								)}
 						</div>
 
 						<div className="flex items-center gap-4">

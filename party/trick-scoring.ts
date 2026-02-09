@@ -1,9 +1,16 @@
 import { getTrickPoints, isTrump } from "../src/lib/game/rules";
-import type { Card, Suit, Trick } from "./types";
+import type { Card, Suit, Trick, TrumpMode } from "./types";
+
+const SUIT_ORDER: Record<Suit, number> = {
+	clubs: 4,
+	spades: 3,
+	hearts: 2,
+	diamonds: 1,
+};
 
 export function determineTrickWinner(
 	trick: Trick,
-	trump: Suit | "jacks" | "queens",
+	trump: TrumpMode,
 	schweinereiPlayers: string[],
 	isLastTrick = false,
 ): string {
@@ -27,7 +34,13 @@ export function determineTrickWinner(
 	);
 
 	// Sonderregel für letzten Stich: Wenn beide Herz 10 sind, gewinnt die zweite
-	if (isLastTrick) {
+	// Gilt nur wenn Herz 10 Trumpf ist (Normalspiel + Farbsolo)
+	if (
+		isLastTrick &&
+		trump !== "queens-only" &&
+		trump !== "jacks-only" &&
+		trump !== "none"
+	) {
 		const hearts10Cards = trick.cards.filter(
 			(entry) => entry.card.suit === "hearts" && entry.card.rank === "10",
 		);
@@ -61,7 +74,7 @@ export function determineTrickWinner(
 export function getCardValue(
 	card: Card,
 	leadSuit: Suit,
-	trump: Suit | "jacks" | "queens",
+	trump: TrumpMode,
 	playerId: string,
 	schweinereiPlayers: string[],
 ): number {
@@ -69,39 +82,101 @@ export function getCardValue(
 	const isLeadSuit = card.suit === leadSuit;
 
 	if (cardIsTrump) {
-		// Schweinerei: Karo-Assen sind höher als Herz 10, wenn Spieler beide hat
-		if (
-			card.suit === "diamonds" &&
-			card.rank === "ace" &&
-			schweinereiPlayers.includes(playerId)
-		) {
-			return 1200; // Höher als Herz 10 (1100)
-		}
-		// In Doppelkopf: Herz 10 ist höchster Trumpf, dann Damen, dann Buben, dann Karo
-		if (card.suit === "hearts" && card.rank === "10") return 1100;
-		if (card.rank === "queen") {
-			const queenSuitOrder = { clubs: 4, spades: 3, hearts: 2, diamonds: 1 };
-			return 1000 + queenSuitOrder[card.suit];
-		}
-		if (card.rank === "jack") {
-			const jackSuitOrder = { clubs: 4, spades: 3, hearts: 2, diamonds: 1 };
-			return 900 + jackSuitOrder[card.suit];
-		}
-		// Karo (Diamonds) ist auch Trumpf
-		if (card.suit === "diamonds") {
-			if (card.rank === "ace") return 850;
-			if (card.rank === "king") return 840;
-			if (card.rank === "10") return 830;
-			if (card.rank === "9") return 820;
+		switch (trump) {
+			case "none":
+				// Sollte nie passieren (isTrump gibt false zurück)
+				break;
+
+			case "jacks-only":
+				// Bubensolo: Nur Buben sind Trumpf
+				if (card.rank === "jack") {
+					return 900 + SUIT_ORDER[card.suit];
+				}
+				break;
+
+			case "queens-only":
+				// Damensolo: Nur Damen sind Trumpf
+				if (card.rank === "queen") {
+					return 1000 + SUIT_ORDER[card.suit];
+				}
+				break;
+
+			case "jacks":
+				// Normalspiel: Schweinerei, Herz 10, Damen, Buben, Karo
+				if (
+					card.suit === "diamonds" &&
+					card.rank === "ace" &&
+					schweinereiPlayers.includes(playerId)
+				) {
+					return 1200;
+				}
+				if (card.suit === "hearts" && card.rank === "10") return 1100;
+				if (card.rank === "queen") {
+					return 1000 + SUIT_ORDER[card.suit];
+				}
+				if (card.rank === "jack") {
+					return 900 + SUIT_ORDER[card.suit];
+				}
+				if (card.suit === "diamonds") {
+					if (card.rank === "ace") return 850;
+					if (card.rank === "10") return 840;
+					if (card.rank === "king") return 830;
+					if (card.rank === "9") return 820;
+				}
+				break;
+
+			default: {
+				// Farbsolo (trump ist eine Suit)
+				if (card.suit === "hearts" && card.rank === "10") return 1100;
+				if (card.rank === "queen") {
+					return 1000 + SUIT_ORDER[card.suit];
+				}
+				if (card.rank === "jack") {
+					return 900 + SUIT_ORDER[card.suit];
+				}
+				// Karten der gewählten Trumpffarbe
+				if (card.suit === trump) {
+					if (card.rank === "ace") return 850;
+					if (card.rank === "10") return 840;
+					if (card.rank === "king") return 830;
+					if (card.rank === "9") return 820;
+				}
+				break;
+			}
 		}
 	}
 
+	// Nicht-Trumpf / Angespieltefarbe
 	if (isLeadSuit && !cardIsTrump) {
-		if (card.rank === "ace") return 800;
-		if (card.rank === "king") return 700;
-		if (card.rank === "queen") return 600;
-		if (card.rank === "10") return 500;
-		if (card.rank === "9") return 400;
+		if (trump === "jacks-only") {
+			// Bubensolo Fehlfarben: A, 10, K, D, 9
+			if (card.rank === "ace") return 800;
+			if (card.rank === "10") return 700;
+			if (card.rank === "king") return 600;
+			if (card.rank === "queen") return 500;
+			if (card.rank === "9") return 400;
+		} else if (trump === "queens-only") {
+			// Damensolo Fehlfarben: A, 10, K, B, 9
+			if (card.rank === "ace") return 800;
+			if (card.rank === "10") return 700;
+			if (card.rank === "king") return 600;
+			if (card.rank === "jack") return 500;
+			if (card.rank === "9") return 400;
+		} else if (trump === "none") {
+			// Fleischloser Fehlfarben: A, 10, K, D, B, 9
+			if (card.rank === "ace") return 800;
+			if (card.rank === "10") return 700;
+			if (card.rank === "king") return 600;
+			if (card.rank === "queen") return 500;
+			if (card.rank === "jack") return 400;
+			if (card.rank === "9") return 300;
+		} else {
+			// Normalspiel / Farbsolo Fehlfarben: A, 10, K, 9
+			if (card.rank === "ace") return 800;
+			if (card.rank === "10") return 700;
+			if (card.rank === "king") return 600;
+			if (card.rank === "9") return 400;
+		}
 	}
 
 	return 0;

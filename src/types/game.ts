@@ -20,8 +20,10 @@ export type {
 	PointAnnouncementType,
 	Rank,
 	ReservationType,
+	SoloContractType,
 	Suit,
 	Trick,
+	TrumpMode,
 } from "./game/base";
 
 // Re-export der Sub-Interfaces (für Dokumentation und Selektoren)

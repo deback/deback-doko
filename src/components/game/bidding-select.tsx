@@ -104,12 +104,15 @@ export function BiddingSelect({
 		}
 	};
 
-	const handleHochzeitConfirm = () => {
-		onDeclareContract("hochzeit");
-	};
+	// Contract declaration state (Select + OK)
+	const contractDefault: ContractType = canDeclareHochzeit
+		? "hochzeit"
+		: "solo-diamonds";
+	const [selectedContract, setSelectedContract] =
+		useState<ContractType>(contractDefault);
 
-	const handleBackToGesund = () => {
-		onDeclareContract("normal");
+	const handleDeclareConfirm = () => {
+		onDeclareContract(selectedContract);
 	};
 
 	return (
@@ -118,32 +121,38 @@ export function BiddingSelect({
 				Vorbehaltsabfrage
 			</h3>
 
-			{/* Awaiting contract declaration (after Vorbehalt) */}
+			{/* Awaiting contract declaration (after all bids are in) */}
 			{awaitingDeclaration && (
-				<div className="flex w-full flex-col gap-3">
-					<p className="text-center text-sm">
-						Du hast Vorbehalt angesagt. Wähle dein Sonderspiel.
-					</p>
-					{canDeclareHochzeit ? (
-						<Button
-							className="w-full"
-							onClick={handleHochzeitConfirm}
-							size="lg"
+				<div className="flex w-full flex-col items-center gap-3">
+					<p className="text-center text-sm">Wähle dein Sonderspiel.</p>
+					<div className="flex w-full items-center gap-3">
+						<Select
+							onValueChange={(value) =>
+								setSelectedContract(value as ContractType)
+							}
+							value={selectedContract}
 						>
-							Hochzeit (beide ♣ Damen)
+							<SelectTrigger className="min-w-40">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{canDeclareHochzeit && (
+									<SelectItem value="hochzeit">Hochzeit</SelectItem>
+								)}
+								<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
+								<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
+								<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
+								<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
+								<SelectItem value="solo-queens">Damen-Solo</SelectItem>
+								<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
+								<SelectItem value="solo-aces">Fleischloser</SelectItem>
+								<SelectItem value="normal">Zurück zu Gesund</SelectItem>
+							</SelectContent>
+						</Select>
+						<Button onClick={handleDeclareConfirm} size="default">
+							OK
 						</Button>
-					) : (
-						<p className="text-center text-sm text-amber-400">
-							Solo-Varianten werden später hinzugefügt.
-						</p>
-					)}
-					<Button
-						className="w-full"
-						onClick={handleBackToGesund}
-						variant="outline"
-					>
-						Zurück zu Gesund
-					</Button>
+					</div>
 				</div>
 			)}
 
@@ -155,9 +164,18 @@ export function BiddingSelect({
 			)}
 			{(myBid || isReady) && !awaitingDeclaration && (
 				<p className="text-xs text-foreground/50">
-					{Object.keys(biddingPhase.bids).length >= players.length
-						? "Es geht los!"
-						: `Warte auf ${currentBidder?.name}...`}
+					{(() => {
+						const allBidsIn =
+							Object.keys(biddingPhase.bids).length >= players.length;
+						if (!allBidsIn) return `Warte auf ${currentBidder?.name}...`;
+						// All bids in — check if someone else is declaring
+						const declaringId = biddingPhase.awaitingContractDeclaration;
+						if (declaringId) {
+							const declaringPlayer = players.find((p) => p.id === declaringId);
+							return `Warte auf ${declaringPlayer?.name ?? "..."}...`;
+						}
+						return "Es geht los!";
+					})()}
 				</p>
 			)}
 

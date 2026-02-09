@@ -1,12 +1,16 @@
 import type * as Party from "partykit/server";
 import { env } from "@/env";
-import { canPlayCard, getPlayableCards, isTrump } from "../src/lib/game/rules";
+import {
+	canPlayCard,
+	contractToTrumpMode,
+	getPlayableCards,
+	isTrump,
+} from "../src/lib/game/rules";
 import { canMakeAnnouncement } from "./announcements";
 import { createDeck, dealCards } from "./deck";
 import { calculateTrickPoints, determineTrickWinner } from "./trick-scoring";
 import type {
 	AnnouncementType,
-	BiddingPhase,
 	ContractType,
 	GameEvent,
 	GameMessage,
@@ -15,7 +19,6 @@ import type {
 	PointAnnouncement,
 	PointAnnouncementType,
 	ReservationType,
-	Suit,
 	Table,
 	TableEvent,
 	TableMessage,
@@ -411,16 +414,7 @@ export default class Server implements Party.Server {
 		// Speichere das Gebot
 		gameState.biddingPhase.bids[playerId] = bid;
 
-		if (bid === "vorbehalt") {
-			// Spieler muss seinen Vorbehalt-Typ deklarieren
-			gameState.biddingPhase.awaitingContractDeclaration = playerId;
-			await this.persistGameState(gameState);
-			this.broadcastGameState(gameState);
-			this.broadcastToSpectators(gameState);
-			return;
-		}
-
-		// Gesund: Nächster Spieler
+		// Nächster Spieler (Contract-Deklaration kommt erst nach allen Bids)
 		await this.advanceBidding(gameState);
 	}
 
@@ -460,24 +454,46 @@ export default class Server implements Party.Server {
 			}
 		}
 
-		// Speichere den Contract temporär (wird bei Bidding-Ende ausgewertet)
+		// Speichere den Contract (wird bei Bidding-Ende ausgewertet)
 		gameState.biddingPhase.awaitingContractDeclaration = undefined;
+		gameState.biddingPhase.pendingContracts[playerId] = contract;
 
-		// Wenn Hochzeit gewählt, merken wir uns das im bids-Objekt mit einem Marker
-		// (Einfachheitshalber speichern wir den Contract-Typ als zusätzliches Feld)
-		(
-			gameState.biddingPhase as BiddingPhase & {
-				pendingContract?: ContractType;
-			}
-		).pendingContract = contract;
-		(
-			gameState.biddingPhase as BiddingPhase & {
-				pendingContractPlayer?: string;
-			}
-		).pendingContractPlayer = playerId;
+		// Prüfe ob noch weitere Vorbehalt-Spieler deklarieren müssen
+		const nextUndeclared = this.findNextUndeclaredVorbehalt(gameState);
+		if (nextUndeclared) {
+			gameState.biddingPhase.awaitingContractDeclaration = nextUndeclared;
+			await this.persistGameState(gameState);
+			this.broadcastGameState(gameState);
+			this.broadcastToSpectators(gameState);
+			return;
+		}
 
-		// Nächster Spieler
-		await this.advanceBidding(gameState);
+		// Alle haben deklariert — Bidding auflösen
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
+
+		setTimeout(() => {
+			this.resolveBidding(gameState);
+		}, 2000);
+	}
+
+	// Finde den nächsten Vorbehalt-Spieler der noch keinen Contract deklariert hat (in Vorhand-Reihenfolge)
+	findNextUndeclaredVorbehalt(gameState: GameState): string | undefined {
+		if (!gameState.biddingPhase) return undefined;
+		const forehandIndex = (gameState.round - 1) % gameState.players.length;
+		for (let i = 0; i < gameState.players.length; i++) {
+			const index = (forehandIndex + i) % gameState.players.length;
+			const player = gameState.players[index];
+			if (!player) continue;
+			if (
+				gameState.biddingPhase.bids[player.id] === "vorbehalt" &&
+				!gameState.biddingPhase.pendingContracts[player.id]
+			) {
+				return player.id;
+			}
+		}
+		return undefined;
 	}
 
 	async advanceBidding(gameState: GameState) {
@@ -493,6 +509,16 @@ export default class Server implements Party.Server {
 			Object.keys(gameState.biddingPhase.bids).length >=
 			gameState.players.length
 		) {
+			// Prüfe ob Vorbehalt-Spieler noch deklarieren müssen
+			const nextUndeclared = this.findNextUndeclaredVorbehalt(gameState);
+			if (nextUndeclared) {
+				gameState.biddingPhase.awaitingContractDeclaration = nextUndeclared;
+				await this.persistGameState(gameState);
+				this.broadcastGameState(gameState);
+				this.broadcastToSpectators(gameState);
+				return;
+			}
+
 			// Finalen Zustand broadcasten, damit der letzte Bid sichtbar wird
 			await this.persistGameState(gameState);
 			this.broadcastGameState(gameState);
@@ -513,30 +539,94 @@ export default class Server implements Party.Server {
 	async resolveBidding(gameState: GameState) {
 		if (!gameState.biddingPhase) return;
 
-		const biddingPhase = gameState.biddingPhase as BiddingPhase & {
-			pendingContract?: ContractType;
-			pendingContractPlayer?: string;
-		};
+		const { bids, pendingContracts } = gameState.biddingPhase;
 
-		// Prüfe ob jemand Vorbehalt hat
-		const hasVorbehalt = Object.values(biddingPhase.bids).includes("vorbehalt");
+		// Sammle alle Vorbehalt-Spieler
+		const vorbehaltPlayers = Object.entries(bids)
+			.filter(([_, bid]) => bid === "vorbehalt")
+			.map(([playerId]) => playerId);
 
-		if (
-			hasVorbehalt &&
-			biddingPhase.pendingContract === "hochzeit" &&
-			biddingPhase.pendingContractPlayer
-		) {
-			// Hochzeit wurde angesagt
-			await this.setupHochzeit(gameState, biddingPhase.pendingContractPlayer);
-		} else {
-			// Normales Spiel: Teams durch Kreuz-Dame
+		if (vorbehaltPlayers.length === 0) {
+			// Alle "gesund" - normales Spiel
 			await this.setupNormalGame(gameState);
+			return;
+		}
+
+		// Priorität: Solo > Hochzeit > Normal (zurückgezogen)
+		function contractPriority(contract: ContractType): number {
+			if (contract === "normal") return 0;
+			if (contract === "hochzeit") return 1;
+			return 2; // Alle Solo-Varianten
+		}
+
+		// Vorhand-Position für Tie-Breaking (früherer Bieter gewinnt)
+		const forehandIndex = (gameState.round - 1) % gameState.players.length;
+
+		let winningPlayerId: string | undefined;
+		let winningContract: ContractType = "normal";
+		let winningPriority = -1;
+		let winningPosition = 99;
+
+		for (const playerId of vorbehaltPlayers) {
+			const contract = pendingContracts[playerId];
+			if (!contract) continue;
+
+			const priority = contractPriority(contract);
+			const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
+			const position =
+				(playerIndex - forehandIndex + gameState.players.length) %
+				gameState.players.length;
+
+			if (
+				priority > winningPriority ||
+				(priority === winningPriority && position < winningPosition)
+			) {
+				winningPlayerId = playerId;
+				winningContract = contract;
+				winningPriority = priority;
+				winningPosition = position;
+			}
+		}
+
+		// Falls alle zurückgezogen haben
+		if (!winningPlayerId || winningContract === "normal") {
+			await this.setupNormalGame(gameState);
+			return;
+		}
+
+		if (winningContract === "hochzeit") {
+			await this.setupHochzeit(gameState, winningPlayerId);
+		} else {
+			await this.setupSolo(gameState, winningPlayerId, winningContract);
 		}
 	}
 
 	async setupNormalGame(gameState: GameState) {
 		// Teams sind bereits durch Kreuz-Dame bestimmt (in startGameRoom/restartGame)
 		gameState.contractType = "normal";
+		gameState.biddingPhase = undefined;
+
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
+	}
+
+	async setupSolo(
+		gameState: GameState,
+		soloistId: string,
+		contract: ContractType,
+	) {
+		gameState.contractType = contract;
+		gameState.trump = contractToTrumpMode(contract);
+
+		// Solo-Teams: Solist = Re (allein), alle anderen = Kontra
+		for (const player of gameState.players) {
+			gameState.teams[player.id] = player.id === soloistId ? "re" : "kontra";
+		}
+
+		// Schweinerei gilt nicht im Solo
+		gameState.schweinereiPlayers = [];
+
 		gameState.biddingPhase = undefined;
 
 		await this.persistGameState(gameState);
@@ -827,7 +917,7 @@ export default class Server implements Party.Server {
 
 		const deck = createDeck();
 		const hands = dealCards(deck, players);
-		const trump: Suit | "jacks" | "queens" = "jacks";
+		const trump = "jacks" as const;
 
 		// Prüfe, welche Spieler beide Karo-Assen haben (Schweinerei)
 		const schweinereiPlayers: string[] = [];
@@ -900,6 +990,7 @@ export default class Server implements Party.Server {
 				active: true,
 				currentBidderIndex: 0,
 				bids: {},
+				pendingContracts: {},
 			},
 			contractType: "normal",
 		};
@@ -1064,7 +1155,7 @@ export default class Server implements Party.Server {
 		// Create new deck and deal
 		const deck = createDeck();
 		const hands = dealCards(deck, players);
-		const trump: Suit | "jacks" | "queens" = "jacks";
+		const trump = "jacks" as const;
 
 		// Check for Schweinerei
 		const schweinereiPlayers: string[] = [];
@@ -1137,6 +1228,7 @@ export default class Server implements Party.Server {
 				active: true,
 				currentBidderIndex: (newRound - 1) % 4,
 				bids: {},
+				pendingContracts: {},
 			},
 			contractType: "normal",
 		};
@@ -1220,6 +1312,15 @@ export default class Server implements Party.Server {
 
 		// During bidding phase: auto-bid "gesund" for current bidder
 		if (gameState.biddingPhase?.active) {
+			// Falls ein Spieler seinen Vorbehalt deklarieren muss, auto-retract
+			if (gameState.biddingPhase.awaitingContractDeclaration) {
+				await this.handleDeclareContract(
+					gameState.biddingPhase.awaitingContractDeclaration,
+					"normal",
+					sender,
+				);
+				return;
+			}
 			const currentBidder =
 				gameState.players[gameState.biddingPhase.currentBidderIndex];
 			if (currentBidder) {

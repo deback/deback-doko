@@ -56,13 +56,27 @@ export type PointAnnouncementType = "no90" | "no60" | "no30" | "schwarz";
 
 // Vorbehaltsabfrage (Bidding) Typen
 export type ReservationType = "gesund" | "vorbehalt";
-export type ContractType = "normal" | "hochzeit";
+export type ContractType =
+	| "normal"
+	| "hochzeit"
+	| "solo-clubs"
+	| "solo-spades"
+	| "solo-hearts"
+	| "solo-diamonds"
+	| "solo-queens"
+	| "solo-jacks"
+	| "solo-aces";
+
+export type SoloContractType = Exclude<ContractType, "normal" | "hochzeit">;
+
+export type TrumpMode = Suit | "jacks" | "queens-only" | "jacks-only" | "none";
 
 export interface BiddingPhase {
 	active: boolean;
 	currentBidderIndex: number;
 	bids: Record<string, ReservationType>;
 	awaitingContractDeclaration?: string;
+	pendingContracts: Record<string, ContractType>;
 }
 
 export interface HochzeitState {
@@ -113,7 +127,7 @@ export interface GameState {
 	initialHands?: Record<string, Card[]>; // Initial hands at deal time - for game history
 	currentTrick: Trick;
 	completedTricks: Trick[];
-	trump: Suit | "jacks" | "queens";
+	trump: TrumpMode;
 	gameStarted: boolean;
 	gameEnded: boolean;
 	round: number;

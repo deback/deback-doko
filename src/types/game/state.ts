@@ -12,8 +12,8 @@ import type {
 	Card,
 	ContractType,
 	HochzeitState,
-	Suit,
 	Trick,
+	TrumpMode,
 } from "./base";
 
 // =============================================================================
@@ -85,7 +85,7 @@ export interface TricksState {
 	/** Liste der abgeschlossenen Stiche */
 	completedTricks: Trick[];
 	/** Trumpffarbe / Spielmodus */
-	trump: Suit | "jacks" | "queens";
+	trump: TrumpMode;
 }
 
 // =============================================================================

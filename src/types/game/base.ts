@@ -90,7 +90,21 @@ export interface Announcements {
 // =============================================================================
 
 export type ReservationType = "gesund" | "vorbehalt";
-export type ContractType = "normal" | "hochzeit";
+export type ContractType =
+	| "normal"
+	| "hochzeit"
+	| "solo-clubs"
+	| "solo-spades"
+	| "solo-hearts"
+	| "solo-diamonds"
+	| "solo-queens"
+	| "solo-jacks"
+	| "solo-aces";
+
+export type SoloContractType = Exclude<ContractType, "normal" | "hochzeit">;
+
+/** Trumpf-Modus: bestimmt welche Karten Trumpf sind */
+export type TrumpMode = Suit | "jacks" | "queens-only" | "jacks-only" | "none";
 
 export interface BiddingPhase {
 	active: boolean;
@@ -99,6 +113,8 @@ export interface BiddingPhase {
 	bids: Record<string, ReservationType>;
 	/** playerId der Vorbehalt-Deklaration machen muss */
 	awaitingContractDeclaration?: string;
+	/** Ausstehende Verträge (playerId -> ContractType) für Vorbehalt-Spieler */
+	pendingContracts: Record<string, ContractType>;
 }
 
 export interface HochzeitState {

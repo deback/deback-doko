@@ -3,6 +3,17 @@ import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { GameHistoryDetail } from "@/types/game-history";
 
+const CONTRACT_LABELS: Record<string, string> = {
+	hochzeit: "Hochzeit",
+	"solo-clubs": "♣ Kreuz-Solo",
+	"solo-spades": "♠ Pik-Solo",
+	"solo-hearts": "♥ Herz-Solo",
+	"solo-diamonds": "♦ Karo-Solo",
+	"solo-queens": "Damen-Solo",
+	"solo-jacks": "Buben-Solo",
+	"solo-aces": "Fleischloser",
+};
+
 interface GameSummaryProps {
 	game: GameHistoryDetail;
 }
@@ -35,11 +46,20 @@ export function GameSummary({ game }: GameSummaryProps) {
 
 			{/* Contract type badges */}
 			<div className="flex gap-2">
-				{game.contractType === "hochzeit" && (
-					<span className="rounded-full bg-pink-500/10 px-2 py-0.5 text-pink-600 text-xs">
-						Hochzeit
-					</span>
-				)}
+				{game.contractType &&
+					game.contractType !== "normal" &&
+					CONTRACT_LABELS[game.contractType] && (
+						<span
+							className={cn(
+								"rounded-full px-2 py-0.5 text-xs",
+								game.contractType === "hochzeit"
+									? "bg-pink-500/10 text-pink-600"
+									: "bg-violet-500/10 text-violet-600",
+							)}
+						>
+							{CONTRACT_LABELS[game.contractType]}
+						</span>
+					)}
 				{game.schweinereiPlayers.length > 0 && (
 					<span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-600 text-xs">
 						Schweinerei
