@@ -3,6 +3,7 @@
 import { CONTRACT_LABELS, POINT_ANNOUNCEMENT_LABELS } from "@/lib/game/labels";
 import { cn } from "@/lib/utils";
 import type { ContractType, PointAnnouncementType } from "@/types/game";
+import { AnnouncementBadge } from "./announcement-badge";
 
 interface PlayerStatusProps {
 	position: "top" | "bottom" | "left" | "right";
@@ -34,44 +35,30 @@ export function PlayerStatus({
 	return (
 		<div
 			className={cn(
-				"absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm",
+				"absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full flex items-center gap-1.5",
 				className,
 			)}
 		>
-			{/* Contract badge */}
 			{hasContract && (
-				<span
-					className={cn(
-						"rounded px-1.5 py-0.5 text-[10px] font-bold text-white whitespace-nowrap",
-						declaredContract === "hochzeit" ? "bg-pink-500" : "bg-violet-500",
-					)}
-				>
-					{CONTRACT_LABELS[declaredContract]}
-				</span>
+				<AnnouncementBadge
+					label={CONTRACT_LABELS[declaredContract] ?? declaredContract}
+					variant={declaredContract === "hochzeit" ? "hochzeit" : "solo"}
+				/>
 			)}
 
-			{/* Re/Kontra badge */}
 			{hasReOrKontra && (
-				<span
-					className={cn(
-						"rounded px-1.5 py-0.5 text-[10px] font-bold uppercase text-white",
-						announcements?.reOrKontra === "re"
-							? "bg-emerald-500"
-							: "bg-rose-500",
-					)}
-				>
-					{announcements?.reOrKontra === "re" ? "Re" : "Ko"}
-				</span>
+				<AnnouncementBadge
+					label={announcements?.reOrKontra === "re" ? "Re" : "Ko"}
+					variant={announcements?.reOrKontra === "re" ? "re" : "kontra"}
+				/>
 			)}
 
-			{/* Point announcement badges */}
 			{announcements?.pointAnnouncements?.map((pa) => (
-				<span
-					className="rounded bg-amber-500 px-1 py-0.5 text-[10px] font-semibold text-white"
+				<AnnouncementBadge
 					key={pa}
-				>
-					{POINT_ANNOUNCEMENT_LABELS[pa]}
-				</span>
+					label={POINT_ANNOUNCEMENT_LABELS[pa]}
+					variant="points"
+				/>
 			))}
 		</div>
 	);

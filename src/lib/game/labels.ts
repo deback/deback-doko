@@ -16,8 +16,8 @@ export const CONTRACT_LABELS: Record<string, string> = {
 /** Kurz-Labels für Punkt-Ansagen */
 export const POINT_ANNOUNCEMENT_LABELS: Record<PointAnnouncementType, string> =
 	{
-		no90: "K90",
-		no60: "K60",
-		no30: "K30",
+		no90: "90",
+		no60: "60",
+		no30: "30",
 		schwarz: "S",
 	};

@@ -29,10 +29,10 @@ const MIN_CARDS: Record<AnnouncementType, number> = {
 const ANNOUNCEMENT_LABELS: Record<AnnouncementType, string> = {
 	re: "Re",
 	kontra: "Kontra",
-	no90: "K90",
-	no60: "K60",
-	no30: "K30",
-	schwarz: "Schwarz",
+	no90: "90",
+	no60: "60",
+	no30: "30",
+	schwarz: "S",
 };
 
 /**
