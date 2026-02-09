@@ -20,7 +20,7 @@ export function PlayerInfo({
 	return (
 		<div
 			className={cn(
-				"z-10 absolute inline-flex items-center gap-2 rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
+				" text-balance text-nowrap z-10 absolute inline-flex items-center gap-2 rounded-t-[1.2rem] bg-primary/40 px-2 py-2 backdrop-blur-sm",
 				{
 					"ring-4 ring-primary": isCurrentTurn,
 				},
@@ -48,7 +48,7 @@ export function PlayerInfo({
 				size="xs"
 				src={player.image}
 			/>
-			<span className="font-medium text-white lg:text-base text-sm pr-1">
+			<span className=" text-white text-balance text-nowrap font-medium lg:text-base text-sm pr-1">
 				{player.name}
 			</span>
 		</div>

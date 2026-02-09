@@ -17,6 +17,19 @@
 			}
 		}
 	},
+	"linter": {
+		"rules": {
+			"nursery": {
+				"useSortedClasses": {
+					"level": "warn",
+					"fix": "safe",
+					"options": {
+						"functions": ["clsx", "cva", "cn"]
+					}
+				}
+			}
+		}
+	},
 	"files": {
 		"includes": ["**", "!src/components/ui"]
 	},

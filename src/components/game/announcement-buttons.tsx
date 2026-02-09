@@ -145,7 +145,7 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 			{isAnnouncementPossible(teamAnnouncement) && (
 				<Button
 					className={cn(
-						"h-7 px-2 text-xs font-semibold",
+						"h-7 px-2 font-semibold text-xs",
 						teamAnnouncement === "re"
 							? "bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/30"
 							: "bg-rose-600 hover:bg-rose-700 disabled:bg-rose-600/30",
