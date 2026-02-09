@@ -19,11 +19,11 @@ const POSITION_STYLES: Record<Position, string> = {
 	right: "right-0 top-1/2 -translate-y-1/2 -rotate-90 translate-x-4/5",
 };
 
-// Counter-rotation to keep status text readable inside rotated card fans
+// Counter-rotation so status text stays upright on screen
 const COUNTER_ROTATION: Record<Position, string> = {
 	top: "-rotate-180",
-	left: "-rotate-90 origin-bottom-left",
-	right: "rotate-90 origin-bottom-right -translate-x-full",
+	left: "-translate-y-1/2",
+	right: "-translate-y-full",
 };
 
 export function OpponentHand({
@@ -49,17 +49,17 @@ export function OpponentHand({
 						/>
 					);
 				})}
+				{statusSlot && (
+					<div
+						className={cn(
+							"absolute top-0 -translate-y-full left-1/2 -translate-x-1/2",
+							COUNTER_ROTATION[position],
+						)}
+					>
+						{statusSlot}
+					</div>
+				)}
 			</div>
-			{statusSlot && (
-				<div
-					className={cn(
-						"absolute top-0 -translate-y-full left-1/2 -translate-x-1/2",
-						COUNTER_ROTATION[position],
-					)}
-				>
-					{statusSlot}
-				</div>
-			)}
 		</div>
 	);
 }

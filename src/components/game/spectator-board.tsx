@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import type { GameState } from "@/types/game";
 import type { Player } from "@/types/tables";
 import { Badge } from "../ui/badge";
+import Card, { CARD_SIZE } from "./card";
 import { OpponentHand } from "./opponent-hand";
 import { PlayerInfo } from "./player-info";
 import { TrickArea } from "./trick-area";
@@ -159,10 +160,25 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 							position="bottom"
 						/>
 					</div>
-					<OpponentHand
-						cardCount={getCardCount(bottomPlayer.id)}
-						position="bottom"
-					/>
+					<div className="fixed bottom-0 left-1/2 -translate-x-1/2 translate-y-4/5 lg:translate-y-2/3">
+						<div className={`@container relative ${CARD_SIZE}`}>
+							{Array.from({ length: getCardCount(bottomPlayer.id) }).map(
+								(_, index) => {
+									const t = index - (getCardCount(bottomPlayer.id) - 1) / 2;
+									const angle = t * 1.2;
+									return (
+										<Card
+											angle={angle}
+											className="top-0 left-0 w-full h-full"
+											// biome-ignore lint/suspicious/noArrayIndexKey: spectator cards are identical
+											key={`spectator-bottom-${index}`}
+											showBack
+										/>
+									);
+								},
+							)}
+						</div>
+					</div>
 				</>
 			)}
 
