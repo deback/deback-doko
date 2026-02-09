@@ -64,22 +64,20 @@ export function useMyHand(): Card[] {
 
 /**
  * Sortierte Hand des aktuellen Spielers
+ * Nutzt previewTrumpMode (falls gesetzt) für Vorschau-Sortierung bei Solo-Auswahl
  */
 export function useSortedHand(): Card[] {
 	const hand = useMyHand();
 	const gameState = useGameStore((s) => s.gameState);
 	const currentPlayer = useGameStore((s) => s.currentPlayer);
+	const previewTrumpMode = useGameStore((s) => s.previewTrumpMode);
 
 	return useMemo(() => {
 		if (!gameState || !currentPlayer || hand.length === 0) return [];
+		const trump = previewTrumpMode ?? gameState.trump;
 		const schweinereiPlayerId = gameState.schweinereiPlayers[0] ?? null;
-		return sortHand(
-			hand,
-			gameState.trump,
-			schweinereiPlayerId,
-			currentPlayer.id,
-		);
-	}, [hand, gameState, currentPlayer]);
+		return sortHand(hand, trump, schweinereiPlayerId, currentPlayer.id);
+	}, [hand, gameState, currentPlayer, previewTrumpMode]);
 }
 
 /**
@@ -253,3 +251,5 @@ export const useSetSpectatorMode = () =>
 export const useSetConnected = () => useGameStore((s) => s.setConnected);
 export const useSetError = () => useGameStore((s) => s.setError);
 export const useSetGameActions = () => useGameStore((s) => s.setGameActions);
+export const useSetPreviewTrumpMode = () =>
+	useGameStore((s) => s.setPreviewTrumpMode);

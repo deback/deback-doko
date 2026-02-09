@@ -11,6 +11,7 @@ import type {
 	ContractType,
 	GameState,
 	ReservationType,
+	TrumpMode,
 } from "@/types/game";
 import type { Player } from "@/types/tables";
 
@@ -29,6 +30,8 @@ export interface GameStoreState {
 	isConnected: boolean;
 	/** Fehlermeldung */
 	error: string | null;
+	/** Vorschau-Trumpfmodus (für Solo-Auswahl im Bidding) */
+	previewTrumpMode: TrumpMode | null;
 }
 
 // =============================================================================
@@ -42,6 +45,7 @@ export interface GameStoreActions {
 	setSpectatorMode: (mode: boolean) => void;
 	setConnected: (connected: boolean) => void;
 	setError: (error: string | null) => void;
+	setPreviewTrumpMode: (mode: TrumpMode | null) => void;
 
 	// Game Actions (WebSocket calls, set by useGameConnection)
 	playCard: (cardId: string) => void;
@@ -77,6 +81,7 @@ export const defaultInitState: GameStoreState = {
 	isSpectator: false,
 	isConnected: false,
 	error: null,
+	previewTrumpMode: null,
 };
 
 // =============================================================================
@@ -99,6 +104,7 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 		setSpectatorMode: (isSpectator) => set({ isSpectator }),
 		setConnected: (isConnected) => set({ isConnected }),
 		setError: (error) => set({ error }),
+		setPreviewTrumpMode: (previewTrumpMode) => set({ previewTrumpMode }),
 
 		// Game Actions (no-op until set by useGameConnection)
 		playCard: () => {},

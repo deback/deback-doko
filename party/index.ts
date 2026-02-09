@@ -100,10 +100,7 @@ export default class Server implements Party.Server {
 			this.sendState(conn);
 		} else if (this.room.id.startsWith("game-")) {
 			// Handle game room - don't send state immediately, wait for get-state or spectate-game event
-			const gameState = this.games.get(this.room.id);
-			if (gameState) {
-				this.sendGameState(conn, gameState);
-			}
+			// Players will send "get-state", spectators will send "spectate-game" (which returns a sanitized view)
 		}
 	}
 
@@ -1372,11 +1369,18 @@ export default class Server implements Party.Server {
 	}
 
 	broadcastGameState(gameState: GameState) {
+		const spectators = this.spectatorConnections.get(gameState.id);
 		const message: GameMessage = {
 			type: "state",
 			state: gameState,
 		};
-		this.room.broadcast(JSON.stringify(message));
+		const messageStr = JSON.stringify(message);
+
+		for (const conn of this.room.getConnections()) {
+			// Skip spectator connections — they receive a sanitized view via broadcastToSpectators
+			if (spectators?.has(conn.id)) continue;
+			conn.send(messageStr);
+		}
 	}
 }
 

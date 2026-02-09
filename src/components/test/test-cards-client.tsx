@@ -126,7 +126,7 @@ export function HandViewClient() {
 					// X-Offset: Schiebe sie etwas zusammen
 					const xOffset = (index - (total - 1) / 2) * 30;
 
-					// Y-Offset: Bogenform (Arch)
+					// Y-Offset: Bogenform (Arc)
 					const yOffset = Math.abs(index - (total - 1) / 2) * 5;
 
 					return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Circle, Clock } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -10,7 +10,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { contractToTrumpMode } from "@/lib/game/rules";
 import { cn } from "@/lib/utils";
+import { useSetPreviewTrumpMode } from "@/stores/game-selectors";
 import type {
 	BiddingPhase,
 	Card,
@@ -105,14 +107,34 @@ export function BiddingSelect({
 	};
 
 	// Contract declaration state (Select + OK)
-	const contractDefault: ContractType = canDeclareHochzeit
-		? "hochzeit"
-		: "solo-diamonds";
-	const [selectedContract, setSelectedContract] =
-		useState<ContractType>(contractDefault);
+	const setPreviewTrumpMode = useSetPreviewTrumpMode();
+	const contractDefault = canDeclareHochzeit ? "hochzeit" : "";
+	const [selectedContract, setSelectedContract] = useState(contractDefault);
+
+	// Update preview trump mode when contract selection changes
+	const handleContractChange = useCallback(
+		(value: string) => {
+			const contract = value as ContractType;
+			setSelectedContract(contract);
+			setPreviewTrumpMode(contractToTrumpMode(contract));
+		},
+		[setPreviewTrumpMode],
+	);
+
+	// Set initial preview when entering declaration phase
+	useEffect(() => {
+		if (awaitingDeclaration && contractDefault) {
+			setPreviewTrumpMode(contractToTrumpMode(contractDefault));
+		}
+		return () => {
+			setPreviewTrumpMode(null);
+		};
+	}, [awaitingDeclaration, contractDefault, setPreviewTrumpMode]);
 
 	const handleDeclareConfirm = () => {
-		onDeclareContract(selectedContract);
+		if (!selectedContract) return;
+		setPreviewTrumpMode(null);
+		onDeclareContract(selectedContract as ContractType);
 	};
 
 	return (
@@ -120,41 +142,6 @@ export function BiddingSelect({
 			<h3 className="font-semibold font-serif text-lg hidden lg:block">
 				Vorbehaltsabfrage
 			</h3>
-
-			{/* Awaiting contract declaration (after all bids are in) */}
-			{awaitingDeclaration && (
-				<div className="flex w-full flex-col items-center gap-3">
-					<p className="text-center text-sm">Wähle dein Sonderspiel.</p>
-					<div className="flex w-full items-center gap-3">
-						<Select
-							onValueChange={(value) =>
-								setSelectedContract(value as ContractType)
-							}
-							value={selectedContract}
-						>
-							<SelectTrigger className="min-w-40">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{canDeclareHochzeit && (
-									<SelectItem value="hochzeit">Hochzeit</SelectItem>
-								)}
-								<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
-								<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
-								<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
-								<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
-								<SelectItem value="solo-queens">Damen-Solo</SelectItem>
-								<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
-								<SelectItem value="solo-aces">Fleischloser</SelectItem>
-								<SelectItem value="normal">Zurück zu Gesund</SelectItem>
-							</SelectContent>
-						</Select>
-						<Button onClick={handleDeclareConfirm} size="default">
-							OK
-						</Button>
-					</div>
-				</div>
-			)}
 
 			{/* Status message */}
 			{!myBid && !isReady && !awaitingDeclaration && (
@@ -227,6 +214,31 @@ export function BiddingSelect({
 					);
 				})}
 			</div>
+
+			{/* Awaiting contract declaration (after all bids are in) */}
+			{awaitingDeclaration && (
+				<div className="flex w-full items-center gap-3">
+					<Select onValueChange={handleContractChange} value={selectedContract}>
+						<SelectTrigger className="min-w-40">
+							<SelectValue placeholder="Wähle Sonderspiel" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="hochzeit">Hochzeit</SelectItem>
+							<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
+							<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
+							<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
+							<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
+							<SelectItem value="solo-queens">Damen-Solo</SelectItem>
+							<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
+							<SelectItem value="solo-aces">Fleischloser</SelectItem>
+						</SelectContent>
+					</Select>
+					<Button onClick={handleDeclareConfirm} size="default">
+						OK
+					</Button>
+				</div>
+			)}
+
 			{/* Form with animated collapse */}
 			<div
 				className="grid w-full transition-[grid-template-rows] duration-300 ease-in-out"
