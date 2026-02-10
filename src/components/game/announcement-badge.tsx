@@ -47,12 +47,12 @@ export function HochzeitIcon({ className }: { className?: string }) {
 		>
 			{/* Left ring: gap near upper overlap */}
 			<path
-				d="M12.52 15.8 A5.4 5.4 0 1 1 12.52 8.2"
+				d="M12.76 16.3 A5.9 5.9 0 1 1 12.76 7.7"
 				transform="rotate(50 8.5 12)"
 			/>
 			{/* Right ring: gap near lower overlap */}
 			<path
-				d="M11.48 8.2 A5.4 5.4 0 1 1 11.48 15.8"
+				d="M11.24 7.7 A5.9 5.9 0 1 1 11.24 16.3"
 				transform="rotate(50 15.5 12)"
 			/>
 		</svg>
