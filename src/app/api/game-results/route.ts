@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
 				announcements: parsed.data.announcements,
 				contractType: parsed.data.contractType,
 				schweinereiPlayers: parsed.data.schweinereiPlayers,
+				gamePoints: parsed.data.gamePoints,
 			});
 
 			// Save player results and update user stats
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
 					team: player.team,
 					won: player.won,
 					balanceChange: player.balanceChange,
+					gamePoints: player.gamePoints ?? 0,
 				});
 
 				// Update user balance and game stats

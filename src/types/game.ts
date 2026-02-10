@@ -15,6 +15,8 @@ export type {
 	CardRenderMode,
 	ContractType,
 	FullRank,
+	GamePointEntry,
+	GamePointsResult,
 	HochzeitState,
 	PointAnnouncement,
 	PointAnnouncementType,

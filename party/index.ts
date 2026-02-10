@@ -8,6 +8,7 @@ import {
 } from "../src/lib/game/rules";
 import { canMakeAnnouncement } from "./announcements";
 import { createDeck, dealCards } from "./deck";
+import { calculateGamePoints } from "./game-scoring";
 import { logger } from "./logger";
 import { gameEventSchema, tableEventSchema } from "./schemas";
 import { calculateTrickPoints, determineTrickWinner } from "./trick-scoring";
@@ -1134,6 +1135,7 @@ export default class Server implements Party.Server {
 
 			if (gameState.completedTricks.length >= 12) {
 				gameState.gameEnded = true;
+				gameState.gamePointsResult = calculateGamePoints(gameState);
 				this.saveGameResults(gameState);
 
 				await this.persistGameState(gameState);
@@ -1249,33 +1251,48 @@ export default class Server implements Party.Server {
 	}
 
 	async saveGameResults(gameState: GameState) {
-		// Berechne Re-Team-Punkte
-		let reScore = 0;
-		for (const player of gameState.players) {
-			if (gameState.teams[player.id] === "re") {
-				reScore += gameState.scores[player.id] || 0;
-			}
-		}
-		const reWins = reScore >= 121;
+		const gpr = gameState.gamePointsResult;
+		if (!gpr) return;
 
-		// Balance-Änderung: Gewinner bekommen 50 Cents (0,50 $), Verlierer verlieren 50 Cents
-		// Solo: Solo-Spieler (Re, allein) bekommt 3x, Kontra-Spieler je 1x
-		const baseChange = 50;
+		// Balance-Änderung nach DDV-Regeln: Jeder Spielpunkt = 50 Cents (0,50$)
+		// Solo (7.2.4): Solist bekommt 3x, Gegner je 1x
 		const isSolo =
 			gameState.contractType !== "normal" &&
 			gameState.contractType !== "hochzeit";
 
+		// Netto-Spielpunkte: positiv = Re gewinnt Punkte, negativ = Kontra gewinnt
+		const absGamePoints = Math.abs(gpr.netGamePoints);
+		const pointsPerPlayer = absGamePoints * 50; // Cents
+
 		const playerResults = gameState.players.map((player) => {
 			const team = gameState.teams[player.id] || "kontra";
-			const won = team === "re" ? reWins : !reWins;
-			const change = isSolo && team === "re" ? baseChange * 3 : baseChange;
+			const won = team === "re" ? gpr.reWon : gpr.kontraWon;
+
+			let balanceChange: number;
+			if (isSolo && team === "re") {
+				// Solist bekommt/verliert 3x
+				balanceChange =
+					gpr.netGamePoints > 0 ? pointsPerPlayer * 3 : -pointsPerPlayer * 3;
+			} else if (isSolo && team === "kontra") {
+				// Solo-Gegner: bekommen/verlieren 1x
+				balanceChange =
+					gpr.netGamePoints < 0 ? pointsPerPlayer : -pointsPerPlayer;
+			} else {
+				// Normal/Hochzeit: Gewinner +, Verlierer -
+				const teamWinsPoints =
+					(team === "re" && gpr.netGamePoints > 0) ||
+					(team === "kontra" && gpr.netGamePoints < 0);
+				balanceChange = teamWinsPoints ? pointsPerPlayer : -pointsPerPlayer;
+			}
+
 			return {
 				id: player.id,
 				name: player.name,
 				score: gameState.scores[player.id] || 0,
 				team,
 				won,
-				balanceChange: won ? change : -change,
+				balanceChange,
+				gamePoints: team === "re" ? gpr.netGamePoints : -gpr.netGamePoints,
 			};
 		});
 
@@ -1302,6 +1319,7 @@ export default class Server implements Party.Server {
 					announcements: gameState.announcements,
 					contractType: gameState.contractType,
 					schweinereiPlayers: gameState.schweinereiPlayers,
+					gamePoints: gpr,
 				}),
 			});
 		} catch (error) {

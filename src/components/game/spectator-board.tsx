@@ -210,38 +210,149 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 				onOpenChange={(open) => !open && handleCloseGameEndDialog()}
 				open={!!cachedEndGameState && showGameEndDialog}
 			>
-				<DialogContent>
+				<DialogContent className="max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle className="text-center text-2xl text-emerald-600">
 							Spiel beendet!
 						</DialogTitle>
 					</DialogHeader>
 					{cachedEndGameState && (
-						<div className="space-y-2">
-							{cachedEndGameState.players
-								.sort(
-									(a, b) =>
-										(cachedEndGameState.scores[b.id] || 0) -
-										(cachedEndGameState.scores[a.id] || 0),
-								)
-								.map((player, index) => (
-									<div
-										className="flex items-center justify-between gap-4"
-										key={player.id}
-									>
-										<span
-											className={cn(
-												"font-medium",
-												index === 0 && "text-yellow-600",
-											)}
-										>
-											{index + 1}. {player.name}
-										</span>
-										<span className="font-bold">
-											{cachedEndGameState.scores[player.id] || 0} Pkt.
-										</span>
-									</div>
-								))}
+						<div className="space-y-4">
+							{(() => {
+								const gpr = cachedEndGameState.gamePointsResult;
+								const reCardPoints =
+									gpr?.reCardPoints ??
+									cachedEndGameState.players
+										.filter((p) => cachedEndGameState.teams[p.id] === "re")
+										.reduce(
+											(sum, p) => sum + (cachedEndGameState.scores[p.id] || 0),
+											0,
+										);
+								const kontraCardPoints =
+									gpr?.kontraCardPoints ??
+									cachedEndGameState.players
+										.filter((p) => cachedEndGameState.teams[p.id] === "kontra")
+										.reduce(
+											(sum, p) => sum + (cachedEndGameState.scores[p.id] || 0),
+											0,
+										);
+								const reWon = gpr?.reWon ?? reCardPoints > kontraCardPoints;
+								const kontraWon = gpr?.kontraWon ?? !reWon;
+
+								return (
+									<>
+										{/* Kartenpunkte */}
+										<div className="flex gap-2">
+											<div
+												className={cn(
+													"flex-1 rounded-lg p-3",
+													reWon ? "bg-emerald-500/20" : "bg-muted",
+												)}
+											>
+												<div className="mb-1 flex items-center justify-between">
+													<span
+														className={cn(
+															"font-bold text-sm",
+															reWon && "text-emerald-600",
+														)}
+													>
+														Re {reWon && "\u{1F3C6}"}
+													</span>
+													<span className="font-bold">{reCardPoints} Pkt.</span>
+												</div>
+												<div className="text-muted-foreground text-xs">
+													{cachedEndGameState.players
+														.filter(
+															(p) => cachedEndGameState.teams[p.id] === "re",
+														)
+														.map((p) => p.name)
+														.join(", ")}
+												</div>
+											</div>
+											<div
+												className={cn(
+													"flex-1 rounded-lg p-3",
+													kontraWon ? "bg-emerald-500/20" : "bg-muted",
+												)}
+											>
+												<div className="mb-1 flex items-center justify-between">
+													<span
+														className={cn(
+															"font-bold text-sm",
+															kontraWon && "text-emerald-600",
+														)}
+													>
+														Kontra {kontraWon && "\u{1F3C6}"}
+													</span>
+													<span className="font-bold">
+														{kontraCardPoints} Pkt.
+													</span>
+												</div>
+												<div className="text-muted-foreground text-xs">
+													{cachedEndGameState.players
+														.filter(
+															(p) =>
+																cachedEndGameState.teams[p.id] === "kontra",
+														)
+														.map((p) => p.name)
+														.join(", ")}
+												</div>
+											</div>
+										</div>
+
+										{/* Spielpunkte */}
+										{gpr && gpr.points.length > 0 && (
+											<div className="space-y-1">
+												<h4 className="font-semibold text-sm">Spielpunkte</h4>
+												<div className="space-y-0.5 rounded-lg border p-2">
+													{gpr.points.map(
+														(
+															point: {
+																label: string;
+																team: "re" | "kontra";
+																value: number;
+															},
+															idx: number,
+														) => (
+															<div
+																className="flex items-center justify-between text-sm"
+																key={`${point.label}-${point.team}-${idx}`}
+															>
+																<span className="text-muted-foreground">
+																	{point.label}
+																</span>
+																<span
+																	className={cn(
+																		"font-medium",
+																		point.team === "re"
+																			? "text-blue-600"
+																			: "text-orange-600",
+																	)}
+																>
+																	{point.team === "re" ? "Re" : "Ko"} +
+																	{point.value}
+																</span>
+															</div>
+														),
+													)}
+													<div className="mt-1 flex items-center justify-between border-t pt-1 font-bold text-sm">
+														<span>Gesamt</span>
+														<span>
+															{gpr.netGamePoints > 0
+																? "Re"
+																: gpr.netGamePoints < 0
+																	? "Kontra"
+																	: "Unentschieden"}{" "}
+															{gpr.netGamePoints !== 0 &&
+																`${Math.abs(gpr.netGamePoints)} Punkt${Math.abs(gpr.netGamePoints) !== 1 ? "e" : ""}`}
+														</span>
+													</div>
+												</div>
+											</div>
+										)}
+									</>
+								);
+							})()}
 						</div>
 					)}
 				</DialogContent>

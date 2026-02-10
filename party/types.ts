@@ -117,6 +117,23 @@ export interface Trick {
 	points?: number;
 }
 
+export interface GamePointEntry {
+	label: string; // e.g. "Gewonnen", "Keine 90", "Doppelkopf"
+	team: "re" | "kontra"; // which team earns this point
+	value: number; // 1 or 2 (Re/Kontra announcement = 2)
+}
+
+export interface GamePointsResult {
+	points: GamePointEntry[];
+	reWon: boolean;
+	kontraWon: boolean;
+	reCardPoints: number;
+	kontraCardPoints: number;
+	totalReGamePoints: number;
+	totalKontraGamePoints: number;
+	netGamePoints: number; // positive = Re wins points, negative = Kontra wins
+}
+
 export interface GameState {
 	id: string;
 	tableId: string;
@@ -141,6 +158,7 @@ export interface GameState {
 	biddingPhase?: BiddingPhase;
 	contractType: ContractType;
 	hochzeit?: HochzeitState;
+	gamePointsResult?: GamePointsResult; // DDV-Spielpunkte nach Spielende
 }
 
 export type GameEvent =

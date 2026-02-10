@@ -11,6 +11,7 @@ import type {
 	BiddingPhase,
 	Card,
 	ContractType,
+	GamePointsResult,
 	HochzeitState,
 	Trick,
 	TrumpMode,
@@ -72,6 +73,8 @@ export interface TeamsState {
 	scores: Record<string, number>;
 	/** Spieler mit Schweinerei (beide Karo-Asse) */
 	schweinereiPlayers: string[];
+	/** DDV-Spielpunkte nach Spielende */
+	gamePointsResult?: GamePointsResult;
 }
 
 // =============================================================================

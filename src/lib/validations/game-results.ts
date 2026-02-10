@@ -7,6 +7,7 @@ const playerResultSchema = z.object({
 	team: z.enum(["re", "kontra"]),
 	won: z.boolean(),
 	balanceChange: z.number(),
+	gamePoints: z.number().optional(),
 });
 
 export const gameResultPayloadSchema = z.object({
@@ -18,6 +19,7 @@ export const gameResultPayloadSchema = z.object({
 	announcements: z.unknown().optional(),
 	contractType: z.string().optional(),
 	schweinereiPlayers: z.unknown().optional(),
+	gamePoints: z.unknown().optional(),
 });
 
 export type GameResultPayload = z.infer<typeof gameResultPayloadSchema>;

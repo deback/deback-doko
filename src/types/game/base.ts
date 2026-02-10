@@ -126,3 +126,24 @@ export interface HochzeitState {
 	/** Spätestens im 3. Stich muss Partner gefunden sein */
 	clarificationTrickNumber: number;
 }
+
+// =============================================================================
+// Spielpunkte (DDV-Turnierregeln Abschnitt 7)
+// =============================================================================
+
+export interface GamePointEntry {
+	label: string;
+	team: "re" | "kontra";
+	value: number;
+}
+
+export interface GamePointsResult {
+	points: GamePointEntry[];
+	reWon: boolean;
+	kontraWon: boolean;
+	reCardPoints: number;
+	kontraCardPoints: number;
+	totalReGamePoints: number;
+	totalKontraGamePoints: number;
+	netGamePoints: number;
+}

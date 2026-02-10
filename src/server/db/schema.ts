@@ -104,6 +104,7 @@ export const gameResult = createTable("game_result", {
 	announcements: jsonb("announcements"),
 	contractType: text("contract_type"),
 	schweinereiPlayers: jsonb("schweinerei_players"),
+	gamePoints: jsonb("game_points"),
 	createdAt: timestamp("created_at")
 		.$defaultFn(() => new Date())
 		.notNull(),
@@ -124,6 +125,7 @@ export const playerGameResult = createTable(
 		team: d.text().notNull(), // "re" | "kontra"
 		won: d.boolean().notNull(),
 		balanceChange: d.integer("balance_change").notNull(),
+		gamePoints: d.integer("game_points").notNull().default(0),
 	}),
 	(t) => [
 		primaryKey({ columns: [t.gameResultId, t.userId] }),
