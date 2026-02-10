@@ -157,7 +157,7 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 	};
 
 	return (
-		<div className={cn("flex items-center gap-1.5", className)}>
+		<div className={cn("flex flex-col items-center gap-1.5", className)}>
 			<Select
 				onValueChange={(v) => setSelected(v as AnnouncementType)}
 				value={effectiveSelected}

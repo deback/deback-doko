@@ -15,6 +15,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
 import {
@@ -511,31 +512,34 @@ export function GameBoard() {
 
 			{/* Auto-Play & Reset Game Buttons (Development only, nicht für Zuschauer) */}
 			{!isSpectator && process.env.NODE_ENV === "development" && (
-				<div className="fixed bottom-4 left-4 z-50 flex items-center gap-2">
-					<button
-						className="flex items-center gap-2 rounded-full bg-amber-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-amber-600"
+				<div className="fixed bottom-4 left-4 z-50 flex items-center gap-1">
+					<Button
+						className="flex size-8 items-center gap-2 rounded-full bg-amber-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-amber-600"
 						onClick={autoPlay}
-						type="button"
+						size="icon"
+						variant="ghost"
 					>
-						<Bot className="h-4 w-4" />
-						Auto-Play
-					</button>
-					<button
-						className="flex items-center gap-2 rounded-full bg-purple-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-purple-600"
+						<Bot className="size-4" />
+						<span className="hidden">Auto-Play</span>
+					</Button>
+					<Button
+						className="flex size-8 items-center justify-center gap-2 rounded-full bg-purple-500/90 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-purple-600"
 						onClick={autoPlayAll}
-						type="button"
+						size="icon"
+						variant="ghost"
 					>
-						<FastForward className="h-4 w-4" />
-						Alle spielen
-					</button>
-					<button
-						className="flex items-center gap-2 rounded-full bg-slate-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-slate-600"
+						<FastForward className="size-4" />
+						<span className="hidden">Alle spielen</span>
+					</Button>
+					<Button
+						className="flex size-8 items-center gap-2 rounded-full bg-slate-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-slate-600"
 						onClick={resetGame}
-						type="button"
+						size="icon"
+						variant="ghost"
 					>
 						<RotateCcw className="h-4 w-4" />
-						Reset
-					</button>
+						<span className="hidden">Reset</span>
+					</Button>
 				</div>
 			)}
 

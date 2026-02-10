@@ -69,10 +69,13 @@
 	--game-solo-background: var(--color-violet-700);
 
 	--game-kontra: var(--color-rose-600);
+	--game-kontra-background: var(--color-rose-600);
 
 	--game-hochzeit: var(--color-pink-600);
+	--game-hochzeit-background: var(--color-pink-600);
 
 	--game-points: var(--color-amber-600);
+	--game-points-background: var(--color-amber-600);
 }
 
 .dark {
