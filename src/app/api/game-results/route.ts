@@ -1,27 +1,8 @@
 import { sql } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
+import { gameResultPayloadSchema } from "@/lib/validations/game-results";
 import { db } from "@/server/db";
 import { gameResult, playerGameResult, user } from "@/server/db/schema";
-
-interface PlayerResult {
-	id: string;
-	name: string;
-	score: number;
-	team: "re" | "kontra";
-	won: boolean;
-	balanceChange: number;
-}
-
-interface GameResultPayload {
-	gameId: string;
-	tableId: string;
-	players: PlayerResult[];
-	tricks?: unknown;
-	initialHands?: unknown;
-	announcements?: unknown;
-	contractType?: string;
-	schweinereiPlayers?: unknown;
-}
 
 export async function POST(request: NextRequest) {
 	// Verify API secret
@@ -32,41 +13,50 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
 
+	const parsed = gameResultPayloadSchema.safeParse(await request.json());
+
+	if (!parsed.success) {
+		return NextResponse.json(
+			{ error: "Invalid game result payload" },
+			{ status: 400 },
+		);
+	}
+
 	try {
-		const body: GameResultPayload = await request.json();
-
-		// Save game result
-		await db.insert(gameResult).values({
-			id: body.gameId,
-			tableId: body.tableId,
-			tricks: body.tricks,
-			initialHands: body.initialHands,
-			announcements: body.announcements,
-			contractType: body.contractType,
-			schweinereiPlayers: body.schweinereiPlayers,
-		});
-
-		// Save player results and update user stats
-		for (const player of body.players) {
-			await db.insert(playerGameResult).values({
-				gameResultId: body.gameId,
-				userId: player.id,
-				score: player.score,
-				team: player.team,
-				won: player.won,
-				balanceChange: player.balanceChange,
+		await db.transaction(async (tx) => {
+			// Save game result
+			await tx.insert(gameResult).values({
+				id: parsed.data.gameId,
+				tableId: parsed.data.tableId,
+				tricks: parsed.data.tricks,
+				initialHands: parsed.data.initialHands,
+				announcements: parsed.data.announcements,
+				contractType: parsed.data.contractType,
+				schweinereiPlayers: parsed.data.schweinereiPlayers,
 			});
 
-			// Update user balance and game stats
-			await db
-				.update(user)
-				.set({
-					balance: sql`${user.balance} + ${player.balanceChange}`,
-					gamesPlayed: sql`${user.gamesPlayed} + 1`,
-					gamesWon: player.won ? sql`${user.gamesWon} + 1` : user.gamesWon,
-				})
-				.where(sql`${user.id} = ${player.id}`);
-		}
+			// Save player results and update user stats
+			for (const player of parsed.data.players) {
+				await tx.insert(playerGameResult).values({
+					gameResultId: parsed.data.gameId,
+					userId: player.id,
+					score: player.score,
+					team: player.team,
+					won: player.won,
+					balanceChange: player.balanceChange,
+				});
+
+				// Update user balance and game stats
+				await tx
+					.update(user)
+					.set({
+						balance: sql`${user.balance} + ${player.balanceChange}`,
+						gamesPlayed: sql`${user.gamesPlayed} + 1`,
+						gamesWon: player.won ? sql`${user.gamesWon} + 1` : user.gamesWon,
+					})
+					.where(sql`${user.id} = ${player.id}`);
+			}
+		});
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
