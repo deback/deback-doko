@@ -533,7 +533,12 @@ export function GameBoard() {
 									cachedEndGameState.contractType !== "normal" &&
 									cachedEndGameState.contractType !== "hochzeit";
 								const absPoints = Math.abs(gpr?.netGamePoints ?? 0);
-								const pointsPerPlayer = absPoints * 0.5;
+								const pointsPerPlayer = absPoints * 50; // Cents
+
+								// Determine current player's team for personalized view
+								const myTeam = currentPlayer
+									? cachedEndGameState.teams[currentPlayer.id]
+									: undefined;
 
 								return (
 									<>
@@ -609,54 +614,70 @@ export function GameBoard() {
 																value: number;
 															},
 															idx: number,
-														) => (
-															<div
-																className="flex items-center justify-between text-sm"
-																key={`${point.label}-${point.team}-${idx}`}
-															>
-																<span className="text-muted-foreground">
-																	{point.label}
-																</span>
+														) => {
+															const isMyPoint = point.team === myTeam;
+															return (
+																<div
+																	className="flex items-center justify-between text-sm"
+																	key={`${point.label}-${point.team}-${idx}`}
+																>
+																	<span className="text-muted-foreground">
+																		{point.label}
+																	</span>
+																	<span
+																		className={cn(
+																			"font-medium",
+																			isMyPoint
+																				? "text-emerald-600"
+																				: "text-red-500",
+																		)}
+																	>
+																		{isMyPoint ? "+" : "\u2212"}
+																		{point.value}
+																	</span>
+																</div>
+															);
+														},
+													)}
+													{(() => {
+														const myPoints =
+															myTeam === "re"
+																? gpr.netGamePoints
+																: -gpr.netGamePoints;
+														return (
+															<div className="mt-1 flex items-center justify-between border-t pt-1 font-bold text-sm">
+																<span>Gesamt</span>
 																<span
 																	className={cn(
-																		"font-medium",
-																		point.team === "re"
-																			? "text-blue-600"
-																			: "text-orange-600",
+																		myPoints > 0
+																			? "text-emerald-600"
+																			: myPoints < 0
+																				? "text-red-500"
+																				: "",
 																	)}
 																>
-																	{point.team === "re" ? "Re" : "Ko"} +
-																	{point.value}
+																	{myPoints > 0 ? "+" : ""}
+																	{myPoints}{" "}
+																	{Math.abs(myPoints) === 1
+																		? "Punkt"
+																		: "Punkte"}
 																</span>
 															</div>
-														),
-													)}
-													<div className="mt-1 flex items-center justify-between border-t pt-1 font-bold text-sm">
-														<span>Gesamt</span>
-														<span>
-															{gpr.netGamePoints > 0
-																? "Re"
-																: gpr.netGamePoints < 0
-																	? "Kontra"
-																	: "Unentschieden"}{" "}
-															{gpr.netGamePoints !== 0 &&
-																`${Math.abs(gpr.netGamePoints)} Punkt${Math.abs(gpr.netGamePoints) !== 1 ? "e" : ""}`}
-														</span>
-													</div>
+														);
+													})()}
 												</div>
 											</div>
 										)}
 
-										{/* Geldbeträge pro Spieler */}
-										{gpr && (
+										{/* Abrechnung - nur eigener Betrag */}
+										{gpr && currentPlayer && (
 											<div className="space-y-1">
 												<h4 className="font-semibold text-sm">
 													Abrechnung (je Spielpunkt 0,50$)
 												</h4>
-												<div className="space-y-0.5 rounded-lg border p-2">
-													{cachedEndGameState.players.map((player) => {
-														const team =
-															cachedEndGameState.teams[player.id] || "kontra";
+												<div className="rounded-lg border p-2">
+													{(() => {
+														const team = myTeam || "kontra";
 														let amount: number;
 														if (isSolo && team === "re") {
 															amount =
@@ -676,16 +697,8 @@ export function GameBoard() {
 																: -pointsPerPlayer;
 														}
 														return (
-															<div
-																className="flex items-center justify-between text-sm"
-																key={player.id}
-															>
-																<span>
-																	{player.name}
-																	<span className="ml-1 text-muted-foreground text-xs">
-																		({team === "re" ? "Re" : "Ko"})
-																	</span>
-																</span>
+															<div className="flex items-center justify-between text-sm">
+																<span>{currentPlayer.name}</span>
 																<span
 																	className={cn(
 																		"font-bold",
@@ -701,7 +714,7 @@ export function GameBoard() {
 																</span>
 															</div>
 														);
-													})}
+													})()}
 												</div>
 											</div>
 										)}

@@ -108,7 +108,7 @@ export function calculateGamePoints(gameState: GameState): GamePointsResult {
 	// (c) Re-Punktansagen
 	for (const ann of rePointAnnouncements) {
 		points.push({
-			label: `Re: ${announcementLabel(ann)}`,
+			label: `${announcementLabel(ann)} angesagt`,
 			team: reWon ? "re" : "kontra",
 			value: 1,
 		});
@@ -117,7 +117,7 @@ export function calculateGamePoints(gameState: GameState): GamePointsResult {
 	// (d) Kontra-Punktansagen
 	for (const ann of kontraPointAnnouncements) {
 		points.push({
-			label: `Kontra: ${announcementLabel(ann)}`,
+			label: `${announcementLabel(ann)} angesagt`,
 			team: kontraWon ? "kontra" : "re",
 			value: 1,
 		});
