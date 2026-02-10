@@ -293,7 +293,7 @@ export function GameEndDialog({
 						<div className="flex gap-2 text-xs">
 							<div
 								className={cn(
-									"flex-1 rounded-md px-2 py-1.5 transition-colors duration-500",
+									"min-w-0 flex-1 rounded-md px-2 py-1.5 transition-colors duration-500",
 									animationDone && gpr?.reWon
 										? "bg-emerald-500/20"
 										: "bg-muted",
@@ -313,13 +313,16 @@ export function GameEndDialog({
 								<div className="text-muted-foreground">
 									{gameState.players
 										.filter((p) => gameState.teams[p.id] === "re")
-										.map((p) => p.name)
-										.join(", ")}
+										.map((p) => (
+											<div key={p.id} className="truncate">
+												{p.name}
+											</div>
+										))}
 								</div>
 							</div>
 							<div
 								className={cn(
-									"flex-1 rounded-md px-2 py-1.5 transition-colors duration-500",
+									"min-w-0 flex-1 rounded-md px-2 py-1.5 transition-colors duration-500",
 									animationDone && gpr?.kontraWon
 										? "bg-emerald-500/20"
 										: "bg-muted",
@@ -339,8 +342,11 @@ export function GameEndDialog({
 								<div className="text-muted-foreground">
 									{gameState.players
 										.filter((p) => gameState.teams[p.id] === "kontra")
-										.map((p) => p.name)
-										.join(", ")}
+										.map((p) => (
+											<div key={p.id} className="truncate">
+												{p.name}
+											</div>
+										))}
 								</div>
 							</div>
 						</div>
