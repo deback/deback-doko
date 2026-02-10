@@ -50,3 +50,14 @@ export const POINT_ANNOUNCEMENT_LABELS: Record<PointAnnouncementType, string> =
 		no30: "30",
 		schwarz: "S",
 	};
+
+/** Tooltip-Labels für Punkt-Ansagen */
+export const POINT_ANNOUNCEMENT_TOOLTIPS: Record<
+	PointAnnouncementType,
+	string
+> = {
+	no90: "Keine 90",
+	no60: "Keine 60",
+	no30: "Keine 30",
+	schwarz: "Schwarz",
+};

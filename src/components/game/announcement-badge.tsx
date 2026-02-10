@@ -5,7 +5,13 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-type BadgeVariant = "re" | "kontra" | "hochzeit" | "solo" | "points";
+type BadgeVariant =
+	| "re"
+	| "kontra"
+	| "hochzeit"
+	| "solo"
+	| "points"
+	| "schwarz";
 type BadgePosition = "top" | "bottom" | "left" | "right";
 
 const VARIANT_STYLES: Record<BadgeVariant, string> = {
@@ -14,6 +20,7 @@ const VARIANT_STYLES: Record<BadgeVariant, string> = {
 	hochzeit: "bg-game-hochzeit-background",
 	solo: "bg-game-solo-background",
 	points: "bg-game-points-background",
+	schwarz: "bg-black",
 };
 
 /** Counter-rotation to keep badges upright inside rotated opponent hands */
@@ -44,7 +51,7 @@ export function AnnouncementBadge({
 	const badge = (
 		<span
 			className={cn(
-				"flex size-7 items-center justify-center rounded-full font-bold text-base text-white shadow-lg",
+				"flex size-7 select-none items-center justify-center rounded-full font-bold text-base text-white shadow-lg",
 				VARIANT_STYLES[variant],
 				position && POSITION_ROTATION[position],
 				className,

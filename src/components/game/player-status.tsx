@@ -4,6 +4,7 @@ import {
 	getContractLabels,
 	getContractTooltips,
 	POINT_ANNOUNCEMENT_LABELS,
+	POINT_ANNOUNCEMENT_TOOLTIPS,
 } from "@/lib/game/labels";
 import { useCardDesign } from "@/lib/hooks/use-card-design";
 import { cn } from "@/lib/utils";
@@ -60,8 +61,9 @@ export function PlayerStatus({
 
 			{hasReOrKontra && (
 				<AnnouncementBadge
-					label={announcements?.reOrKontra === "re" ? "Re" : "Ko"}
+					label={announcements?.reOrKontra === "re" ? "RE" : "Ko"}
 					position={position}
+					tooltip={announcements?.reOrKontra === "re" ? "Re" : "Kontra"}
 					variant={announcements?.reOrKontra === "re" ? "re" : "kontra"}
 				/>
 			)}
@@ -71,7 +73,8 @@ export function PlayerStatus({
 					key={pa}
 					label={POINT_ANNOUNCEMENT_LABELS[pa]}
 					position={position}
-					variant="points"
+					tooltip={POINT_ANNOUNCEMENT_TOOLTIPS[pa]}
+					variant={pa === "schwarz" ? "schwarz" : "points"}
 				/>
 			))}
 		</div>

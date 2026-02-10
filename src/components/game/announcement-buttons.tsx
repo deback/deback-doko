@@ -1,6 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
 	useAnnounce,
@@ -25,22 +33,24 @@ const MIN_CARDS: Record<AnnouncementType, number> = {
 	schwarz: 7,
 };
 
-// Labels für Ansagen
-const ANNOUNCEMENT_LABELS: Record<AnnouncementType, string> = {
+// Labels für Select-Optionen
+const ANNOUNCEMENT_SELECT_LABELS: Record<AnnouncementType, string> = {
 	re: "Re",
 	kontra: "Kontra",
-	no90: "90",
-	no60: "60",
-	no30: "30",
-	schwarz: "S",
+	no90: "Keine 90",
+	no60: "Keine 60",
+	no30: "Keine 30",
+	schwarz: "Schwarz",
 };
 
 /**
- * AnnouncementButtons - Buttons für Re/Kontra und Punkt-Ansagen
+ * AnnouncementButtons - Select + "Ansagen"-Button für Re/Kontra und Punkt-Ansagen
  *
  * Verwendet Store-Selektoren für Game-State.
  */
 export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
+	const [selected, setSelected] = useState<AnnouncementType | "">("");
+
 	// Store Selectors
 	const gameState = useGameState();
 	const currentPlayer = useCurrentPlayer();
@@ -119,64 +129,53 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 		return true;
 	};
 
-	// Prüfe welche Ansagen prinzipiell noch gemacht werden können (für UI)
-	// Alle Buttons sollen sichtbar sein, solange sie nicht bereits gemacht wurden
-	const isAnnouncementPossible = (announcement: AnnouncementType): boolean => {
-		if (announcement === "re" || announcement === "kontra") {
-			if (announcement !== teamAnnouncement) return false;
-			return !teamHasAnnounced;
-		}
-		// Punkt-Ansagen - nur ausblenden wenn bereits gemacht
-		if (hasPointAnnouncement(announcement)) return false;
-		return true;
-	};
-
-	// Zeige nur relevante Buttons
-	const pointAnnouncements: AnnouncementType[] = [
+	// Berechne verfügbare Ansagen
+	const allAnnouncements: AnnouncementType[] = [
+		teamAnnouncement,
 		"no90",
 		"no60",
 		"no30",
 		"schwarz",
 	];
+	const availableAnnouncements = allAnnouncements.filter(canAnnounce);
+
+	// Keine Ansagen möglich → nichts anzeigen
+	if (availableAnnouncements.length === 0) {
+		return null;
+	}
+
+	// Oberste Ansage immer vorauswählen (auch nach Ansage oder wenn Auswahl ungültig wird)
+	const effectiveSelected =
+		selected && availableAnnouncements.includes(selected)
+			? selected
+			: availableAnnouncements[0];
+
+	const handleAnnounce = () => {
+		if (!effectiveSelected) return;
+		announce(effectiveSelected);
+		setSelected("");
+	};
 
 	return (
-		<div className={cn("flex items-center gap-1", className)}>
-			{/* Re/Kontra Button */}
-			{isAnnouncementPossible(teamAnnouncement) && (
-				<Button
-					className={cn(
-						"h-7 px-2 font-semibold text-xs",
-						teamAnnouncement === "re"
-							? "bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/30"
-							: "bg-rose-600 hover:bg-rose-700 disabled:bg-rose-600/30",
-					)}
-					disabled={!canAnnounce(teamAnnouncement)}
-					onClick={() => announce(teamAnnouncement)}
-					size="sm"
-					variant={canAnnounce(teamAnnouncement) ? "default" : "outline"}
-				>
-					{ANNOUNCEMENT_LABELS[teamAnnouncement]}
-				</Button>
-			)}
-
-			{/* Punkt-Ansagen (nur wenn Re/Kontra angesagt) */}
-			{teamHasAnnounced &&
-				pointAnnouncements.map((announcement) => {
-					if (!isAnnouncementPossible(announcement)) return null;
-					const canMake = canAnnounce(announcement);
-					return (
-						<Button
-							className="h-7 px-2 text-xs"
-							disabled={!canMake}
-							key={announcement}
-							onClick={() => announce(announcement)}
-							size="sm"
-							variant={canMake ? "secondary" : "outline"}
-						>
-							{ANNOUNCEMENT_LABELS[announcement]}
-						</Button>
-					);
-				})}
+		<div className={cn("flex items-center gap-1.5", className)}>
+			<Select
+				onValueChange={(v) => setSelected(v as AnnouncementType)}
+				value={effectiveSelected}
+			>
+				<SelectTrigger className="bg-background" size="sm">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{availableAnnouncements.map((a) => (
+						<SelectItem key={a} value={a}>
+							{ANNOUNCEMENT_SELECT_LABELS[a]}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+			<Button onClick={handleAnnounce} size="sm">
+				Ansagen
+			</Button>
 		</div>
 	);
 }
