@@ -419,7 +419,9 @@ export function GameBoard() {
 											: undefined
 									}
 									position="bottom"
-								/>
+								>
+									{!isBiddingActive && <AnnouncementButtons />}
+								</PlayerStatus>
 							}
 						/>
 					)}
@@ -503,11 +505,6 @@ export function GameBoard() {
 						Zuschauer-Modus
 					</Badge>
 				</div>
-			)}
-
-			{/* Ansagen-Buttons (nicht während Vorbehaltsabfrage, nicht für Zuschauer) */}
-			{!isSpectator && !isBiddingActive && (
-				<AnnouncementButtons className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2" />
 			)}
 
 			{/* Auto-Play & Reset Game Buttons (Development only, nicht für Zuschauer) */}

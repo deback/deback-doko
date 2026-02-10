@@ -1,5 +1,6 @@
 "use client";
 
+import { Speech } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,7 @@ import {
 	useMyHand,
 	useMyTeam,
 } from "@/stores/game-selectors";
-import type { AnnouncementType } from "@/types/game";
+import type { AnnouncementType, PointAnnouncementType } from "@/types/game";
 
 interface AnnouncementButtonsProps {
 	className?: string;
@@ -33,23 +34,29 @@ const MIN_CARDS: Record<AnnouncementType, number> = {
 	schwarz: 7,
 };
 
-// Labels für Select-Optionen
-const ANNOUNCEMENT_SELECT_LABELS: Record<AnnouncementType, string> = {
-	re: "Re",
-	kontra: "Kontra",
+// Labels für Select-Optionen (lang)
+const POINT_LABELS: Record<PointAnnouncementType, string> = {
 	no90: "Keine 90",
 	no60: "Keine 60",
 	no30: "Keine 30",
 	schwarz: "Schwarz",
 };
 
+// Kurz-Labels für kleine Screens
+const POINT_SHORT_LABELS: Record<PointAnnouncementType, string> = {
+	no90: "K90",
+	no60: "K60",
+	no30: "K30",
+	schwarz: "SW",
+};
+
 /**
- * AnnouncementButtons - Select + "Ansagen"-Button für Re/Kontra und Punkt-Ansagen
+ * AnnouncementButtons - Re/Kontra Button + Select für Punkt-Ansagen
  *
  * Verwendet Store-Selektoren für Game-State.
  */
 export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
-	const [selected, setSelected] = useState<AnnouncementType | "">("");
+	const [selected, setSelected] = useState<PointAnnouncementType | "">("");
 
 	// Store Selectors
 	const gameState = useGameState();
@@ -100,9 +107,7 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 		if (cardCount < minCards) return false;
 
 		if (announcement === "re" || announcement === "kontra") {
-			// Kann nur eigenes Team ansagen
 			if (announcement !== teamAnnouncement) return false;
-			// Bereits angesagt?
 			return !teamHasAnnounced;
 		}
 
@@ -118,7 +123,6 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 		for (let i = 0; i < requestedIndex; i++) {
 			const skipped = order[i];
 			if (skipped && !hasPointAnnouncement(skipped)) {
-				// Diese Ansage wird übersprungen - prüfe ob genug Karten
 				const skippedMinCards = MIN_CARDS[skipped];
 				if (cardCount < skippedMinCards) {
 					return false;
@@ -129,53 +133,73 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 		return true;
 	};
 
-	// Berechne verfügbare Ansagen
-	const allAnnouncements: AnnouncementType[] = [
-		teamAnnouncement,
+	// Re/Kontra Button
+	const canAnnounceTeam = canAnnounce(teamAnnouncement);
+
+	// Verfügbare Punkt-Ansagen für Select
+	const allPointAnnouncements: PointAnnouncementType[] = [
 		"no90",
 		"no60",
 		"no30",
 		"schwarz",
 	];
-	const availableAnnouncements = allAnnouncements.filter(canAnnounce);
+	const availablePoints = allPointAnnouncements.filter(canAnnounce);
 
-	// Keine Ansagen möglich → nichts anzeigen
-	if (availableAnnouncements.length === 0) {
-		return null;
-	}
-
-	// Oberste Ansage immer vorauswählen (auch nach Ansage oder wenn Auswahl ungültig wird)
+	// Oberste Punkt-Ansage vorauswählen
 	const effectiveSelected =
-		selected && availableAnnouncements.includes(selected)
+		selected && availablePoints.includes(selected)
 			? selected
-			: availableAnnouncements[0];
+			: availablePoints[0];
 
-	const handleAnnounce = () => {
+	const handlePointAnnounce = () => {
 		if (!effectiveSelected) return;
 		announce(effectiveSelected);
 		setSelected("");
 	};
 
+	// Nichts anzeigen wenn weder Re/Kontra noch Punkt-Ansagen möglich
+	if (!canAnnounceTeam && availablePoints.length === 0) {
+		return null;
+	}
+
 	return (
-		<div className={cn("flex flex-col items-center gap-1.5", className)}>
-			<Select
-				onValueChange={(v) => setSelected(v as AnnouncementType)}
-				value={effectiveSelected}
-			>
-				<SelectTrigger className="bg-background" size="sm">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
-					{availableAnnouncements.map((a) => (
-						<SelectItem key={a} value={a}>
-							{ANNOUNCEMENT_SELECT_LABELS[a]}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-			<Button onClick={handleAnnounce} size="sm">
-				Ansagen
-			</Button>
+		<div className={cn("flex items-center gap-1.5", className)}>
+			{/* Re/Kontra als direkter Button */}
+			{canAnnounceTeam && (
+				<Button onClick={() => announce(teamAnnouncement)} size="sm">
+					{teamAnnouncement === "re" ? "Re" : "Kontra"}
+				</Button>
+			)}
+
+			{/* Punkt-Ansagen als Select + Ansagen-Button */}
+			{availablePoints.length > 0 && (
+				<>
+					<Select
+						onValueChange={(v) => setSelected(v as PointAnnouncementType)}
+						value={effectiveSelected}
+					>
+						<SelectTrigger className="bg-background" size="sm">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{availablePoints.map((a) => (
+								<SelectItem key={a} value={a}>
+									<span className="sm:hidden">{POINT_SHORT_LABELS[a]}</span>
+									<span className="hidden sm:inline">{POINT_LABELS[a]}</span>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<Button
+						className="max-sm:size-8"
+						onClick={handlePointAnnounce}
+						size="sm"
+					>
+						<span className="hidden">Ansagen</span>
+						<Speech className="size-4" />
+					</Button>
+				</>
+			)}
 		</div>
 	);
 }
