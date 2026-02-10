@@ -50,6 +50,7 @@ export async function signUpAction(
 
 		return { success: true };
 	} catch (error) {
+		console.error("Sign up error:", error);
 		if (error instanceof Error && error.message.includes("already exists")) {
 			return {
 				success: false,
@@ -97,6 +98,7 @@ export async function signInEmailAction(
 
 		success = true;
 	} catch (error) {
+		console.error("Sign in error:", error);
 		if (error instanceof Error) {
 			if (error.message.includes("not verified")) {
 				return {
@@ -150,7 +152,8 @@ export async function signInMagicLinkAction(
 		});
 
 		return { success: true };
-	} catch (_error) {
+	} catch (error) {
+		console.error("Magic link error:", error);
 		return {
 			success: false,
 			error: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
@@ -221,6 +224,7 @@ export async function resetPasswordAction(
 
 		return { success: true };
 	} catch (error) {
+		console.error("Reset password error:", error);
 		if (error instanceof Error && error.message.includes("Invalid")) {
 			return {
 				success: false,

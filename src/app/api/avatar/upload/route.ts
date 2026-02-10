@@ -32,6 +32,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
 		return NextResponse.json(jsonResponse);
 	} catch (error) {
+		console.error("Avatar upload error:", error);
 		return NextResponse.json(
 			{ error: error instanceof Error ? error.message : String(error) },
 			{ status: 400 },

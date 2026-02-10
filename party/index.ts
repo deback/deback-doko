@@ -8,6 +8,7 @@ import {
 } from "../src/lib/game/rules";
 import { canMakeAnnouncement } from "./announcements";
 import { createDeck, dealCards } from "./deck";
+import { logger } from "./logger";
 import { gameEventSchema, tableEventSchema } from "./schemas";
 import { calculateTrickPoints, determineTrickWinner } from "./trick-scoring";
 import type {
@@ -47,7 +48,7 @@ export default class Server implements Party.Server {
 
 	// Load persisted state from storage
 	async onStart() {
-		console.log("[onStart] Room:", this.room.id);
+		logger.debug("[onStart] Room:", this.room.id);
 		if (this.room.id === "tables-room") {
 			const storedTables = await this.room.storage.get<Table[]>("tables");
 			if (storedTables) {
@@ -55,7 +56,7 @@ export default class Server implements Party.Server {
 			}
 		} else if (this.room.id.startsWith("game-")) {
 			const storedGame = await this.room.storage.get<GameState>("gameState");
-			console.log(
+			logger.debug(
 				"[onStart] Loaded game:",
 				storedGame?.id,
 				"gameEnded:",
@@ -66,12 +67,12 @@ export default class Server implements Party.Server {
 
 				// If loaded game is ended, schedule restart
 				if (storedGame.gameEnded) {
-					console.log(
+					logger.info(
 						"[onStart] Game is ended, scheduling restart in 5 seconds",
 					);
 					const RESTART_DELAY = 5000;
 					setTimeout(() => {
-						console.log("[onStart] Restarting game now...");
+						logger.info("[onStart] Restarting game now...");
 						this.restartGame(storedGame);
 					}, RESTART_DELAY);
 				}
@@ -92,7 +93,7 @@ export default class Server implements Party.Server {
 	}
 
 	onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
-		console.log(
+		logger.debug(
 			`Connected: id: ${conn.id}, room: ${this.room.id}, url: ${new URL(ctx.request.url).pathname}`,
 		);
 
@@ -125,7 +126,7 @@ export default class Server implements Party.Server {
 				}
 				this.handleGameEvent(parsed.data as GameEvent, sender);
 			} catch (error) {
-				console.error("Error parsing message:", error);
+				logger.error("Error parsing message:", error);
 				this.sendGameError(sender, "Ungültiges Nachrichtenformat");
 			}
 			return;
@@ -141,7 +142,7 @@ export default class Server implements Party.Server {
 				}
 				this.handleEvent(parsed.data as TableEvent, sender);
 			} catch (error) {
-				console.error("Error parsing message:", error);
+				logger.error("Error parsing message:", error);
 				this.sendError(sender, "Ungültiges Nachrichtenformat");
 			}
 		}
@@ -1154,7 +1155,7 @@ export default class Server implements Party.Server {
 	}
 
 	async restartGame(oldGameState: GameState) {
-		console.log("[restartGame] Starting restart for game:", oldGameState.id);
+		logger.debug("[restartGame] Starting restart for game:", oldGameState.id);
 		const gameId = this.room.id;
 		const players = oldGameState.players;
 		const tableId = oldGameState.tableId;
@@ -1304,7 +1305,7 @@ export default class Server implements Party.Server {
 				}),
 			});
 		} catch (error) {
-			console.error("Failed to save game results:", error);
+			logger.error("Failed to save game results:", error);
 		}
 	}
 

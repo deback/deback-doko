@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
 	const authHeader = request.headers.get("Authorization");
 
 	if (authHeader !== `Bearer ${env.PARTYKIT_API_SECRET}`) {
+		console.error("Game results API: unauthorized request");
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
 
