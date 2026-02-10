@@ -50,8 +50,8 @@ export function GameHistoryList({ games }: GameHistoryListProps) {
 										className={cn(
 											"rounded-full px-2 py-0.5 text-xs",
 											game.contractType === "hochzeit"
-												? "bg-pink-500/10 text-pink-600"
-												: "bg-violet-500/10 text-violet-600",
+												? "bg-game-hochzeit/10 text-game-hochzeit"
+												: "bg-game-solo/10 text-game-solo",
 										)}
 									>
 										{CONTRACT_LABELS[game.contractType]}

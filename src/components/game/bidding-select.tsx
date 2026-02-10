@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Circle, Clock } from "lucide-react";
+import { Check, Circle, Clock, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { contractToTrumpMode } from "@/lib/game/rules";
+import { useCardDesign } from "@/lib/hooks/use-card-design";
 import { cn } from "@/lib/utils";
 import { useSetPreviewTrumpMode } from "@/stores/game-selectors";
 import type {
@@ -42,14 +43,24 @@ function hasBothQueensOfClubs(hand: Card[]): boolean {
 }
 
 // Get bid status icon
-function BidStatusIcon({ status }: { status: "done" | "current" | "pending" }) {
+function BidStatusIcon({
+	status,
+	bid,
+}: {
+	status: "done" | "current" | "pending";
+	bid?: ReservationType;
+}) {
 	switch (status) {
 		case "done":
-			return <CheckCircle2 className="size-4 text-emerald-500" />;
+			return bid === "vorbehalt" ? (
+				<ShieldAlert className="size-4 shrink-0 text-game-vorbehalt" />
+			) : (
+				<Check className="size-4 shrink-0 text-game-gesund" />
+			);
 		case "current":
-			return <Clock className="size-4 animate-pulse text-amber-500" />;
+			return <Clock className="size-4 shrink-0 animate-pulse text-amber-500" />;
 		case "pending":
-			return <Circle className="size-4 text-muted-foreground/50" />;
+			return <Circle className="size-4 shrink-0 text-muted-foreground/50" />;
 	}
 }
 
@@ -69,6 +80,8 @@ export function BiddingSelect({
 	onDeclareContract,
 	readOnly = false,
 }: BiddingSelectProps) {
+	const { cardDesign } = useCardDesign();
+	const isPoker = cardDesign === "poker";
 	const currentBidder = players[biddingPhase.currentBidderIndex];
 	const isMyTurn = currentBidder?.id === currentPlayerId;
 	const myBid = biddingPhase.bids[currentPlayerId];
@@ -142,7 +155,7 @@ export function BiddingSelect({
 	};
 
 	return (
-		<div className="fixed top-1/2 left-1/2 z-50 mx-auto -mt-8 flex min-w-64 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl bg-background p-4 text-foreground shadow-lg lg:gap-4">
+		<div className="fixed top-1/2 left-1/2 z-50 mx-auto -mt-8 flex w-64 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl bg-background p-4 text-foreground shadow-lg lg:gap-4">
 			<h3 className="hidden font-semibold font-serif text-lg lg:block">
 				Vorbehaltsabfrage
 			</h3>
@@ -216,26 +229,40 @@ export function BiddingSelect({
 
 					return (
 						<div
-							className={cn(
-								"flex items-center gap-1.5 rounded-full px-2 py-1",
-								isCurrent && "bg-amber-500/20",
-								hasBid && "bg-emerald-500/10",
-							)}
+							className="flex w-full items-center justify-between gap-1.5"
 							key={player.id}
 						>
-							<BidStatusIcon status={status} />
-							<span
+							<div
 								className={cn(
-									"text-xs",
-									player.id === currentPlayerId
-										? "font-medium text-foreground"
-										: "text-foreground/70",
+									"flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1",
+									isCurrent && "bg-amber-500/20",
+									hasBid &&
+										(playerBid === "vorbehalt"
+											? "bg-game-vorbehalt/10"
+											: "bg-game-gesund/10"),
 								)}
 							>
-								{player.name}
-							</span>
+								<BidStatusIcon bid={playerBid} status={status} />
+								<span
+									className={cn(
+										"truncate text-xs",
+										player.id === currentPlayerId
+											? "font-medium text-foreground"
+											: "text-foreground/70",
+									)}
+								>
+									{player.name}
+								</span>
+							</div>
 							{hasBid && (
-								<span className="text-emerald-400 text-xs">
+								<span
+									className={cn(
+										"shrink-0 text-xs",
+										playerBid === "vorbehalt"
+											? "text-game-vorbehalt"
+											: "text-game-gesund",
+									)}
+								>
 									{getBidLabel(playerBid)}
 								</span>
 							)}
@@ -271,8 +298,12 @@ export function BiddingSelect({
 										<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
 										<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
 										<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
-										<SelectItem value="solo-queens">Damen-Solo</SelectItem>
-										<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
+										<SelectItem value="solo-queens">
+											{isPoker ? "Queens-Solo" : "Damen-Solo"}
+										</SelectItem>
+										<SelectItem value="solo-jacks">
+											{isPoker ? "Jacks-Solo" : "Buben-Solo"}
+										</SelectItem>
 										<SelectItem value="solo-aces">Fleischloser</SelectItem>
 									</SelectContent>
 								</Select>

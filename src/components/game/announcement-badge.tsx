@@ -1,14 +1,19 @@
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type BadgeVariant = "re" | "kontra" | "hochzeit" | "solo" | "points";
 type BadgePosition = "top" | "bottom" | "left" | "right";
 
 const VARIANT_STYLES: Record<BadgeVariant, string> = {
-	re: "bg-emerald-500",
-	kontra: "bg-rose-500",
-	hochzeit: "bg-pink-500",
-	solo: "bg-violet-500",
-	points: "bg-amber-500",
+	re: "bg-game-re-background",
+	kontra: "bg-game-kontra-background",
+	hochzeit: "bg-game-hochzeit-background",
+	solo: "bg-game-solo-background",
+	points: "bg-game-points-background",
 };
 
 /** Counter-rotation to keep badges upright inside rotated opponent hands */
@@ -22,6 +27,8 @@ const POSITION_ROTATION: Record<BadgePosition, string> = {
 interface AnnouncementBadgeProps {
 	variant: BadgeVariant;
 	label: string;
+	/** Full name shown as tooltip on hover */
+	tooltip?: string;
 	/** Position of the player hand — used to counter-rotate the badge */
 	position?: BadgePosition;
 	className?: string;
@@ -30,16 +37,14 @@ interface AnnouncementBadgeProps {
 export function AnnouncementBadge({
 	variant,
 	label,
+	tooltip,
 	position,
 	className,
 }: AnnouncementBadgeProps) {
-	const isPill = variant === "hochzeit" || variant === "solo";
-
-	return (
+	const badge = (
 		<span
 			className={cn(
-				"flex items-center justify-center rounded-full font-bold text-base text-white shadow-md",
-				isPill ? "whitespace-nowrap px-2 py-0.5" : "size-8 uppercase",
+				"flex size-7 items-center justify-center rounded-full font-bold text-base text-white shadow-lg",
 				VARIANT_STYLES[variant],
 				position && POSITION_ROTATION[position],
 				className,
@@ -47,5 +52,14 @@ export function AnnouncementBadge({
 		>
 			{label}
 		</span>
+	);
+
+	if (!tooltip) return badge;
+
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>{badge}</TooltipTrigger>
+			<TooltipContent>{tooltip}</TooltipContent>
+		</Tooltip>
 	);
 }

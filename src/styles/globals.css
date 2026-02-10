@@ -58,6 +58,21 @@
 	--shadow-2xl: 1px 1px 16px -2px oklch(0.28 0.09 24.83 / 0.3);
 
 	--wood-pattern-background: oklch(0.76 0.0696 63.54);
+
+	/* Game colors (light: one step darker) */
+	--game-gesund: var(--color-emerald-600);
+	--game-re: var(--color-emerald-600);
+	--game-re-background: var(--color-emerald-600);
+
+	--game-vorbehalt: var(--color-violet-700);
+	--game-solo: var(--color-violet-700);
+	--game-solo-background: var(--color-violet-700);
+
+	--game-kontra: var(--color-rose-600);
+
+	--game-hochzeit: var(--color-pink-600);
+
+	--game-points: var(--color-amber-600);
 }
 
 .dark {
@@ -106,6 +121,24 @@
 		0 1px 3px 0px oklch(0 0 0 / 0.1), 0 8px 10px -1px oklch(0 0 0 / 0.1);
 	--shadow-2xl: 0 1px 3px 0px oklch(0 0 0 / 0.25);
 	--wood-pattern-background: oklch(0.38 0.0484 58.23);
+
+	/* Game colors (dark: standard shades) */
+	--game-gesund: var(--color-emerald-500);
+	--game-re: var(--color-emerald-500);
+	--game-re-background: var(--color-emerald-500);
+
+	--game-vorbehalt: var(--color-violet-400);
+	--game-solo: var(--color-violet-400);
+	--game-solo-background: var(--color-violet-600);
+
+	--game-kontra: var(--color-rose-500);
+	--game-kontra-background: var(--color-rose-500);
+
+	--game-points: var(--color-amber-500);
+	--game-points-background: var(--color-amber-500);
+
+	--game-hochzeit-background: var(--color-pink-500);
+	--game-hochzeit: var(--color-pink-500);
 }
 
 @theme inline {
@@ -141,6 +174,19 @@
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-wood-pattern-background: var(--wood-pattern-background);
+
+	--color-game-gesund: var(--game-gesund);
+	--color-game-vorbehalt: var(--game-vorbehalt);
+	--color-game-re: var(--game-re);
+	--color-game-kontra: var(--game-kontra);
+	--color-game-hochzeit: var(--game-hochzeit);
+	--color-game-solo: var(--game-solo);
+	--color-game-points: var(--game-points);
+	--color-game-re-background: var(--game-re-background);
+	--color-game-kontra-background: var(--game-kontra-background);
+	--color-game-hochzeit-background: var(--game-hochzeit-background);
+	--color-game-solo-background: var(--game-solo-background);
+	--color-game-points-background: var(--game-points-background);
 
 	--font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 	--font-serif: var(--font-libre-baskerville), ui-serif, Georgia, serif;

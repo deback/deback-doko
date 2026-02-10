@@ -1,6 +1,11 @@
 "use client";
 
-import { CONTRACT_LABELS, POINT_ANNOUNCEMENT_LABELS } from "@/lib/game/labels";
+import {
+	getContractLabels,
+	getContractTooltips,
+	POINT_ANNOUNCEMENT_LABELS,
+} from "@/lib/game/labels";
+import { useCardDesign } from "@/lib/hooks/use-card-design";
 import { cn } from "@/lib/utils";
 import type { ContractType, PointAnnouncementType } from "@/types/game";
 import { AnnouncementBadge } from "./announcement-badge";
@@ -23,6 +28,9 @@ export function PlayerStatus({
 	announcements,
 	className,
 }: PlayerStatusProps) {
+	const { cardDesign } = useCardDesign();
+	const contractLabels = getContractLabels(cardDesign);
+	const contractTooltips = getContractTooltips(cardDesign);
 	const hasContract = declaredContract && declaredContract !== "normal";
 	const hasReOrKontra = !!announcements?.reOrKontra;
 	const hasPointAnnouncements =
@@ -43,8 +51,9 @@ export function PlayerStatus({
 		>
 			{hasContract && (
 				<AnnouncementBadge
-					label={CONTRACT_LABELS[declaredContract] ?? declaredContract}
+					label={contractLabels[declaredContract] ?? declaredContract}
 					position={position}
+					tooltip={contractTooltips[declaredContract]}
 					variant={declaredContract === "hochzeit" ? "hochzeit" : "solo"}
 				/>
 			)}

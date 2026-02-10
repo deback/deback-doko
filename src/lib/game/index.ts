@@ -1,4 +1,9 @@
-export { CONTRACT_LABELS, POINT_ANNOUNCEMENT_LABELS } from "./labels";
+export {
+	CONTRACT_LABELS,
+	getContractLabels,
+	getContractTooltips,
+	POINT_ANNOUNCEMENT_LABELS,
+} from "./labels";
 export {
 	canPlayCard,
 	getCardPoints,
