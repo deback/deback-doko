@@ -192,7 +192,7 @@ export default class Server implements Party.Server {
 			return;
 		}
 
-		const tableId = `table-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+		const tableId = `table-${crypto.randomUUID()}`;
 		const table: Table = {
 			id: tableId,
 			name,
