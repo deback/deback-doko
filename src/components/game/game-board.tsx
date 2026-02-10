@@ -14,6 +14,7 @@ import { Bot, Eye, FastForward, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +27,7 @@ import {
 	useGameState,
 	useIsBiddingActive,
 	useIsMyTurn,
+	useIsSpectator,
 	usePlayableCardIds,
 	usePlayCard,
 	usePlayerAnnouncements,
@@ -60,6 +62,7 @@ export function GameBoard() {
 	// =========================================================================
 	const gameState = useGameState();
 	const currentPlayer = useCurrentPlayer();
+	const isSpectator = useIsSpectator();
 	const sortedHand = useSortedHand();
 	const playableCardIds = usePlayableCardIds();
 	const isMyTurn = useIsMyTurn();
@@ -251,9 +254,13 @@ export function GameBoard() {
 	// =========================================================================
 	// Early Return if no data
 	// =========================================================================
-	if (!gameState || !currentPlayer) {
+	if (!gameState || (!isSpectator && !currentPlayer)) {
 		return null;
 	}
+
+	// Card count helper: uses handCounts (available for spectators) with fallback to hands array
+	const getCardCount = (playerId: string) =>
+		gameState.handCounts[playerId] ?? gameState.hands[playerId]?.length ?? 0;
 
 	// =========================================================================
 	// Render
@@ -277,7 +284,7 @@ export function GameBoard() {
 						position="top"
 					/>
 					<OpponentHand
-						cardCount={gameState.hands[topPlayer.id]?.length || 0}
+						cardCount={getCardCount(topPlayer.id)}
 						position="top"
 						statusSlot={
 							<PlayerStatus
@@ -306,7 +313,7 @@ export function GameBoard() {
 						position="left"
 					/>
 					<OpponentHand
-						cardCount={gameState.hands[leftPlayer.id]?.length || 0}
+						cardCount={getCardCount(leftPlayer.id)}
 						position="left"
 						statusSlot={
 							<PlayerStatus
@@ -335,7 +342,7 @@ export function GameBoard() {
 						position="right"
 					/>
 					<OpponentHand
-						cardCount={gameState.hands[rightPlayer.id]?.length || 0}
+						cardCount={getCardCount(rightPlayer.id)}
 						position="right"
 						statusSlot={
 							<PlayerStatus
@@ -355,56 +362,85 @@ export function GameBoard() {
 			{/* Stich-Bereich (Mitte) */}
 			<TrickArea
 				cardOrigin={cardOrigin}
-				currentPlayerId={currentPlayer.id}
+				currentPlayerId={
+					isSpectator ? (bottomPlayer?.id ?? "") : (currentPlayer?.id ?? "")
+				}
 				playedCard={playedCard}
 				players={gameState.players}
 				trickCards={gameState.currentTrick.cards}
 				trickWinnerId={gameState.currentTrick.winnerId}
 			/>
 
-			{/* Unterer Spieler (aktueller Benutzer) */}
+			{/* Unterer Spieler (aktueller Benutzer / Spectator-Ansicht) */}
 			{bottomPlayer && (
 				<>
 					<PlayerInfo
-						isCurrentTurn={isMyTurn}
+						isCurrentTurn={
+							isSpectator
+								? gameState.players[gameState.currentPlayerIndex]?.id ===
+									bottomPlayer.id
+								: isMyTurn
+						}
 						player={bottomPlayer}
 						position="bottom"
 					/>
-					<PlayerHand
-						activeDragCard={dragPlayedCard}
-						onPlayCardWithOrigin={handlePlayCardWithOrigin}
-						onRemoveCard={handleRemoveCard}
-						statusSlot={
-							<PlayerStatus
-								announcements={formatAnnouncementsForStatus(
-									bottomAnnouncements,
-								)}
-								declaredContract={
-									contractDeclarer?.playerId === bottomPlayer.id
-										? contractDeclarer.contractType
-										: undefined
-								}
-								position="bottom"
-							/>
-						}
-					/>
+					{isSpectator ? (
+						<OpponentHand
+							cardCount={getCardCount(bottomPlayer.id)}
+							position="bottom"
+							statusSlot={
+								<PlayerStatus
+									announcements={formatAnnouncementsForStatus(
+										bottomAnnouncements,
+									)}
+									declaredContract={
+										contractDeclarer?.playerId === bottomPlayer.id
+											? contractDeclarer.contractType
+											: undefined
+									}
+									position="bottom"
+								/>
+							}
+						/>
+					) : (
+						<PlayerHand
+							activeDragCard={dragPlayedCard}
+							onPlayCardWithOrigin={handlePlayCardWithOrigin}
+							onRemoveCard={handleRemoveCard}
+							statusSlot={
+								<PlayerStatus
+									announcements={formatAnnouncementsForStatus(
+										bottomAnnouncements,
+									)}
+									declaredContract={
+										contractDeclarer?.playerId === bottomPlayer.id
+											? contractDeclarer.contractType
+											: undefined
+									}
+									position="bottom"
+								/>
+							}
+						/>
+					)}
 				</>
 			)}
 
-			{/* Drag Overlay */}
-			<DragOverlay dropAnimation={null}>
-				{activeDragCard && (
-					<div className={`relative ${CARD_SIZE}`}>
-						<Image
-							alt={`${activeDragCard.rank} of ${activeDragCard.suit}`}
-							className="rounded-[1cqw] shadow-xl"
-							draggable={false}
-							fill
-							src={getCardImagePath(activeDragCard.suit, activeDragCard.rank)}
-						/>
-					</div>
-				)}
-			</DragOverlay>
+			{/* Drag Overlay (nur für Spieler) */}
+			{!isSpectator && (
+				<DragOverlay dropAnimation={null}>
+					{activeDragCard && (
+						<div className={`relative ${CARD_SIZE}`}>
+							<Image
+								alt={`${activeDragCard.rank} of ${activeDragCard.suit}`}
+								className="rounded-[1cqw] shadow-xl"
+								draggable={false}
+								fill
+								src={getCardImagePath(activeDragCard.suit, activeDragCard.rank)}
+							/>
+						</div>
+					)}
+				</DragOverlay>
+			)}
 
 			{/* Turn-Indikator */}
 			<TurnIndicator
@@ -455,13 +491,26 @@ export function GameBoard() {
 				)}
 			</div>
 
-			{/* Ansagen-Buttons (nicht während Vorbehaltsabfrage) */}
-			{!isBiddingActive && (
+			{/* Spectator Badge */}
+			{isSpectator && (
+				<div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
+					<Badge
+						className="gap-2 bg-amber-500/20 px-4 py-2 text-amber-700 dark:text-amber-400"
+						variant="secondary"
+					>
+						<Eye className="h-4 w-4" />
+						Zuschauer-Modus
+					</Badge>
+				</div>
+			)}
+
+			{/* Ansagen-Buttons (nicht während Vorbehaltsabfrage, nicht für Zuschauer) */}
+			{!isSpectator && !isBiddingActive && (
 				<AnnouncementButtons className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2" />
 			)}
 
-			{/* Auto-Play & Reset Game Buttons (Development only) */}
-			{process.env.NODE_ENV === "development" && (
+			{/* Auto-Play & Reset Game Buttons (Development only, nicht für Zuschauer) */}
+			{!isSpectator && process.env.NODE_ENV === "development" && (
 				<div className="fixed bottom-4 left-4 z-50 flex items-center gap-2">
 					<button
 						className="flex items-center gap-2 rounded-full bg-amber-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-amber-600"
@@ -493,15 +542,15 @@ export function GameBoard() {
 			{/* Spielende Dialog */}
 			{cachedEndGameState && (
 				<GameEndDialog
-					currentPlayer={currentPlayer}
+					currentPlayer={isSpectator ? null : currentPlayer}
 					gameState={cachedEndGameState}
 					onClose={handleCloseGameEndDialog}
 					open={showGameEndDialog}
 				/>
 			)}
 
-			{/* Bidding Select */}
-			{gameState.biddingPhase?.active && (
+			{/* Bidding Select (nicht für Zuschauer) */}
+			{!isSpectator && gameState.biddingPhase?.active && currentPlayer && (
 				<BiddingSelect
 					biddingPhase={gameState.biddingPhase}
 					currentPlayerId={currentPlayer.id}

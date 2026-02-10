@@ -108,10 +108,11 @@ export function usePlayerAtPosition(position: 0 | 1 | 2 | 3): Player | null {
 
 	return useMemo(() => {
 		if (!gameState || !currentPlayer) return null;
-		const currentIdx = gameState.players.findIndex(
+		let currentIdx = gameState.players.findIndex(
 			(p) => p.id === currentPlayer.id,
 		);
-		if (currentIdx === -1) return null;
+		// Spectators: Ansicht aus Perspektive von Spieler 0
+		if (currentIdx === -1) currentIdx = 0;
 		const targetIdx = (currentIdx + position) % gameState.players.length;
 		return gameState.players[targetIdx] ?? null;
 	}, [gameState, currentPlayer, position]);

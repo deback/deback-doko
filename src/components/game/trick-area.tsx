@@ -319,11 +319,13 @@ export function TrickArea({
 	}
 
 	// Detect newly arrived opponent cards for fly-in animation (synchronous)
+	// Cards played by the local player get their own "throwing" animation via playedCard/cardOrigin,
+	// so we exclude them here. For spectators, playedCard is always null, so all cards fly in.
 	const flyInCardIds = new Set<string>();
 	for (const tc of trickCards) {
 		if (
 			!knownCardIdsRef.current.has(tc.card.id) &&
-			tc.playerId !== currentPlayerId
+			tc.card.id !== playedCard?.card.id
 		) {
 			flyInCardIds.add(tc.card.id);
 		}

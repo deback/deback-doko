@@ -5,12 +5,10 @@ import {
 	useError,
 	useGameState,
 	useIsConnected,
-	useIsSpectator,
 } from "@/stores/game-selectors";
 import type { Player } from "@/types/tables";
 import { GameBoard } from "./game-board";
 import { useGameConnection } from "./hooks/use-game-connection";
-import { SpectatorBoard } from "./spectator-board";
 
 interface GameContentProps {
 	player: Player;
@@ -40,7 +38,6 @@ export function GameContent({
 	const gameState = useGameState();
 	const error = useError();
 	const isConnected = useIsConnected();
-	const spectatorMode = useIsSpectator();
 
 	// Loading state
 	if (!gameState) {
@@ -73,12 +70,6 @@ export function GameContent({
 		);
 	}
 
-	// Spectator view
-	if (spectatorMode) {
-		return <SpectatorBoard gameState={gameState} />;
-	}
-
-	// Main game board
-	// Note: GameBoard still uses props for now (will be migrated to store selectors)
+	// Game board (handles both player and spectator mode internally)
 	return <GameBoard />;
 }
