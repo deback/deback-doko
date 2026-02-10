@@ -549,18 +549,28 @@ export function GameBoard() {
 				/>
 			)}
 
-			{/* Bidding Select (nicht für Zuschauer) */}
-			{!isSpectator && gameState.biddingPhase?.active && currentPlayer && (
-				<BiddingSelect
-					biddingPhase={gameState.biddingPhase}
-					currentPlayerId={currentPlayer.id}
-					onBid={bid}
-					onDeclareContract={declareContract}
-					playerHand={sortedHand}
-					players={gameState.players}
-					startingPlayerIndex={gameState.currentPlayerIndex}
-				/>
-			)}
+			{/* Bidding Select */}
+			{gameState.biddingPhase?.active &&
+				(isSpectator ? (
+					<BiddingSelect
+						biddingPhase={gameState.biddingPhase}
+						players={gameState.players}
+						readOnly
+						startingPlayerIndex={gameState.currentPlayerIndex}
+					/>
+				) : (
+					currentPlayer && (
+						<BiddingSelect
+							biddingPhase={gameState.biddingPhase}
+							currentPlayerId={currentPlayer.id}
+							onBid={bid}
+							onDeclareContract={declareContract}
+							playerHand={sortedHand}
+							players={gameState.players}
+							startingPlayerIndex={gameState.currentPlayerIndex}
+						/>
+					)
+				))}
 		</DndContext>
 	);
 }

@@ -25,11 +25,12 @@ import type { Player } from "@/types/tables";
 interface BiddingSelectProps {
 	biddingPhase: BiddingPhase;
 	players: Player[];
-	currentPlayerId: string;
-	playerHand: Card[];
+	currentPlayerId?: string;
+	playerHand?: Card[];
 	startingPlayerIndex: number;
-	onBid: (bid: ReservationType) => void;
-	onDeclareContract: (contract: ContractType) => void;
+	onBid?: (bid: ReservationType) => void;
+	onDeclareContract?: (contract: ContractType) => void;
+	readOnly?: boolean;
 }
 
 // Check if player has both Queens of Clubs (for Hochzeit)
@@ -61,11 +62,12 @@ function getBidLabel(bid: ReservationType | undefined): string {
 export function BiddingSelect({
 	biddingPhase,
 	players,
-	currentPlayerId,
-	playerHand,
+	currentPlayerId = "",
+	playerHand = [],
 	startingPlayerIndex,
 	onBid,
 	onDeclareContract,
+	readOnly = false,
 }: BiddingSelectProps) {
 	const currentBidder = players[biddingPhase.currentBidderIndex];
 	const isMyTurn = currentBidder?.id === currentPlayerId;
@@ -81,11 +83,12 @@ export function BiddingSelect({
 
 	// Reset state when default value changes (e.g., after game reset with new hand)
 	useEffect(() => {
+		if (readOnly) return;
 		setSelectedBid(defaultValue);
 		setIsReady(false);
 		hasSentBid.current = false;
 		setPreviewTrumpMode(null);
-	}, [defaultValue, setPreviewTrumpMode]);
+	}, [defaultValue, setPreviewTrumpMode, readOnly]);
 
 	// Check if we're awaiting contract declaration
 	const awaitingDeclaration =
@@ -94,16 +97,17 @@ export function BiddingSelect({
 
 	// Auto-send bid when it's my turn and I'm ready
 	useEffect(() => {
+		if (readOnly) return;
 		if (isMyTurn && isReady && !myBid && !hasSentBid.current) {
 			hasSentBid.current = true;
-			onBid(selectedBid);
+			onBid?.(selectedBid);
 		}
-	}, [isMyTurn, isReady, myBid, selectedBid, onBid]);
+	}, [isMyTurn, isReady, myBid, selectedBid, onBid, readOnly]);
 
 	const handleConfirm = () => {
 		if (isMyTurn) {
 			// Send immediately if it's my turn
-			onBid(selectedBid);
+			onBid?.(selectedBid);
 		} else {
 			// Mark as ready, will auto-send when it's my turn
 			setIsReady(true);
@@ -126,14 +130,15 @@ export function BiddingSelect({
 
 	// Set initial preview when entering declaration phase
 	useEffect(() => {
+		if (readOnly) return;
 		if (awaitingDeclaration && contractDefault) {
 			setPreviewTrumpMode(contractToTrumpMode(contractDefault));
 		}
-	}, [awaitingDeclaration, contractDefault, setPreviewTrumpMode]);
+	}, [awaitingDeclaration, contractDefault, setPreviewTrumpMode, readOnly]);
 
 	const handleDeclareConfirm = () => {
 		if (!selectedContract) return;
-		onDeclareContract(selectedContract as ContractType);
+		onDeclareContract?.(selectedContract as ContractType);
 	};
 
 	return (
@@ -143,18 +148,13 @@ export function BiddingSelect({
 			</h3>
 
 			{/* Status message */}
-			{!myBid && !isReady && !awaitingDeclaration && (
-				<p className="text-foreground/50 text-xs">
-					Bitte wähle Gesund/Vorbehalt
-				</p>
-			)}
-			{(myBid || isReady) && !awaitingDeclaration && (
+			{readOnly ? (
 				<p className="text-foreground/50 text-xs">
 					{(() => {
 						const allBidsIn =
 							Object.keys(biddingPhase.bids).length >= players.length;
-						if (!allBidsIn) return `Warte auf ${currentBidder?.name}...`;
-						// All bids in — check if someone else is declaring
+						if (!allBidsIn)
+							return `Warte auf ${currentBidder?.name?.split(" ")[0]}...`;
 						const declaringIds = biddingPhase.awaitingContractDeclaration ?? [];
 						if (declaringIds.length > 0) {
 							const names = declaringIds
@@ -169,6 +169,37 @@ export function BiddingSelect({
 						return "Es geht los!";
 					})()}
 				</p>
+			) : (
+				<>
+					{!myBid && !isReady && !awaitingDeclaration && (
+						<p className="text-foreground/50 text-xs">
+							Bitte wähle Gesund/Vorbehalt
+						</p>
+					)}
+					{(myBid || isReady) && !awaitingDeclaration && (
+						<p className="text-foreground/50 text-xs">
+							{(() => {
+								const allBidsIn =
+									Object.keys(biddingPhase.bids).length >= players.length;
+								if (!allBidsIn) return `Warte auf ${currentBidder?.name}...`;
+								// All bids in — check if someone else is declaring
+								const declaringIds =
+									biddingPhase.awaitingContractDeclaration ?? [];
+								if (declaringIds.length > 0) {
+									const names = declaringIds
+										.map(
+											(id) =>
+												players.find((p) => p.id === id)?.name?.split(" ")[0] ??
+												"...",
+										)
+										.join(", ");
+									return `Warte auf ${names}...`;
+								}
+								return "Es geht los!";
+							})()}
+						</p>
+					)}
+				</>
 			)}
 
 			{/* Player status row - rotated to start with the starting player */}
@@ -221,76 +252,80 @@ export function BiddingSelect({
 			</div>
 
 			{/* Awaiting contract declaration (after all bids are in) */}
-			<AnimatePresence>
-				{awaitingDeclaration && (
-					<motion.div
-						animate={{ height: "auto", opacity: 1 }}
-						className="-mx-1 -mb-1 w-[calc(100%+0.5rem)] overflow-hidden px-1 pb-1"
-						exit={{ height: 0, opacity: 0 }}
-						initial={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.3, ease: "easeInOut" }}
-					>
-						<div className="flex w-full items-center gap-3 pt-1">
-							<Select
-								onValueChange={handleContractChange}
-								value={selectedContract}
-							>
-								<SelectTrigger className="min-w-40">
-									<SelectValue placeholder="Sonderspiel" />
-								</SelectTrigger>
-								<SelectContent>
-									{canDeclareHochzeit && (
-										<SelectItem value="hochzeit">Hochzeit</SelectItem>
-									)}
-									<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
-									<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
-									<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
-									<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
-									<SelectItem value="solo-queens">Damen-Solo</SelectItem>
-									<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
-									<SelectItem value="solo-aces">Fleischloser</SelectItem>
-								</SelectContent>
-							</Select>
-							<Button onClick={handleDeclareConfirm} size="default">
-								OK
-							</Button>
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+			{!readOnly && (
+				<AnimatePresence>
+					{awaitingDeclaration && (
+						<motion.div
+							animate={{ height: "auto", opacity: 1 }}
+							className="-mx-1 -mb-1 w-[calc(100%+0.5rem)] overflow-hidden px-1 pb-1"
+							exit={{ height: 0, opacity: 0 }}
+							initial={{ height: 0, opacity: 0 }}
+							transition={{ duration: 0.3, ease: "easeInOut" }}
+						>
+							<div className="flex w-full items-center gap-3 pt-1">
+								<Select
+									onValueChange={handleContractChange}
+									value={selectedContract}
+								>
+									<SelectTrigger className="min-w-40">
+										<SelectValue placeholder="Sonderspiel" />
+									</SelectTrigger>
+									<SelectContent>
+										{canDeclareHochzeit && (
+											<SelectItem value="hochzeit">Hochzeit</SelectItem>
+										)}
+										<SelectItem value="solo-clubs">♣ Kreuz-Solo</SelectItem>
+										<SelectItem value="solo-spades">♠ Pik-Solo</SelectItem>
+										<SelectItem value="solo-hearts">♥ Herz-Solo</SelectItem>
+										<SelectItem value="solo-diamonds">♦ Karo-Solo</SelectItem>
+										<SelectItem value="solo-queens">Damen-Solo</SelectItem>
+										<SelectItem value="solo-jacks">Buben-Solo</SelectItem>
+										<SelectItem value="solo-aces">Fleischloser</SelectItem>
+									</SelectContent>
+								</Select>
+								<Button onClick={handleDeclareConfirm} size="default">
+									OK
+								</Button>
+							</div>
+						</motion.div>
+					)}
+				</AnimatePresence>
+			)}
 
 			{/* Form with animated collapse */}
-			<AnimatePresence>
-				{!myBid && !isReady && !awaitingDeclaration && (
-					<motion.div
-						animate={{ height: "auto", opacity: 1 }}
-						className="-mx-1 -mb-1 w-[calc(100%+0.5rem)] overflow-hidden px-1 pb-1"
-						exit={{ height: 0, opacity: 0 }}
-						initial={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.3, ease: "easeInOut" }}
-					>
-						<div className="flex w-full items-center gap-3 pt-1">
-							<Select
-								onValueChange={(value) =>
-									setSelectedBid(value as ReservationType)
-								}
-								value={selectedBid}
-							>
-								<SelectTrigger className="min-w-30">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="gesund">Gesund</SelectItem>
-									<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
-								</SelectContent>
-							</Select>
-							<Button onClick={handleConfirm} size="default">
-								OK
-							</Button>
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+			{!readOnly && (
+				<AnimatePresence>
+					{!myBid && !isReady && !awaitingDeclaration && (
+						<motion.div
+							animate={{ height: "auto", opacity: 1 }}
+							className="-mx-1 -mb-1 w-[calc(100%+0.5rem)] overflow-hidden px-1 pb-1"
+							exit={{ height: 0, opacity: 0 }}
+							initial={{ height: 0, opacity: 0 }}
+							transition={{ duration: 0.3, ease: "easeInOut" }}
+						>
+							<div className="flex w-full items-center gap-3 pt-1">
+								<Select
+									onValueChange={(value) =>
+										setSelectedBid(value as ReservationType)
+									}
+									value={selectedBid}
+								>
+									<SelectTrigger className="min-w-30">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="gesund">Gesund</SelectItem>
+										<SelectItem value="vorbehalt">Vorbehalt</SelectItem>
+									</SelectContent>
+								</Select>
+								<Button onClick={handleConfirm} size="default">
+									OK
+								</Button>
+							</div>
+						</motion.div>
+					)}
+				</AnimatePresence>
+			)}
 		</div>
 	);
 }
