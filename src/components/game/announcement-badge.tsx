@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -31,9 +32,36 @@ const POSITION_ROTATION: Record<BadgePosition, string> = {
 	bottom: "",
 };
 
+/** Two interlocking rings icon for Hochzeit (wedding) */
+export function HochzeitIcon({ className }: { className?: string }) {
+	return (
+		<svg
+			aria-hidden="true"
+			className={className}
+			fill="none"
+			stroke="currentColor"
+			strokeLinecap="round"
+			strokeWidth={2.8}
+			viewBox="0 0 24 24"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			{/* Left ring: gap near upper overlap */}
+			<path
+				d="M13.12 14.8 A5.4 5.4 0 1 1 13.12 9.2"
+				transform="rotate(40 8.5 12)"
+			/>
+			{/* Right ring: gap near lower overlap */}
+			<path
+				d="M10.88 9.2 A5.4 5.4 0 1 1 10.88 14.8"
+				transform="rotate(40 15.5 12)"
+			/>
+		</svg>
+	);
+}
+
 interface AnnouncementBadgeProps {
 	variant: BadgeVariant;
-	label: string;
+	label: ReactNode;
 	/** Full name shown as tooltip on hover */
 	tooltip?: string;
 	/** Position of the player hand — used to counter-rotate the badge */

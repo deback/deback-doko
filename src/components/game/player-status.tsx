@@ -10,7 +10,7 @@ import {
 import { useCardDesign } from "@/lib/hooks/use-card-design";
 import { cn } from "@/lib/utils";
 import type { ContractType, PointAnnouncementType } from "@/types/game";
-import { AnnouncementBadge } from "./announcement-badge";
+import { AnnouncementBadge, HochzeitIcon } from "./announcement-badge";
 
 interface PlayerStatusProps {
 	position: "top" | "bottom" | "left" | "right";
@@ -55,14 +55,20 @@ export function PlayerStatus({
 			)}
 		>
 			<div className="flex items-center gap-1.5">
-				{hasContract && (
-					<AnnouncementBadge
-						label={contractLabels[declaredContract] ?? declaredContract}
-						position={position}
-						tooltip={contractTooltips[declaredContract]}
-						variant={declaredContract === "hochzeit" ? "hochzeit" : "solo"}
-					/>
-				)}
+			{hasContract && (
+				<AnnouncementBadge
+					label={
+						declaredContract === "hochzeit" ? (
+							<HochzeitIcon className="size-5" />
+						) : (
+							(contractLabels[declaredContract] ?? declaredContract)
+						)
+					}
+					position={position}
+					tooltip={contractTooltips[declaredContract]}
+					variant={declaredContract === "hochzeit" ? "hochzeit" : "solo"}
+				/>
+			)}
 
 				{hasReOrKontra && (
 					<AnnouncementBadge
