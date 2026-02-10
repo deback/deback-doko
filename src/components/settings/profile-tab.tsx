@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { broadcastProfileUpdate } from "@/lib/profile-sync";
 import { updateProfile } from "@/server/actions/profile";
 import { ImageUpload } from "./image-upload";
 
@@ -148,6 +149,11 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 			});
 
 			if (result.success) {
+				broadcastProfileUpdate({
+					playerId: user.id,
+					name,
+					image: currentImage,
+				});
 				toast.success("Profil erfolgreich aktualisiert!");
 				onClose?.();
 			} else {
@@ -158,7 +164,7 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 		} finally {
 			setIsSaving(false);
 		}
-	}, [name, currentImage, hasChanges, onClose]);
+	}, [name, currentImage, hasChanges, onClose, user.id]);
 
 	const isCropping = !!imageSrc;
 

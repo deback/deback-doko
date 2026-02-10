@@ -57,6 +57,12 @@ export const gameEventSchema = z.discriminatedUnion("type", [
 			"solo-aces",
 		]),
 	}),
+	z.object({
+		type: z.literal("update-player-info"),
+		playerId: z.string(),
+		name: z.string(),
+		image: z.string().nullable().optional(),
+	}),
 ]);
 
 export const tableEventSchema = z.discriminatedUnion("type", [
@@ -80,5 +86,11 @@ export const tableEventSchema = z.discriminatedUnion("type", [
 		type: z.literal("delete-table"),
 		tableId: z.string(),
 		playerId: z.string(),
+	}),
+	z.object({
+		type: z.literal("update-player-info"),
+		playerId: z.string(),
+		name: z.string(),
+		image: z.string().nullable().optional(),
 	}),
 ]);

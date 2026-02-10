@@ -95,6 +95,46 @@ export default class Server implements Party.Server {
 		await this.room.storage.put("gameState", gameState);
 	}
 
+	async onRequest(req: Party.Request) {
+		if (req.method !== "POST") {
+			return new Response("Method not allowed", { status: 405 });
+		}
+
+		const authHeader = req.headers.get("Authorization");
+		const apiSecret = env.PARTYKIT_API_SECRET || "";
+		if (authHeader !== `Bearer ${apiSecret}`) {
+			return new Response("Unauthorized", { status: 401 });
+		}
+
+		try {
+			const body = (await req.json()) as {
+				type: string;
+				playerId: string;
+				name: string;
+				image?: string | null;
+			};
+
+			if (body.type === "update-player-info") {
+				if (this.room.id === "tables-room") {
+					const gameIds = await this.updatePlayerInfo(
+						body.playerId,
+						body.name,
+						body.image,
+					);
+					return Response.json({ gameIds });
+				}
+				if (this.room.id.startsWith("game-")) {
+					await this.updateGamePlayerInfo(body.playerId, body.name, body.image);
+				}
+				return new Response("OK", { status: 200 });
+			}
+
+			return new Response("Unknown event type", { status: 400 });
+		} catch {
+			return new Response("Invalid request body", { status: 400 });
+		}
+	}
+
 	onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
 		logger.debug(
 			`Connected: id: ${conn.id}, room: ${this.room.id}, url: ${new URL(ctx.request.url).pathname}`,
@@ -186,6 +226,10 @@ export default class Server implements Party.Server {
 
 			case "delete-table":
 				await this.deleteTable(event.tableId, event.playerId);
+				break;
+
+			case "update-player-info":
+				await this.updatePlayerInfo(event.playerId, event.name, event.image);
 				break;
 		}
 	}
@@ -306,6 +350,73 @@ export default class Server implements Party.Server {
 		}
 	}
 
+	async updatePlayerInfo(
+		playerId: string,
+		name: string,
+		image?: string | null,
+	): Promise<string[]> {
+		let changed = false;
+		const gameIds: string[] = [];
+
+		for (const table of this.tables.values()) {
+			const player = table.players.find((p) => p.id === playerId);
+			if (player) {
+				player.name = name;
+				if (image !== undefined) player.image = image;
+				changed = true;
+				if (table.gameId) {
+					gameIds.push(table.gameId);
+				}
+			}
+		}
+
+		if (changed) {
+			await this.persistTables();
+			this.broadcastState();
+		}
+
+		return gameIds;
+	}
+
+	async updateGamePlayerInfo(
+		playerId: string,
+		name: string,
+		image?: string | null,
+	) {
+		const gameState = this.games.get(this.room.id);
+		if (!gameState) return;
+
+		let changed = false;
+
+		const player = gameState.players.find((p) => p.id === playerId);
+		if (player) {
+			player.name = name;
+			if (image !== undefined) player.image = image;
+			changed = true;
+		}
+
+		const spectator = gameState.spectators.find((s) => s.id === playerId);
+		if (spectator) {
+			spectator.name = name;
+			if (image !== undefined) spectator.image = image;
+			changed = true;
+		}
+
+		for (const info of this.connectionToSpectator.values()) {
+			if (info.spectatorId === playerId) {
+				info.spectatorName = name;
+				if (image !== undefined) info.spectatorImage = image;
+				changed = true;
+			}
+		}
+
+		if (changed) {
+			await this.persistGameState(gameState);
+			this.broadcastGameState(gameState);
+			this.broadcastToSpectators(gameState);
+		}
+	}
+
 	getState(): TablesState {
 		return {
 			tables: Array.from(this.tables.values()),
@@ -417,6 +528,14 @@ export default class Server implements Party.Server {
 					event.playerId,
 					event.contract,
 					sender,
+				);
+				break;
+
+			case "update-player-info":
+				await this.updateGamePlayerInfo(
+					event.playerId,
+					event.name,
+					event.image,
 				);
 				break;
 		}

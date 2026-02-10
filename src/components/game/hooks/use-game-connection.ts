@@ -2,6 +2,7 @@
 
 import PartySocket from "partysocket";
 import { useEffect, useRef } from "react";
+import { onProfileUpdate } from "@/lib/profile-sync";
 import {
 	useSetConnected,
 	useSetError,
@@ -185,9 +186,20 @@ export function useGameConnection({
 			},
 		});
 
+		const cleanupProfileSync = onProfileUpdate((update) => {
+			const event: GameEvent = {
+				type: "update-player-info",
+				playerId: update.playerId,
+				name: update.name,
+				image: update.image,
+			};
+			socket.send(JSON.stringify(event));
+		});
+
 		// Cleanup
 		return () => {
 			socket.close();
+			cleanupProfileSync();
 		};
 	}, [
 		gameId,

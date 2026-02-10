@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StarRating } from "@/components/ui/star-rating";
+import { onProfileUpdate } from "@/lib/profile-sync";
 import {
 	calculateAverageRating,
 	calculateRating,
@@ -112,8 +113,19 @@ export function TablesClient({ player }: TablesClientProps) {
 			}
 		});
 
+		const cleanupProfileSync = onProfileUpdate((update) => {
+			const event: TableEvent = {
+				type: "update-player-info",
+				playerId: update.playerId,
+				name: update.name,
+				image: update.image,
+			};
+			socket.send(JSON.stringify(event));
+		});
+
 		return () => {
 			socket.close();
+			cleanupProfileSync();
 		};
 	}, [player.id]);
 

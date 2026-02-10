@@ -153,16 +153,11 @@ export function BiddingSelect({
 					{(() => {
 						const allBidsIn =
 							Object.keys(biddingPhase.bids).length >= players.length;
-						if (!allBidsIn)
-							return `Warte auf ${currentBidder?.name?.split(" ")[0]}...`;
+						if (!allBidsIn) return `Warte auf ${currentBidder?.name}...`;
 						const declaringIds = biddingPhase.awaitingContractDeclaration ?? [];
 						if (declaringIds.length > 0) {
 							const names = declaringIds
-								.map(
-									(id) =>
-										players.find((p) => p.id === id)?.name?.split(" ")[0] ??
-										"...",
-								)
+								.map((id) => players.find((p) => p.id === id)?.name ?? "...")
 								.join(", ");
 							return `Warte auf ${names}...`;
 						}
@@ -188,9 +183,7 @@ export function BiddingSelect({
 								if (declaringIds.length > 0) {
 									const names = declaringIds
 										.map(
-											(id) =>
-												players.find((p) => p.id === id)?.name?.split(" ")[0] ??
-												"...",
+											(id) => players.find((p) => p.id === id)?.name ?? "...",
 										)
 										.join(", ");
 									return `Warte auf ${names}...`;
@@ -239,7 +232,7 @@ export function BiddingSelect({
 										: "text-foreground/70",
 								)}
 							>
-								{player.name.split(" ")[0]}
+								{player.name}
 							</span>
 							{hasBid && (
 								<span className="text-emerald-400 text-xs">

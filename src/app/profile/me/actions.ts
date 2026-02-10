@@ -2,6 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { notifyPlayerInfoUpdate } from "@/lib/notify-partykit";
 import { db } from "@/server/db";
 import { user } from "@/server/db/schema";
 
@@ -42,6 +43,9 @@ export async function updateUserName(userId: string, newName: string) {
 				updatedAt: new Date(),
 			})
 			.where(eq(user.id, userId));
+
+		// Notify PartyKit about the name update
+		await notifyPlayerInfoUpdate(userId, validationResult.data.name);
 
 		return { success: true };
 	} catch (error) {

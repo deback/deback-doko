@@ -28,7 +28,13 @@ export type TableEvent =
 	| { type: "join-table"; tableId: string; player: Player }
 	| { type: "leave-table"; tableId: string; playerId: string }
 	| { type: "delete-table"; tableId: string; playerId: string }
-	| { type: "get-state" };
+	| { type: "get-state" }
+	| {
+			type: "update-player-info";
+			playerId: string;
+			name: string;
+			image?: string | null;
+	  };
 
 export type TableMessage =
 	| { type: "state"; state: TablesState }
@@ -177,7 +183,13 @@ export type GameEvent =
 	  }
 	| { type: "announce"; announcement: AnnouncementType; playerId: string }
 	| { type: "bid"; playerId: string; bid: ReservationType }
-	| { type: "declare-contract"; playerId: string; contract: ContractType };
+	| { type: "declare-contract"; playerId: string; contract: ContractType }
+	| {
+			type: "update-player-info";
+			playerId: string;
+			name: string;
+			image?: string | null;
+	  };
 
 export type GameMessage =
 	| { type: "state"; state: GameState; isSpectator?: boolean }

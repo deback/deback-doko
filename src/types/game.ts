@@ -121,6 +121,12 @@ export type GameEvent =
 			type: "declare-contract";
 			playerId: string;
 			contract: ContractType;
+	  }
+	| {
+			type: "update-player-info";
+			playerId: string;
+			name: string;
+			image?: string | null;
 	  };
 
 // =============================================================================

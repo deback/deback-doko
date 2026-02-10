@@ -24,6 +24,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { broadcastProfileUpdate } from "@/lib/profile-sync";
 
 const usernameFormSchema = z.object({
 	name: z
@@ -61,6 +62,10 @@ export function UsernameForm({ currentName, userId }: UsernameFormProps) {
 			const result = await updateUserName(userId, values.name);
 
 			if (result.success) {
+				broadcastProfileUpdate({
+					playerId: userId,
+					name: values.name,
+				});
 				setSubmitMessage({
 					type: "success",
 					text: "Username erfolgreich aktualisiert!",

@@ -4,6 +4,7 @@ import { del } from "@vercel/blob";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { notifyPlayerInfoUpdate } from "@/lib/notify-partykit";
 import { getSession } from "@/server/better-auth/server";
 import { db } from "@/server/db";
 import { user } from "@/server/db/schema";
@@ -71,6 +72,13 @@ export async function updateProfile(data: {
 		revalidatePath("/profile/me");
 		revalidatePath("/players");
 		revalidatePath("/tables");
+
+		// Notify PartyKit about the profile update
+		await notifyPlayerInfoUpdate(
+			session.user.id,
+			validationResult.data.name,
+			validationResult.data.image ?? null,
+		);
 
 		return { success: true };
 	} catch (error) {
