@@ -55,20 +55,20 @@ export function PlayerStatus({
 			)}
 		>
 			<div className="flex items-center gap-1.5">
-			{hasContract && (
-				<AnnouncementBadge
-					label={
-						declaredContract === "hochzeit" ? (
-							<HochzeitIcon className="size-5" />
-						) : (
-							(contractLabels[declaredContract] ?? declaredContract)
-						)
-					}
-					position={position}
-					tooltip={contractTooltips[declaredContract]}
-					variant={declaredContract === "hochzeit" ? "hochzeit" : "solo"}
-				/>
-			)}
+				{hasContract && (
+					<AnnouncementBadge
+						label={
+							declaredContract === "hochzeit" ? (
+								<HochzeitIcon className="size-5" />
+							) : (
+								(contractLabels[declaredContract] ?? declaredContract)
+							)
+						}
+						position={position}
+						tooltip={contractTooltips[declaredContract]}
+						variant={declaredContract === "hochzeit" ? "hochzeit" : "solo"}
+					/>
+				)}
 
 				{hasReOrKontra && (
 					<AnnouncementBadge

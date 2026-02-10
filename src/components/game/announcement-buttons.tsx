@@ -10,6 +10,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
 	useAnnounce,
@@ -193,14 +198,22 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 							))}
 						</SelectContent>
 					</Select>
-					<Button
-						className="max-sm:size-8"
-						onClick={handlePointAnnounce}
-						size="sm"
-					>
-						<span className="hidden">Ansagen</span>
-						<Speech className="size-4" />
-					</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="max-sm:size-8"
+								onClick={handlePointAnnounce}
+								size="sm"
+							>
+								<Speech className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{effectiveSelected
+								? `${POINT_LABELS[effectiveSelected]} ansagen`
+								: "Ansagen"}
+						</TooltipContent>
+					</Tooltip>
 				</>
 			)}
 		</div>
