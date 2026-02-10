@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
+import { env } from "@/env";
 import { gameResultPayloadSchema } from "@/lib/validations/game-results";
 import { db } from "@/server/db";
 import { gameResult, playerGameResult, user } from "@/server/db/schema";
@@ -7,9 +8,8 @@ import { gameResult, playerGameResult, user } from "@/server/db/schema";
 export async function POST(request: NextRequest) {
 	// Verify API secret
 	const authHeader = request.headers.get("Authorization");
-	const expectedSecret = process.env.PARTYKIT_API_SECRET;
 
-	if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
+	if (authHeader !== `Bearer ${env.PARTYKIT_API_SECRET}`) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
 

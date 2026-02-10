@@ -46,7 +46,7 @@ function BidStatusIcon({ status }: { status: "done" | "current" | "pending" }) {
 		case "done":
 			return <CheckCircle2 className="size-4 text-emerald-500" />;
 		case "current":
-			return <Clock className="size-4 text-amber-500 animate-pulse" />;
+			return <Clock className="size-4 animate-pulse text-amber-500" />;
 		case "pending":
 			return <Circle className="size-4 text-muted-foreground/50" />;
 	}
@@ -137,19 +137,19 @@ export function BiddingSelect({
 	};
 
 	return (
-		<div className="fixed shadow-lg left-1/2 top-1/2 z-50 -mt-8 mx-auto flex min-w-72 -translate-y-1/2 -translate-x-1/2 flex-col items-center gap-3 lg:gap-4 rounded-xl bg-background p-4 text-foreground">
-			<h3 className="font-semibold font-serif text-lg hidden lg:block">
+		<div className="fixed top-1/2 left-1/2 z-50 mx-auto -mt-8 flex min-w-72 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl bg-background p-4 text-foreground shadow-lg lg:gap-4">
+			<h3 className="hidden font-semibold font-serif text-lg lg:block">
 				Vorbehaltsabfrage
 			</h3>
 
 			{/* Status message */}
 			{!myBid && !isReady && !awaitingDeclaration && (
-				<p className="text-xs text-foreground/50">
+				<p className="text-foreground/50 text-xs">
 					Bitte wähle Gesund/Vorbehalt
 				</p>
 			)}
 			{(myBid || isReady) && !awaitingDeclaration && (
-				<p className="text-xs text-foreground/50">
+				<p className="text-foreground/50 text-xs">
 					{(() => {
 						const allBidsIn =
 							Object.keys(biddingPhase.bids).length >= players.length;
@@ -172,7 +172,7 @@ export function BiddingSelect({
 			)}
 
 			{/* Player status row - rotated to start with the starting player */}
-			<div className="flex flex-col w-full items-start justify-center gap-2">
+			<div className="flex w-full flex-col items-start justify-center gap-2">
 				{players.map((_, i) => {
 					const index = (startingPlayerIndex + i) % players.length;
 					const player = players[index];
@@ -211,7 +211,7 @@ export function BiddingSelect({
 								{player.name.split(" ")[0]}
 							</span>
 							{hasBid && (
-								<span className="text-xs text-emerald-400">
+								<span className="text-emerald-400 text-xs">
 									{getBidLabel(playerBid)}
 								</span>
 							)}

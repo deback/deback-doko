@@ -56,7 +56,7 @@ export default function SvgCardsTestPage() {
 								const cardId = `${suit}_${rank}`;
 								return (
 									<button
-										className="w-full bg-transparent border-none p-0"
+										className="w-full border-none bg-transparent p-0"
 										key={cardId}
 										onClick={() =>
 											setSelectedCard(selectedCard === cardId ? null : cardId)

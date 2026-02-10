@@ -18,7 +18,7 @@ export default function PasswordResetEmail({ url }: PasswordResetEmailProps) {
 				folgenden Link, um ein neues Passwort zu wählen:
 			</Text>
 			<CTA href={url} text="Passwort zurücksetzen" />
-			<Text className="text-sm mt-8">
+			<Text className="mt-8 text-sm">
 				Oder kopier diesen Link in deinen Browser:
 			</Text>
 			<CopyCode code={url} />

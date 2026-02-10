@@ -21,7 +21,7 @@ export function GameReview({ game, currentUserId }: GameReviewProps) {
 		<div className="space-y-6">
 			{/* Back link */}
 			<Link
-				className="inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground transition-colors"
+				className="inline-flex items-center gap-1 text-muted-foreground text-sm transition-colors hover:text-foreground"
 				href="/history"
 			>
 				<ArrowLeft className="size-4" />

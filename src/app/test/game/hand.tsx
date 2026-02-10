@@ -63,9 +63,9 @@ function DraggableHandCard({
 		<Card
 			angle={angle}
 			className={cn(
-				"top-0 left-0 w-full h-full touch-none",
+				"top-0 left-0 h-full w-full touch-none",
 				(isGhost || isDragging || isDraggingThis) &&
-					"invisible pointer-events-none",
+					"pointer-events-none invisible",
 				isDraggingThis && "transition-none!",
 			)}
 			dragAttributes={attributes}
@@ -158,19 +158,19 @@ export default function Hand({
 			className={cn(
 				"fixed",
 				{
-					"rotate-180 top-0 -translate-x-1/2 portrait:-translate-y-2/3 left-1/2 -translate-y-4/5 lg:-translate-y-2/3":
+					"top-0 left-1/2 -translate-x-1/2 -translate-y-4/5 rotate-180 lg:-translate-y-2/3 portrait:-translate-y-2/3":
 						position === "top",
 				},
 				{
-					"left-0 top-1/2 -translate-y-1/2 rotate-90 -translate-x-4/5":
+					"top-1/2 left-0 -translate-x-4/5 -translate-y-1/2 rotate-90":
 						position === "left",
 				},
 				{
-					"right-0 top-1/2 -translate-y-1/2  -rotate-90 translate-x-4/5":
+					"top-1/2 right-0 translate-x-4/5 -translate-y-1/2 -rotate-90":
 						position === "right",
 				},
 				{
-					"bottom-0 translate-y-1/3 -translate-x-1/2 sm:translate-y-1/2 left-1/2 landscape:translate-y-2/3 lg:landscape:translate-y-1/2":
+					"bottom-0 left-1/2 -translate-x-1/2 translate-y-1/3 sm:translate-y-1/2 landscape:translate-y-2/3 lg:landscape:translate-y-1/2":
 						position === "bottom",
 				},
 			)}
@@ -184,7 +184,7 @@ export default function Hand({
 						return (
 							<Card
 								angle={angle}
-								className="top-0 left-0 w-full h-full"
+								className="top-0 left-0 h-full w-full"
 								file="1B.svg"
 								key={card}
 							/>

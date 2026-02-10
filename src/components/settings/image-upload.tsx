@@ -110,7 +110,7 @@ export function ImageUpload({
 					)}
 				</button>
 
-				<p className="text-center text-xs text-muted-foreground">
+				<p className="text-center text-muted-foreground text-xs">
 					Klicken oder Bild hierher ziehen
 					<br />
 					JPG, PNG oder WebP (max. 5MB)
@@ -166,7 +166,7 @@ export function ImageUpload({
 
 						{/* Edit icon badge */}
 						{!isUploading && (
-							<div className="absolute right-0 bottom-0 flex size-8 items-center justify-center rounded-full bg-background text-secondary-foreground border transition-colors group-hover:bg-accent">
+							<div className="absolute right-0 bottom-0 flex size-8 items-center justify-center rounded-full border bg-background text-secondary-foreground transition-colors group-hover:bg-accent">
 								<Pencil className="size-4" />
 							</div>
 						)}
@@ -189,7 +189,7 @@ export function ImageUpload({
 				</DropdownMenuContent>
 			</DropdownMenu>
 
-			<p className="text-center text-xs text-muted-foreground">
+			<p className="text-center text-muted-foreground text-xs">
 				Klicken oder Bild hierher ziehen
 				<br />
 				JPG, PNG oder WebP (max. 5MB)

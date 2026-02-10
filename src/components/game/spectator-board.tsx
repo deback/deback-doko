@@ -102,7 +102,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 			{/* Left Player - wie in /test/hand */}
 			{leftPlayer && (
 				<>
-					<div className="fixed left-4 top-1/2 z-10 -translate-y-1/2">
+					<div className="fixed top-1/2 left-4 z-10 -translate-y-1/2">
 						<PlayerInfo
 							isCurrentTurn={
 								gameState.players[gameState.currentPlayerIndex]?.id ===
@@ -122,7 +122,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 			{/* Right Player - wie in /test/hand */}
 			{rightPlayer && (
 				<>
-					<div className="fixed right-4 top-1/2 z-10 -translate-y-1/2">
+					<div className="fixed top-1/2 right-4 z-10 -translate-y-1/2">
 						<PlayerInfo
 							isCurrentTurn={
 								gameState.players[gameState.currentPlayerIndex]?.id ===
@@ -169,7 +169,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 									return (
 										<Card
 											angle={angle}
-											className="top-0 left-0 w-full h-full"
+											className="top-0 left-0 h-full w-full"
 											// biome-ignore lint/suspicious/noArrayIndexKey: spectator cards are identical
 											key={`spectator-bottom-${index}`}
 											showBack
@@ -184,7 +184,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 
 			{/* Turn Indicator */}
 			<div className="fixed top-1/2 left-1/2 z-20 -translate-x-1/2 translate-y-24">
-				<div className="rounded-full bg-black/60 px-4 py-2 text-white/80 text-sm backdrop-blur-sm">
+				<div className="rounded-full bg-black/60 px-4 py-2 text-sm text-white/80 backdrop-blur-sm">
 					{gameState.players[gameState.currentPlayerIndex]?.name} ist am Zug
 				</div>
 			</div>
@@ -197,7 +197,7 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 
 			{/* Spectator Count */}
 			{gameState.spectatorCount > 0 && (
-				<div className="fixed bottom-4 right-4 z-20 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+				<div className="fixed right-4 bottom-4 z-20 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
 					<Eye className="h-3 w-3 text-white/70" />
 					<span className="text-white/70 text-xs">
 						{gameState.spectatorCount} Zuschauer

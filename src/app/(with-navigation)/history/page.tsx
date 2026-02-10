@@ -10,7 +10,7 @@ export default async function HistoryPage() {
 	const result = await getGameHistory();
 
 	return (
-		<main className="mx-auto px-4 py-6 space-y-2">
+		<main className="mx-auto space-y-2 px-4 py-6">
 			<h1 className="mb-4 font-bold text-2xl">Spielhistorie</h1>
 			{result.data.length === 0 ? (
 				<p className="text-muted-foreground text-sm">

@@ -69,8 +69,8 @@ export function DraggableCard({
 			angle={angle}
 			card={card}
 			className={cn(
-				"top-0 left-0 w-full h-full touch-none",
-				(isGhost || isDraggingThis) && "invisible pointer-events-none",
+				"top-0 left-0 h-full w-full touch-none",
+				(isGhost || isDraggingThis) && "pointer-events-none invisible",
 				isDraggingThis && "transition-none!",
 				className,
 			)}

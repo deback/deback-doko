@@ -8,6 +8,7 @@ import {
 } from "../src/lib/game/rules";
 import { canMakeAnnouncement } from "./announcements";
 import { createDeck, dealCards } from "./deck";
+import { gameEventSchema, tableEventSchema } from "./schemas";
 import { calculateTrickPoints, determineTrickWinner } from "./trick-scoring";
 import type {
 	AnnouncementType,
@@ -117,11 +118,15 @@ export default class Server implements Party.Server {
 		if (this.room.id.startsWith("game-")) {
 			// Handle game events
 			try {
-				const event: GameEvent = JSON.parse(message);
-				this.handleGameEvent(event, sender);
+				const parsed = gameEventSchema.safeParse(JSON.parse(message));
+				if (!parsed.success) {
+					this.sendGameError(sender, "Ungültiges Nachrichtenformat");
+					return;
+				}
+				this.handleGameEvent(parsed.data as GameEvent, sender);
 			} catch (error) {
 				console.error("Error parsing message:", error);
-				this.sendGameError(sender, "Invalid message format");
+				this.sendGameError(sender, "Ungültiges Nachrichtenformat");
 			}
 			return;
 		}
@@ -129,11 +134,15 @@ export default class Server implements Party.Server {
 		// Handle tables room
 		if (this.room.id === "tables-room") {
 			try {
-				const event: TableEvent = JSON.parse(message);
-				this.handleEvent(event, sender);
+				const parsed = tableEventSchema.safeParse(JSON.parse(message));
+				if (!parsed.success) {
+					this.sendError(sender, "Ungültiges Nachrichtenformat");
+					return;
+				}
+				this.handleEvent(parsed.data as TableEvent, sender);
 			} catch (error) {
 				console.error("Error parsing message:", error);
-				this.sendError(sender, "Invalid message format");
+				this.sendError(sender, "Ungültiges Nachrichtenformat");
 			}
 		}
 	}

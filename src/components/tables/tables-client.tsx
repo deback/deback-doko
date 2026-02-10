@@ -240,10 +240,10 @@ export function TablesClient({ player }: TablesClientProps) {
 						return (
 							<Card
 								className={cn(
-									"pt-4 ",
+									"pt-4",
 									isClickable &&
-										"cursor-pointer hover:border-primary transition-colors",
-									!isClickable && "opacity-50 cursor-not-allowed",
+										"cursor-pointer transition-colors hover:border-primary",
+									!isClickable && "cursor-not-allowed opacity-50",
 									canSpectate && "border-amber-500/50",
 									canRejoinGame && "border-emerald-500/50",
 								)}
@@ -254,7 +254,7 @@ export function TablesClient({ player }: TablesClientProps) {
 									else tableRefs.current.delete(table.id);
 								}}
 							>
-								<CardHeader className="px-4 [.border-b]:pb-1 border-b">
+								<CardHeader className="border-b px-4 [.border-b]:pb-1">
 									<div className="flex items-center justify-between gap-2">
 										<div>
 											<div className="flex items-center gap-2">
@@ -276,7 +276,7 @@ export function TablesClient({ player }: TablesClientProps) {
 										</div>
 										{table.players.length > 0 && (
 											<StarRating
-												className="shrink-0 mb-1"
+												className="mb-1 shrink-0"
 												rating={calculateAverageRating(table.players)}
 											/>
 										)}
@@ -320,7 +320,7 @@ export function TablesClient({ player }: TablesClientProps) {
 														className="flex items-center gap-3"
 														key={`empty-${table.id}-${i}`}
 													>
-														<div className="size-8 rounded-full border-2 border-dashed border-muted-foreground/30" />
+														<div className="size-8 rounded-full border-2 border-muted-foreground/30 border-dashed" />
 														<span className="text-muted-foreground text-sm">
 															(Frei)
 														</span>
@@ -329,7 +329,7 @@ export function TablesClient({ player }: TablesClientProps) {
 											)}
 										{canSpectate && (
 											<Button
-												className="w-full mt-2"
+												className="mt-2 w-full"
 												onClick={(e) => {
 													e.stopPropagation();
 													spectateGame(table);

@@ -30,7 +30,7 @@ export default function EmailContainer({
 			<Preview>{preview}</Preview>
 			<Tailwind config={emailTailwindConfig}>
 				<Body className="bg-transparent font-sans text-base">
-					<Container className="max-w-lg mx-auto">
+					<Container className="mx-auto max-w-lg">
 						<Heading className="font-serif leading-tight">
 							Deback Doko - {title}
 						</Heading>

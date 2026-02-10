@@ -113,7 +113,7 @@ export default function DropZone({
 				"fixed border-2 transition-all duration-200",
 
 				isOver && canDrop
-					? "border-primary bg-primary/10 scale-[1.02]"
+					? "scale-[1.02] border-primary bg-primary/10"
 					: "border-red-500",
 
 				// -- Top --
@@ -139,7 +139,7 @@ export default function DropZone({
 			ref={mergedRef}
 		>
 			{mounted && (
-				<div className="relative w-full h-full flex items-center justify-center">
+				<div className="relative flex h-full w-full items-center justify-center">
 					{OPPONENT_CARDS.map((card) => {
 						const shortScreenOffset =
 							isShortScreen && card.position === "top" ? 90 : 0;

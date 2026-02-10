@@ -147,20 +147,20 @@ export default function Card({
 		<motion.button
 			animate={mergedAnimate}
 			className={cn(
-				`absolute ${CARD_SIZE} origin-[50%_650%] shadow-md rounded-[5cqw] xl:origin-[50%_850%] transition-[translate,box-shadow] duration-200 select-none`,
+				`absolute ${CARD_SIZE} origin-[50%_650%] select-none rounded-[5cqw] shadow-md transition-[translate,box-shadow] duration-200 xl:origin-[50%_850%]`,
 				// Interactive states
 				{ "cursor-pointer hover:-translate-y-[6%]": isInteractive },
 				// Playable indicator (green ring)
 				{ "": playable && !selected },
 				// Selected state
 				{
-					"-translate-y-[10%] hover:-translate-y-[10%] ring-2 ring-primary":
+					"-translate-y-[10%] ring-2 ring-primary hover:-translate-y-[10%]":
 						selected,
 				},
 				// Disabled state
-				{ "grayscale-50 brightness-60 cursor-not-allowed": disabled },
+				{ "cursor-not-allowed brightness-60 grayscale-50": disabled },
 				// Ghost/Dragging states
-				{ "invisible pointer-events-none": isGhost || isDragging },
+				{ "pointer-events-none invisible": isGhost || isDragging },
 				{ "transition-none!": isDragging },
 				className,
 			)}

@@ -27,7 +27,7 @@ export function TurnIndicator({
 			>
 				<Info className="h-4 w-4 text-white/70" />
 				{showInfo && (
-					<span className="text-white/80 text-sm">
+					<span className="text-sm text-white/80">
 						{isMyTurn ? "Du bist am Zug" : `${currentPlayerName} ist am Zug`}
 					</span>
 				)}

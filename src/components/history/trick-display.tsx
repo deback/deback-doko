@@ -38,7 +38,7 @@ export function TrickDisplay({
 							<CardImage rank={entry.card.rank} suit={entry.card.suit} />
 							<span
 								className={cn(
-									"truncate text-center text-xs w-full",
+									"w-full truncate text-center text-xs",
 									isWinner
 										? "font-semibold text-emerald-600"
 										: "text-muted-foreground",

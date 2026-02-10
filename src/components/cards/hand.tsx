@@ -51,7 +51,7 @@ export function Hand({
 					return (
 						<button
 							className={cn(
-								"absolute w-[20%] landscape:w-[15%] transition-transform duration-200 bg-transparent border-none p-0",
+								"absolute w-[20%] border-none bg-transparent p-0 transition-transform duration-200 landscape:w-[15%]",
 								!isSelected && "hover:-translate-y-[8%]",
 							)}
 							key={`${card.suit}-${card.rank}-${index}`}
@@ -73,7 +73,7 @@ export function Hand({
 
 				return (
 					<CardImage
-						className="absolute w-[20%] landscape:w-[15%] transition-transform duration-200"
+						className="absolute w-[20%] transition-transform duration-200 landscape:w-[15%]"
 						key={`${card.suit}-${card.rank}-${index}`}
 						rank={card.rank}
 						showBack={showBack}

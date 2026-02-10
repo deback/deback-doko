@@ -15,7 +15,7 @@ export function AppearanceTab() {
 
 	return (
 		<div className="flex flex-col gap-2">
-			<p className="text-sm text-muted-foreground">Erscheinungsbild</p>
+			<p className="text-muted-foreground text-sm">Erscheinungsbild</p>
 			<div className="grid grid-cols-3 gap-2">
 				{themeOptions.map((option) => {
 					const Icon = option.icon;

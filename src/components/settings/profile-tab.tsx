@@ -166,7 +166,7 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 	if (isCropping) {
 		return (
 			<div className="flex flex-col gap-4">
-				<p className="text-sm font-medium">Bild zuschneiden</p>
+				<p className="font-medium text-sm">Bild zuschneiden</p>
 
 				<div className="relative h-[300px] w-full">
 					<Cropper
@@ -182,7 +182,7 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Label className="text-xs text-muted-foreground" htmlFor="zoom">
+					<Label className="text-muted-foreground text-xs" htmlFor="zoom">
 						Zoom
 					</Label>
 					<input
@@ -240,7 +240,7 @@ export function ProfileTab({ user, onClose }: ProfileTabProps) {
 					placeholder="Dein Name"
 					value={name}
 				/>
-				<p className="text-xs text-muted-foreground">
+				<p className="text-muted-foreground text-xs">
 					Der Name muss zwischen 2 und 50 Zeichen lang sein.
 				</p>
 			</div>

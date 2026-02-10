@@ -26,7 +26,7 @@ export function TablesHeader({
 	// Cannot leave if game has started
 	const canLeave = isPlayerAtAnyTable && !isGameStarted;
 	return (
-		<div className="sticky top-0 z-10 shadow-sm bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+		<div className="sticky top-0 z-10 bg-background/95 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
 			<div className="container mx-auto flex items-center justify-between p-4">
 				<Tooltip>
 					<TooltipTrigger asChild>

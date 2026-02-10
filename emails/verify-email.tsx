@@ -24,7 +24,7 @@ export default function VerifyEmail({ url }: VerifyEmailProps) {
 			</Text>
 			<CTA href={url} text="E-Mail-Adresse bestätigen" />
 
-			<Text className="text-sm mt-8">
+			<Text className="mt-8 text-sm">
 				Oder kopiere diesen Link in deinen Browser:
 			</Text>
 			<CopyCode code={url} />

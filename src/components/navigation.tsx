@@ -41,7 +41,7 @@ export function Navigation({ user }: NavigationProps) {
 	];
 
 	return (
-		<nav className="fixed right-0 bottom-0 left-0 z-10 shadow-sm bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+		<nav className="fixed right-0 bottom-0 left-0 z-10 bg-background/95 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
 			<div className="mx-auto flex max-w-3xl items-center justify-around px-4 py-2">
 				<SettingsDialog user={user} />
 				{navItems.map((item) => {

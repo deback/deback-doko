@@ -35,7 +35,7 @@ export function GameHistoryList({ games }: GameHistoryListProps) {
 
 				return (
 					<Link
-						className="block rounded-lg bg-card px-4 py-3 hover:bg-muted transition-colors"
+						className="block rounded-lg bg-card px-4 py-3 transition-colors hover:bg-muted"
 						href={`/history/${game.id}`}
 						key={game.id}
 					>
