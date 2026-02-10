@@ -167,6 +167,12 @@ export function useGameConnection({
 				socket.send(JSON.stringify(event));
 			},
 
+			autoPlayAll: () => {
+				if (!socket) return;
+				const event: GameEvent = { type: "auto-play-all" };
+				socket.send(JSON.stringify(event));
+			},
+
 			resetGame: () => {
 				if (!socket) return;
 				const event: GameEvent = { type: "reset-game" };

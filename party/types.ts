@@ -165,6 +165,7 @@ export type GameEvent =
 	| { type: "get-state" }
 	| { type: "play-card"; cardId: string; playerId: string }
 	| { type: "auto-play" }
+	| { type: "auto-play-all" }
 	| { type: "reset-game" }
 	| { type: "start-game"; players: Player[]; tableId: string }
 	| {

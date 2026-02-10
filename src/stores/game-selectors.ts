@@ -274,6 +274,9 @@ export const useDeclareContract = () => useGameStore((s) => s.declareContract);
 /** Automatisch spielen */
 export const useAutoPlay = () => useGameStore((s) => s.autoPlay);
 
+/** Alle restlichen Karten automatisch spielen */
+export const useAutoPlayAll = () => useGameStore((s) => s.autoPlayAll);
+
 /** Spiel zurücksetzen */
 export const useResetGame = () => useGameStore((s) => s.resetGame);
 

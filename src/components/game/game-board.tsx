@@ -10,7 +10,7 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { Bot, Eye, RotateCcw } from "lucide-react";
+import { Bot, Eye, FastForward, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -24,6 +24,7 @@ import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
 import {
 	useAutoPlay,
+	useAutoPlayAll,
 	useBid,
 	useContractDeclarer,
 	useCurrentPlayer,
@@ -91,6 +92,7 @@ export function GameBoard() {
 	const bid = useBid();
 	const declareContract = useDeclareContract();
 	const autoPlay = useAutoPlay();
+	const autoPlayAll = useAutoPlayAll();
 	const resetGame = useResetGame();
 
 	// =========================================================================
@@ -473,6 +475,14 @@ export function GameBoard() {
 					>
 						<Bot className="h-4 w-4" />
 						Auto-Play
+					</button>
+					<button
+						className="flex items-center gap-2 rounded-full bg-purple-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-purple-600"
+						onClick={autoPlayAll}
+						type="button"
+					>
+						<FastForward className="h-4 w-4" />
+						Alle spielen
 					</button>
 					<button
 						className="flex items-center gap-2 rounded-full bg-slate-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-slate-600"

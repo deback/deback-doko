@@ -53,6 +53,7 @@ export interface GameStoreActions {
 	bid: (bid: ReservationType) => void;
 	declareContract: (contract: ContractType) => void;
 	autoPlay: () => void;
+	autoPlayAll: () => void;
 	resetGame: () => void;
 
 	// Action Setter (for useGameConnection to register WebSocket actions)
@@ -62,7 +63,13 @@ export interface GameStoreActions {
 /** Game actions that are set by useGameConnection */
 export type GameActions = Pick<
 	GameStoreActions,
-	"playCard" | "announce" | "bid" | "declareContract" | "autoPlay" | "resetGame"
+	| "playCard"
+	| "announce"
+	| "bid"
+	| "declareContract"
+	| "autoPlay"
+	| "autoPlayAll"
+	| "resetGame"
 >;
 
 // =============================================================================
@@ -119,6 +126,7 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 		bid: () => {},
 		declareContract: () => {},
 		autoPlay: () => {},
+		autoPlayAll: () => {},
 		resetGame: () => {},
 
 		// Action Setter

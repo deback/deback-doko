@@ -18,6 +18,7 @@ export const gameEventSchema = z.discriminatedUnion("type", [
 		playerId: z.string(),
 	}),
 	z.object({ type: z.literal("auto-play") }),
+	z.object({ type: z.literal("auto-play-all") }),
 	z.object({ type: z.literal("reset-game") }),
 	z.object({
 		type: z.literal("start-game"),

@@ -352,6 +352,10 @@ export default class Server implements Party.Server {
 				await this.autoPlay(sender);
 				break;
 
+			case "auto-play-all":
+				await this.autoPlayAll(sender);
+				break;
+
 			case "spectate-game":
 				await this.addSpectator(
 					event.gameId,
@@ -1384,6 +1388,115 @@ export default class Server implements Party.Server {
 		}
 
 		await this.playCard(cardToPlay.id, currentPlayer.id, sender);
+	}
+
+	async autoPlayAll(sender: Party.Connection) {
+		const gameState = this.games.get(this.room.id);
+		if (!gameState || !gameState.gameStarted || gameState.gameEnded) return;
+
+		// Block if trick is being animated
+		if (
+			gameState.currentTrick.completed ||
+			gameState.currentTrick.cards.length >= 4
+		) {
+			return;
+		}
+
+		// Handle bidding phase first
+		while (gameState.biddingPhase?.active) {
+			const awaitingPlayers =
+				gameState.biddingPhase.awaitingContractDeclaration;
+			const firstAwaiting = awaitingPlayers?.[0];
+			if (firstAwaiting) {
+				await this.handleDeclareContract(firstAwaiting, "normal", sender);
+				continue;
+			}
+			const currentBidder =
+				gameState.players[gameState.biddingPhase.currentBidderIndex];
+			if (currentBidder) {
+				await this.handleBid(currentBidder.id, "gesund", sender);
+			}
+		}
+
+		// Play all remaining tricks
+		while (!gameState.gameEnded && gameState.completedTricks.length < 12) {
+			// Play 4 cards to complete one trick
+			while (gameState.currentTrick.cards.length < 4) {
+				const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+				if (!currentPlayer) break;
+				const hand = gameState.hands[currentPlayer.id];
+				if (!hand || hand.length === 0) break;
+
+				const playableCards = getPlayableCards(
+					hand,
+					gameState.currentTrick,
+					gameState.trump,
+				);
+				const card = playableCards[0];
+				if (!card) break;
+
+				const cardIndex = hand.findIndex((c) => c.id === card.id);
+				hand.splice(cardIndex, 1);
+				gameState.handCounts[currentPlayer.id] = hand.length;
+				gameState.currentTrick.cards.push({
+					card,
+					playerId: currentPlayer.id,
+				});
+
+				if (gameState.currentTrick.cards.length < 4) {
+					gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % 4;
+				}
+			}
+
+			// Complete trick synchronously (no animation delay)
+			const trick = gameState.currentTrick;
+			const isLastTrick = gameState.completedTricks.length === 11;
+			const trickNumber = gameState.completedTricks.length + 1;
+			const winner = determineTrickWinner(
+				trick,
+				gameState.trump,
+				gameState.schweinereiPlayers,
+				isLastTrick,
+			);
+			trick.winnerId = winner;
+			trick.completed = true;
+
+			if (gameState.hochzeit?.active && !gameState.hochzeit.partnerPlayerId) {
+				this.checkHochzeitPartner(gameState, trick, winner, trickNumber);
+			}
+
+			const trickPoints = calculateTrickPoints(trick);
+			trick.points = trickPoints;
+			if (winner) {
+				gameState.scores[winner] =
+					(gameState.scores[winner] || 0) + trickPoints;
+			}
+
+			gameState.completedTricks.push({ ...trick });
+			gameState.currentPlayerIndex = gameState.players.findIndex(
+				(p) => p.id === winner,
+			);
+			gameState.currentTrick = { cards: [], completed: false };
+
+			if (gameState.completedTricks.length >= 12) {
+				gameState.gameEnded = true;
+				gameState.gamePointsResult = calculateGamePoints(gameState);
+				this.saveGameResults(gameState);
+			}
+		}
+
+		// Final broadcast
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
+
+		// If game ended, restart after delay
+		if (gameState.gameEnded) {
+			const RESTART_DELAY = 5000;
+			setTimeout(() => {
+				this.restartGame(gameState);
+			}, RESTART_DELAY);
+		}
 	}
 
 	sendGameState(conn: Party.Connection, gameState: GameState) {
