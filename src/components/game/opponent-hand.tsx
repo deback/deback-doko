@@ -30,6 +30,7 @@ export function OpponentHand({
 	return (
 		<div className={cn("fixed z-10", POSITION_STYLES[position], className)}>
 			<div className={`@container relative ${CARD_SIZE}`}>
+				{statusSlot}
 				{Array.from({ length: cardCount }).map((_, index) => {
 					const t = index - (cardCount - 1) / 2;
 					const angle = t * 1.2;
@@ -44,7 +45,6 @@ export function OpponentHand({
 						/>
 					);
 				})}
-				{statusSlot}
 			</div>
 		</div>
 	);

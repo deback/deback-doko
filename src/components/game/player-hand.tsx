@@ -216,6 +216,7 @@ export function PlayerHand({
 			)}
 		>
 			<div className={`@container relative ${CARD_SIZE}`}>
+				{statusSlot}
 				{cards.map((card, index) => {
 					const t = index - (cards.length - 1) / 2;
 					const angle = t * 1.2;
@@ -251,7 +252,6 @@ export function PlayerHand({
 						/>
 					);
 				})}
-				{statusSlot}
 			</div>
 		</div>
 	);
