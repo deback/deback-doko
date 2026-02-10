@@ -72,7 +72,7 @@ export function PlayerStatus({
 
 				{hasReOrKontra && (
 					<AnnouncementBadge
-						label={announcements?.reOrKontra === "re" ? "RE" : "Ko"}
+						label={announcements?.reOrKontra === "re" ? "RE" : "KO"}
 						position={position}
 						tooltip={announcements?.reOrKontra === "re" ? "Re" : "Kontra"}
 						variant={announcements?.reOrKontra === "re" ? "re" : "kontra"}
