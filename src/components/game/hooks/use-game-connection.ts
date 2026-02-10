@@ -88,8 +88,13 @@ export function useGameConnection({
 					}
 				}
 
-				// Request current state
-				socket.send(JSON.stringify({ type: "get-state" } satisfies GameEvent));
+				// Request current state (include playerId so server can verify player membership)
+				socket.send(
+					JSON.stringify({
+						type: "get-state",
+						playerId: player.id,
+					} satisfies GameEvent),
+				);
 			}
 		});
 

@@ -32,6 +32,8 @@ import type {
 export default class Server implements Party.Server {
 	tables: Map<string, Table> = new Map();
 	games: Map<string, GameState> = new Map();
+	// Track player connections per game: gameId -> Set of player connection IDs
+	playerConnections: Map<string, Set<string>> = new Map();
 	// Track spectators per game: gameId -> Set of spectator connection IDs
 	spectatorConnections: Map<string, Set<string>> = new Map();
 	// Map connection ID to spectator info (including name and image)
@@ -108,6 +110,11 @@ export default class Server implements Party.Server {
 	}
 
 	async onClose(conn: Party.Connection) {
+		// Handle player disconnect
+		for (const players of this.playerConnections.values()) {
+			players.delete(conn.id);
+		}
+
 		// Handle spectator disconnect
 		const spectatorInfo = this.connectionToSpectator.get(conn.id);
 		if (spectatorInfo) {
@@ -335,7 +342,20 @@ export default class Server implements Party.Server {
 			case "get-state": {
 				const gameState = this.games.get(this.room.id);
 				if (gameState) {
-					this.sendGameState(sender, gameState);
+					const isPlayer =
+						event.playerId &&
+						gameState.players.some((p) => p.id === event.playerId);
+					if (isPlayer) {
+						// Register as player connection
+						if (!this.playerConnections.has(gameState.id)) {
+							this.playerConnections.set(gameState.id, new Set());
+						}
+						this.playerConnections.get(gameState.id)?.add(sender.id);
+						this.sendGameState(sender, gameState);
+					} else {
+						// Not a player → treat as spectator
+						this.sendSpectatorState(sender, gameState);
+					}
 				}
 				break;
 			}
@@ -1516,7 +1536,7 @@ export default class Server implements Party.Server {
 	}
 
 	broadcastGameState(gameState: GameState) {
-		const spectators = this.spectatorConnections.get(gameState.id);
+		const players = this.playerConnections.get(gameState.id);
 		const message: GameMessage = {
 			type: "state",
 			state: gameState,
@@ -1524,9 +1544,10 @@ export default class Server implements Party.Server {
 		const messageStr = JSON.stringify(message);
 
 		for (const conn of this.room.getConnections()) {
-			// Skip spectator connections — they receive a sanitized view via broadcastToSpectators
-			if (spectators?.has(conn.id)) continue;
-			conn.send(messageStr);
+			// Only send full state to registered player connections
+			if (players?.has(conn.id)) {
+				conn.send(messageStr);
+			}
 		}
 	}
 }

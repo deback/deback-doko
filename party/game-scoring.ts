@@ -73,7 +73,7 @@ export function calculateGamePoints(gameState: GameState): GamePointsResult {
 		const loserCardPoints = reWon ? kontraCardPoints : reCardPoints;
 		const loserTricks = reWon ? kontraTricks : reTricks;
 
-		points.push({ label: "Gewonnen", team: winnerTeam, value: 1 });
+		points.push({ label: "Keine 120", team: winnerTeam, value: 1 });
 
 		if (loserCardPoints < 90) {
 			points.push({ label: "Keine 90", team: winnerTeam, value: 1 });

@@ -25,8 +25,16 @@ const MAX_SCORE = 240;
 // Animation timing
 const INITIAL_DELAY = 500; // ms before bar starts
 const BAR_DURATION = 3; // seconds for bar animation
-const POINT_DELAY = 400; // ms between each game point appearing
-const SUMMARY_DELAY = 600; // ms after last point before summary
+const SUMMARY_DELAY = 600; // ms after bar completes
+
+// Score thresholds at which game points appear (from winner's perspective)
+const POINT_THRESHOLDS: Record<string, number> = {
+	"Keine 120": 121,
+	"Keine 90": 151,
+	"Keine 60": 181,
+	"Keine 30": 211,
+	Schwarz: 240,
+};
 
 // =============================================================================
 // Component
@@ -68,7 +76,7 @@ export function GameEndDialog({
 		const winnerTeam = reWon ? "re" : "kontra";
 		const loserCardPoints = reWon ? kontraCardPoints : reCardPoints;
 
-		possiblePoints.push({ label: "Gewonnen", team: winnerTeam });
+		possiblePoints.push({ label: "Keine 120", team: winnerTeam });
 		if (loserCardPoints < 90)
 			possiblePoints.push({ label: "Keine 90", team: winnerTeam });
 		if (loserCardPoints < 60)
@@ -80,11 +88,14 @@ export function GameEndDialog({
 		const extras: { label: string; team: "re" | "kontra" }[] = [
 			{ label: "Re angesagt", team: reWon ? "re" : "kontra" },
 			{ label: "Kontra angesagt", team: kontraWon ? "kontra" : "re" },
-			{ label: "Gegen die Alten", team: "kontra" },
 			{ label: "Fuchs gefangen", team: winnerTeam },
 			{ label: "Karlchen", team: winnerTeam },
 			{ label: "Doppelkopf", team: winnerTeam },
 		];
+		// Gegen die Alten: only when Kontra wins (7.2.3)
+		if (kontraWon) {
+			extras.push({ label: "Gegen die Alten", team: "kontra" });
+		}
 		for (const extra of extras) {
 			if (Math.random() > 0.6) possiblePoints.push(extra);
 		}
@@ -115,45 +126,73 @@ export function GameEndDialog({
 
 	// Animation state
 	const [displayScore, setDisplayScore] = useState(0);
-	const [visiblePointCount, setVisiblePointCount] = useState(0);
+	const [visiblePoints, setVisiblePoints] = useState<Set<number>>(new Set());
 	const [showSummary, setShowSummary] = useState(false);
 	const [animationDone, setAnimationDone] = useState(false);
 	const animationRef = useRef<{ stop: () => void } | null>(null);
 	const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+	const revealedRef = useRef<Set<number>>(new Set());
 
-	// Reset animation state when dialog opens
+	// Reset animation state when dialog opens or data changes
 	useEffect(() => {
 		if (!open) return;
 
 		setDisplayScore(0);
-		setVisiblePointCount(0);
+		setVisiblePoints(new Set());
 		setShowSummary(false);
 		setAnimationDone(false);
+		revealedRef.current = new Set();
+
+		// Compute thresholds for each point
+		// Threshold-based points only apply when the bar represents the winning team.
+		// If the point is for the opponent, show it after the bar completes (null).
+		const points = gpr?.points ?? [];
+		const thresholds = points.map((point) => {
+			const threshold = POINT_THRESHOLDS[point.label];
+			if (threshold == null) return null;
+			// Only use threshold if this point's team matches my team (bar = my score)
+			return point.team === myTeam ? threshold : null;
+		});
 
 		const startTimer = setTimeout(() => {
-			// Animate bar from 0 to myCardPoints
 			const controls = animate(0, myCardPoints, {
 				duration: BAR_DURATION,
 				ease: [0.25, 0.1, 0.25, 1],
-				onUpdate: (v) => setDisplayScore(Math.round(v)),
-				onComplete: () => {
-					// After bar completes, show game points sequentially
-					const points = gpr?.points ?? [];
-					for (let i = 0; i < points.length; i++) {
-						const timer = setTimeout(() => {
-							setVisiblePointCount(i + 1);
-						}, i * POINT_DELAY);
-						timersRef.current.push(timer);
-					}
+				onUpdate: (v) => {
+					const score = Math.round(v);
+					setDisplayScore(score);
 
-					// Show summary after all points
-					const summaryTimer = setTimeout(
-						() => {
-							setShowSummary(true);
-							setAnimationDone(true);
-						},
-						points.length * POINT_DELAY + SUMMARY_DELAY,
-					);
+					// Reveal threshold-based points when bar crosses their value
+					let changed = false;
+					for (let i = 0; i < thresholds.length; i++) {
+						const threshold = thresholds[i];
+						if (
+							threshold != null &&
+							score >= threshold &&
+							!revealedRef.current.has(i)
+						) {
+							revealedRef.current.add(i);
+							changed = true;
+						}
+					}
+					if (changed) {
+						setVisiblePoints(new Set(revealedRef.current));
+					}
+				},
+				onComplete: () => {
+					// After bar completes, reveal non-threshold points immediately
+					for (let i = 0; i < thresholds.length; i++) {
+						if (thresholds[i] === null) {
+							revealedRef.current.add(i);
+						}
+					}
+					setVisiblePoints(new Set(revealedRef.current));
+
+					// Show summary after a short delay
+					const summaryTimer = setTimeout(() => {
+						setShowSummary(true);
+						setAnimationDone(true);
+					}, SUMMARY_DELAY);
 					timersRef.current.push(summaryTimer);
 				},
 			});
@@ -166,7 +205,7 @@ export function GameEndDialog({
 			for (const t of timersRef.current) clearTimeout(t);
 			timersRef.current = [];
 		};
-	}, [open, myCardPoints, gpr?.points]);
+	}, [open, myCardPoints, gpr?.points, myTeam]);
 
 	// Skip animation on click
 	const skipAnimation = useCallback(() => {
@@ -175,10 +214,11 @@ export function GameEndDialog({
 		for (const t of timersRef.current) clearTimeout(t);
 		timersRef.current = [];
 		setDisplayScore(myCardPoints);
-		setVisiblePointCount(gpr?.points.length ?? 0);
+		const allIndices = new Set((gpr?.points ?? []).map((_, i) => i));
+		setVisiblePoints(allIndices);
 		setShowSummary(true);
 		setAnimationDone(true);
-	}, [animationDone, myCardPoints, gpr?.points.length]);
+	}, [animationDone, myCardPoints, gpr?.points]);
 
 	// Compute net points and money
 	const myNetPoints = gpr
@@ -203,10 +243,17 @@ export function GameEndDialog({
 		}
 	}
 
-	const barColor = iWon ? "bg-emerald-500" : "bg-red-500";
-	const barGlow = iWon
-		? "shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-		: "shadow-[0_0_12px_rgba(239,68,68,0.4)]";
+	// During animation: primary color. After: green (won) or red (lost)
+	const barColor = animationDone
+		? iWon
+			? "bg-emerald-500"
+			: "bg-red-500"
+		: "bg-primary";
+	const barGlow = animationDone
+		? iWon
+			? "shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+			: "shadow-[0_0_12px_rgba(239,68,68,0.4)]"
+		: "";
 
 	return (
 		<Dialog onOpenChange={(o) => !o && onClose()} open={open}>
@@ -221,7 +268,7 @@ export function GameEndDialog({
 					<Dices className="size-4" />
 				</Button>
 				<DialogHeader>
-					<DialogTitle className="text-center text-2xl text-emerald-600">
+					<DialogTitle className="text-center font-serif text-2xl">
 						Spiel beendet!
 					</DialogTitle>
 				</DialogHeader>
@@ -232,30 +279,37 @@ export function GameEndDialog({
 					{/* Left: Score Bar */}
 					<div className="flex shrink-0 flex-col items-center">
 						<ScoreBar
+							animationDone={animationDone}
 							barColor={barColor}
 							barGlow={barGlow}
 							displayScore={displayScore}
 							iWon={!!iWon}
-							targetScore={myCardPoints}
 						/>
 					</div>
 
 					{/* Right: Game Points + Summary */}
 					<div className="min-w-0 flex-1 space-y-3">
-						{/* Team Overview (compact) */}
+						{/* Team Overview (compact) - win/loss hidden until animation done */}
 						<div className="flex gap-2 text-xs">
 							<div
 								className={cn(
-									"flex-1 rounded-md px-2 py-1.5",
-									gpr?.reWon ? "bg-emerald-500/20" : "bg-muted",
+									"flex-1 rounded-md px-2 py-1.5 transition-colors duration-500",
+									animationDone && gpr?.reWon
+										? "bg-emerald-500/20"
+										: "bg-muted",
 								)}
 							>
 								<span
-									className={cn("font-bold", gpr?.reWon && "text-emerald-600")}
+									className={cn(
+										"font-bold transition-colors duration-500",
+										animationDone && gpr?.reWon && "text-emerald-600",
+									)}
 								>
-									Re {gpr?.reWon && "\u{1F3C6}"}
+									Re {animationDone && gpr?.reWon && "\u{1F3C6}"}
 								</span>
-								<span className="ml-1 font-bold">{gpr?.reCardPoints ?? 0}</span>
+								<span className="ml-1 font-bold">
+									{animationDone ? (gpr?.reCardPoints ?? 0) : "?"}
+								</span>
 								<div className="text-muted-foreground">
 									{gameState.players
 										.filter((p) => gameState.teams[p.id] === "re")
@@ -265,20 +319,22 @@ export function GameEndDialog({
 							</div>
 							<div
 								className={cn(
-									"flex-1 rounded-md px-2 py-1.5",
-									gpr?.kontraWon ? "bg-emerald-500/20" : "bg-muted",
+									"flex-1 rounded-md px-2 py-1.5 transition-colors duration-500",
+									animationDone && gpr?.kontraWon
+										? "bg-emerald-500/20"
+										: "bg-muted",
 								)}
 							>
 								<span
 									className={cn(
-										"font-bold",
-										gpr?.kontraWon && "text-emerald-600",
+										"font-bold transition-colors duration-500",
+										animationDone && gpr?.kontraWon && "text-emerald-600",
 									)}
 								>
-									Kontra {gpr?.kontraWon && "\u{1F3C6}"}
+									Kontra {animationDone && gpr?.kontraWon && "\u{1F3C6}"}
 								</span>
 								<span className="ml-1 font-bold">
-									{gpr?.kontraCardPoints ?? 0}
+									{animationDone ? (gpr?.kontraCardPoints ?? 0) : "?"}
 								</span>
 								<div className="text-muted-foreground">
 									{gameState.players
@@ -303,7 +359,7 @@ export function GameEndDialog({
 											},
 											idx: number,
 										) => {
-											const isVisible = idx < visiblePointCount;
+											const isVisible = visiblePoints.has(idx);
 											const isMyPoint = point.team === myTeam;
 											return (
 												<motion.div
@@ -333,7 +389,7 @@ export function GameEndDialog({
 													</span>
 													<span
 														className={cn(
-															"font-medium",
+															"font-medium font-mono",
 															isMyPoint ? "text-emerald-600" : "text-red-500",
 														)}
 													>
@@ -348,20 +404,12 @@ export function GameEndDialog({
 									{/* Gesamt */}
 									<motion.div
 										animate={showSummary ? { opacity: 1 } : { opacity: 0 }}
-										className="mt-1 flex items-center justify-between border-t pt-1 font-bold text-sm"
+										className="mt-1 flex items-center justify-between border-t pt-2 font-bold text-sm"
 										initial={{ opacity: 0 }}
 										transition={{ duration: 0.4 }}
 									>
 										<span>Gesamt</span>
-										<span
-											className={cn(
-												myNetPoints > 0
-													? "text-emerald-600"
-													: myNetPoints < 0
-														? "text-red-500"
-														: "",
-											)}
-										>
+										<span>
 											{myNetPoints > 0 ? "+" : ""}
 											{myNetPoints}{" "}
 											{Math.abs(myNetPoints) === 1 ? "Punkt" : "Punkte"}
@@ -381,15 +429,12 @@ export function GameEndDialog({
 								initial={{ opacity: 0, y: 10 }}
 								transition={{ duration: 0.4, delay: 0.2 }}
 							>
-								<h4 className="font-semibold text-sm">
-									Abrechnung (je Spielpunkt 0,50$)
-								</h4>
 								<div className="rounded-lg border p-2">
 									<div className="flex items-center justify-between text-sm">
 										<span>{currentPlayer.name}</span>
 										<span
 											className={cn(
-												"font-bold",
+												"font-bold font-mono",
 												myAmount > 0
 													? "text-emerald-600"
 													: myAmount < 0
@@ -417,24 +462,20 @@ export function GameEndDialog({
 
 function ScoreBar({
 	displayScore,
-	targetScore,
 	barColor,
 	barGlow,
 	iWon,
+	animationDone,
 }: {
 	displayScore: number;
-	targetScore: number;
 	barColor: string;
 	barGlow: string;
 	iWon: boolean;
+	animationDone: boolean;
 }) {
 	const barHeight = 280; // px
 	const fillPercent = Math.min(displayScore / MAX_SCORE, 1);
 	const fillHeight = fillPercent * barHeight;
-
-	// Target score position for the number label
-	const targetPercent = Math.min(targetScore / MAX_SCORE, 1);
-	const targetY = barHeight - targetPercent * barHeight;
 
 	return (
 		<div className="relative flex items-end" style={{ height: barHeight }}>
@@ -457,9 +498,11 @@ function ScoreBar({
 								className={cn(
 									"font-mono text-[10px] transition-colors duration-300",
 									isReached
-										? iWon
-											? "font-bold text-emerald-600"
-											: "font-bold text-red-500"
+										? animationDone
+											? iWon
+												? "font-bold text-emerald-600"
+												: "font-bold text-red-500"
+											: "font-bold text-primary"
 										: "text-muted-foreground",
 									isWinLine && "font-bold",
 								)}
@@ -514,29 +557,12 @@ function ScoreBar({
 				{/* Score number overlay */}
 				{displayScore > 0 && (
 					<div
-						className="absolute right-0 left-0 flex items-center justify-center"
+						className="absolute right-0 left-0 -mt-1.5 flex items-center justify-center pb-1 font-mono"
 						style={{
 							top: Math.max(barHeight - fillHeight - 14, 0),
 						}}
 					>
 						<span className="font-bold font-mono text-xs">{displayScore}</span>
-					</div>
-				)}
-			</div>
-
-			{/* Target score label on the right */}
-			<div className="relative ml-1" style={{ height: barHeight }}>
-				{displayScore >= targetScore && targetScore > 0 && (
-					<div
-						className="absolute flex items-center"
-						style={{
-							top: targetY,
-							transform: "translateY(-50%)",
-						}}
-					>
-						<span className="whitespace-nowrap text-[10px] text-muted-foreground">
-							{targetScore} Augen
-						</span>
 					</div>
 				)}
 			</div>

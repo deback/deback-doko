@@ -90,7 +90,7 @@ import type {
 } from "./game/base";
 
 export type GameEvent =
-	| { type: "get-state" }
+	| { type: "get-state"; playerId?: string }
 	| { type: "play-card"; cardId: string; playerId: string }
 	| { type: "auto-play" }
 	| { type: "auto-play-all" }

@@ -118,7 +118,7 @@ export interface Trick {
 }
 
 export interface GamePointEntry {
-	label: string; // e.g. "Gewonnen", "Keine 90", "Doppelkopf"
+	label: string; // e.g. "Keine 120", "Keine 90", "Doppelkopf"
 	team: "re" | "kontra"; // which team earns this point
 	value: number; // 1 or 2 (Re/Kontra announcement = 2)
 }
@@ -162,7 +162,7 @@ export interface GameState {
 }
 
 export type GameEvent =
-	| { type: "get-state" }
+	| { type: "get-state"; playerId?: string }
 	| { type: "play-card"; cardId: string; playerId: string }
 	| { type: "auto-play" }
 	| { type: "auto-play-all" }
