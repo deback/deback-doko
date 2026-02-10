@@ -178,7 +178,10 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 						onValueChange={(v) => setSelected(v as PointAnnouncementType)}
 						value={effectiveSelected}
 					>
-						<SelectTrigger className="bg-background" size="sm">
+						<SelectTrigger
+							className="bg-background/70 hover:bg-background/90 dark:bg-background/70 dark:hover:bg-background/90"
+							size="sm"
+						>
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
