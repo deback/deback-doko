@@ -142,7 +142,7 @@ export function BiddingSelect({
 	};
 
 	return (
-		<div className="fixed top-1/2 left-1/2 z-50 mx-auto -mt-8 flex min-w-72 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl bg-background p-4 text-foreground shadow-lg lg:gap-4">
+		<div className="fixed top-1/2 left-1/2 z-50 mx-auto -mt-8 flex min-w-64 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl bg-background p-4 text-foreground shadow-lg lg:gap-4">
 			<h3 className="hidden font-semibold font-serif text-lg lg:block">
 				Vorbehaltsabfrage
 			</h3>
@@ -303,7 +303,7 @@ export function BiddingSelect({
 									}
 									value={selectedBid}
 								>
-									<SelectTrigger className="min-w-30">
+									<SelectTrigger className="min-w-30 grow">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>

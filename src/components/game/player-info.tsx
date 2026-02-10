@@ -48,7 +48,7 @@ export function PlayerInfo({
 				size="xs"
 				src={player.image}
 			/>
-			<span className="text-balance pr-1 font-medium text-sm text-white lg:text-base">
+			<span className="max-w-32 truncate pr-1 font-medium text-sm text-white lg:text-base">
 				{player.name}
 			</span>
 		</div>
