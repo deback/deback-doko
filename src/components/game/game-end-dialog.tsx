@@ -1,7 +1,9 @@
 "use client";
 
 import { animate, motion } from "framer-motion";
+import { Dices } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -9,7 +11,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { GameState } from "@/types/game";
+import type { GamePointsResult, GameState } from "@/types/game";
 import type { Player } from "@/types/tables";
 
 // =============================================================================
@@ -43,7 +45,10 @@ export function GameEndDialog({
 	open,
 	onClose,
 }: GameEndDialogProps) {
-	const gpr = gameState.gamePointsResult;
+	// Test data override
+	const [testGpr, setTestGpr] = useState<GamePointsResult | null>(null);
+
+	const gpr = testGpr ?? gameState.gamePointsResult;
 	const myTeam = currentPlayer ? gameState.teams[currentPlayer.id] : undefined;
 	const myCardPoints =
 		myTeam === "re" ? (gpr?.reCardPoints ?? 0) : (gpr?.kontraCardPoints ?? 0);
@@ -52,6 +57,61 @@ export function GameEndDialog({
 	const isSolo =
 		gameState.contractType !== "normal" &&
 		gameState.contractType !== "hochzeit";
+
+	const randomizeData = useCallback(() => {
+		const reCardPoints = Math.floor(Math.random() * 241);
+		const kontraCardPoints = 240 - reCardPoints;
+		const reWon = reCardPoints >= 121;
+		const kontraWon = !reWon;
+
+		const possiblePoints: { label: string; team: "re" | "kontra" }[] = [];
+		const winnerTeam = reWon ? "re" : "kontra";
+		const loserCardPoints = reWon ? kontraCardPoints : reCardPoints;
+
+		possiblePoints.push({ label: "Gewonnen", team: winnerTeam });
+		if (loserCardPoints < 90)
+			possiblePoints.push({ label: "Keine 90", team: winnerTeam });
+		if (loserCardPoints < 60)
+			possiblePoints.push({ label: "Keine 60", team: winnerTeam });
+		if (loserCardPoints < 30)
+			possiblePoints.push({ label: "Keine 30", team: winnerTeam });
+
+		// Randomly add extra points
+		const extras: { label: string; team: "re" | "kontra" }[] = [
+			{ label: "Re angesagt", team: reWon ? "re" : "kontra" },
+			{ label: "Kontra angesagt", team: kontraWon ? "kontra" : "re" },
+			{ label: "Gegen die Alten", team: "kontra" },
+			{ label: "Fuchs gefangen", team: winnerTeam },
+			{ label: "Karlchen", team: winnerTeam },
+			{ label: "Doppelkopf", team: winnerTeam },
+		];
+		for (const extra of extras) {
+			if (Math.random() > 0.6) possiblePoints.push(extra);
+		}
+
+		const points = possiblePoints.map((p) => ({
+			...p,
+			value: p.label.includes("angesagt") ? 2 : 1,
+		}));
+
+		let totalRe = 0;
+		let totalKontra = 0;
+		for (const p of points) {
+			if (p.team === "re") totalRe += p.value;
+			else totalKontra += p.value;
+		}
+
+		setTestGpr({
+			points,
+			reWon,
+			kontraWon,
+			reCardPoints,
+			kontraCardPoints,
+			totalReGamePoints: totalRe,
+			totalKontraGamePoints: totalKontra,
+			netGamePoints: totalRe - totalKontra,
+		});
+	}, []);
 
 	// Animation state
 	const [displayScore, setDisplayScore] = useState(0);
@@ -151,6 +211,15 @@ export function GameEndDialog({
 	return (
 		<Dialog onOpenChange={(o) => !o && onClose()} open={open}>
 			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+				<Button
+					className="absolute top-2 left-2 z-10 size-8"
+					onClick={randomizeData}
+					size="icon"
+					title="Zufällige Testdaten"
+					variant="ghost"
+				>
+					<Dices className="size-4" />
+				</Button>
 				<DialogHeader>
 					<DialogTitle className="text-center text-2xl text-emerald-600">
 						Spiel beendet!
