@@ -7,11 +7,20 @@
 import { isTrump } from "@/lib/game/rules";
 import type { Card, Suit, TrumpMode } from "@/types/game";
 
+// Fehlfarben-Sortierung: Kreuz, Herz, Pik, Karo
 const SUIT_ORDER: Record<Suit, number> = {
 	clubs: 1,
 	hearts: 2,
 	spades: 3,
 	diamonds: 4,
+};
+
+// Trumpf-Hierarchie: Kreuz > Pik > Herz > Karo (höchster Wert = stärkster Trumpf)
+const TRUMP_SUIT_ORDER: Record<Suit, number> = {
+	clubs: 4,
+	spades: 3,
+	hearts: 2,
+	diamonds: 1,
 };
 
 /**
@@ -65,14 +74,14 @@ function trumpValue(
 		case "jacks-only":
 			// Bubensolo: Buben nach Farbe
 			if (card.rank === "jack") {
-				return 900 + (SUIT_ORDER[card.suit] ?? 0) * 10;
+				return 900 + (TRUMP_SUIT_ORDER[card.suit] ?? 0) * 10;
 			}
 			return 0;
 
 		case "queens-only":
 			// Damensolo: Damen nach Farbe
 			if (card.rank === "queen") {
-				return 1000 + (SUIT_ORDER[card.suit] ?? 0) * 10;
+				return 1000 + (TRUMP_SUIT_ORDER[card.suit] ?? 0) * 10;
 			}
 			return 0;
 
