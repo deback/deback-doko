@@ -122,6 +122,7 @@ export type GameEvent =
 			playerId: string;
 			contract: ContractType;
 	  }
+	| { type: "toggle-stand-up"; playerId: string }
 	| {
 			type: "update-player-info";
 			playerId: string;
@@ -137,4 +138,5 @@ export type GameMessage =
 	| { type: "state"; state: GameState; isSpectator?: boolean }
 	| { type: "error"; message: string }
 	| { type: "game-started"; gameId: string }
-	| { type: "spectator-count"; gameId: string; count: number };
+	| { type: "spectator-count"; gameId: string; count: number }
+	| { type: "redirect-to-lobby"; tableId: string };

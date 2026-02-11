@@ -43,6 +43,8 @@ export interface GameFlowState {
 	round: number;
 	/** Index des aktuellen Spielers (0-3) */
 	currentPlayerIndex: number;
+	/** Spieler-IDs, die nach der Runde aufstehen wollen */
+	standingUpPlayers: string[];
 }
 
 // =============================================================================

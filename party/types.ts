@@ -156,6 +156,7 @@ export interface GameState {
 	round: number;
 	scores: Record<string, number>;
 	schweinereiPlayers: string[]; // Spieler-IDs, die beide Karo-Assen haben
+	standingUpPlayers: string[]; // Spieler-IDs, die nach der Runde aufstehen wollen
 	teams: Record<string, "re" | "kontra">; // playerId -> Team-Zuordnung
 	spectatorCount: number;
 	spectators: Array<{ id: string; name: string; image?: string | null }>; // List of spectators
@@ -184,6 +185,7 @@ export type GameEvent =
 	| { type: "announce"; announcement: AnnouncementType; playerId: string }
 	| { type: "bid"; playerId: string; bid: ReservationType }
 	| { type: "declare-contract"; playerId: string; contract: ContractType }
+	| { type: "toggle-stand-up"; playerId: string }
 	| {
 			type: "update-player-info";
 			playerId: string;
@@ -194,4 +196,5 @@ export type GameEvent =
 export type GameMessage =
 	| { type: "state"; state: GameState; isSpectator?: boolean }
 	| { type: "error"; message: string }
-	| { type: "spectator-count"; gameId: string; count: number };
+	| { type: "spectator-count"; gameId: string; count: number }
+	| { type: "redirect-to-lobby"; tableId: string };

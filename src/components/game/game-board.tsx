@@ -46,6 +46,7 @@ import { OpponentHand } from "./opponent-hand";
 import { PlayerHand } from "./player-hand";
 import { PlayerInfo } from "./player-info";
 import { PlayerStatus } from "./player-status";
+import { StandUpButton } from "./stand-up-button";
 import { TrickArea } from "./trick-area";
 import { TurnIndicator } from "./turn-indicator";
 
@@ -420,7 +421,10 @@ export function GameBoard() {
 									}
 									position="bottom"
 								>
-									{!isBiddingActive && <AnnouncementButtons />}
+									<div className="flex items-center gap-1.5">
+										{!isBiddingActive && <AnnouncementButtons />}
+										<StandUpButton />
+									</div>
 								</PlayerStatus>
 							}
 						/>

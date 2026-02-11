@@ -116,6 +116,9 @@ export function useGameConnection({
 						setSpectatorMode(message.isSpectator);
 					}
 					setError(null);
+				} else if (message.type === "redirect-to-lobby") {
+					// Player has been removed from the game — redirect to lobby
+					window.location.href = "/";
 				} else if (message.type === "error") {
 					setError(message.message);
 					console.error("Error from server:", message.message);
@@ -182,6 +185,15 @@ export function useGameConnection({
 			resetGame: () => {
 				if (!socket) return;
 				const event: GameEvent = { type: "reset-game" };
+				socket.send(JSON.stringify(event));
+			},
+
+			toggleStandUp: () => {
+				if (!socket) return;
+				const event: GameEvent = {
+					type: "toggle-stand-up",
+					playerId: player.id,
+				};
 				socket.send(JSON.stringify(event));
 			},
 		});

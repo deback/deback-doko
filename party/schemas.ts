@@ -58,6 +58,10 @@ export const gameEventSchema = z.discriminatedUnion("type", [
 		]),
 	}),
 	z.object({
+		type: z.literal("toggle-stand-up"),
+		playerId: z.string(),
+	}),
+	z.object({
 		type: z.literal("update-player-info"),
 		playerId: z.string(),
 		name: z.string(),

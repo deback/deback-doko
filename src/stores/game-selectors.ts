@@ -169,6 +169,19 @@ export function usePlayerAnnouncements(playerId: string) {
 }
 
 /**
+ * Ist der aktuelle Spieler aufgestanden (will nach der Runde den Tisch verlassen)?
+ */
+export function useIsStandingUp(): boolean {
+	const gameState = useGameStore((s) => s.gameState);
+	const currentPlayer = useGameStore((s) => s.currentPlayer);
+
+	return useMemo(() => {
+		if (!gameState || !currentPlayer) return false;
+		return gameState.standingUpPlayers?.includes(currentPlayer.id) ?? false;
+	}, [gameState, currentPlayer]);
+}
+
+/**
  * Hat der Stich bereits begonnen?
  */
 export function useHasTrickStarted(): boolean {
@@ -280,6 +293,9 @@ export const useAutoPlayAll = () => useGameStore((s) => s.autoPlayAll);
 
 /** Spiel zurücksetzen */
 export const useResetGame = () => useGameStore((s) => s.resetGame);
+
+/** Aufstehen/Platz nehmen umschalten */
+export const useToggleStandUp = () => useGameStore((s) => s.toggleStandUp);
 
 // =============================================================================
 // Store Setter Hooks (für useGameConnection)

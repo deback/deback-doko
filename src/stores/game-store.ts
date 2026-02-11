@@ -55,6 +55,7 @@ export interface GameStoreActions {
 	autoPlay: () => void;
 	autoPlayAll: () => void;
 	resetGame: () => void;
+	toggleStandUp: () => void;
 
 	// Action Setter (for useGameConnection to register WebSocket actions)
 	setGameActions: (actions: Partial<GameActions>) => void;
@@ -70,6 +71,7 @@ export type GameActions = Pick<
 	| "autoPlay"
 	| "autoPlayAll"
 	| "resetGame"
+	| "toggleStandUp"
 >;
 
 // =============================================================================
@@ -128,6 +130,7 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 		autoPlay: () => {},
 		autoPlayAll: () => {},
 		resetGame: () => {},
+		toggleStandUp: () => {},
 
 		// Action Setter
 		setGameActions: (actions) => set(actions),

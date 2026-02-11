@@ -189,16 +189,18 @@ export function TablesClient({ player }: TablesClientProps) {
 	const canJoinTable = (table: Table) => {
 		const isAtThisTable = table.players.some((p) => p.id === player.id);
 		const isFull = table.players.length >= 4;
-		// Cannot join a table that has already started a game
-		return (
-			!isAtThisTable && !isFull && !isPlayerAtAnyTable && !table.gameStarted
-		);
+		return !isAtThisTable && !isFull && !isPlayerAtAnyTable;
 	};
 
 	const canSpectateTable = (table: Table) => {
-		// Only allow spectating if game started AND user is NOT a player at this table
+		// Only allow spectating if game started with 4 players AND user is NOT a player at this table
 		const isPlayerAtThisTable = table.players.some((p) => p.id === player.id);
-		return table.gameStarted && table.gameId && !isPlayerAtThisTable;
+		return (
+			table.gameStarted &&
+			table.gameId &&
+			table.players.length >= 4 &&
+			!isPlayerAtThisTable
+		);
 	};
 
 	const spectateGame = (table: Table) => {
@@ -281,7 +283,7 @@ export function TablesClient({ player }: TablesClientProps) {
 												)}
 											</div>
 											<p className="text-muted-foreground text-sm">
-												{table.gameStarted
+												{table.gameStarted && table.players.length >= 4
 													? "Spiel läuft"
 													: `${table.players.length} / 4 Spieler`}
 											</p>
@@ -325,7 +327,7 @@ export function TablesClient({ player }: TablesClientProps) {
 												/>
 											</div>
 										))}
-										{!table.gameStarted &&
+										{table.players.length < 4 &&
 											Array.from({ length: 4 - table.players.length }).map(
 												(_, i) => (
 													<div
