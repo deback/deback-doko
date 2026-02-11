@@ -146,4 +146,5 @@ export interface GamePointsResult {
 	totalReGamePoints: number;
 	totalKontraGamePoints: number;
 	netGamePoints: number;
+	isSolo: boolean;
 }

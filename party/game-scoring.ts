@@ -1,3 +1,4 @@
+import { isSoloGame } from "../src/lib/game/rules";
 import type {
 	GamePointEntry,
 	GamePointsResult,
@@ -11,9 +12,7 @@ import type {
  */
 export function calculateGamePoints(gameState: GameState): GamePointsResult {
 	const points: GamePointEntry[] = [];
-	const isSolo =
-		gameState.contractType !== "normal" &&
-		gameState.contractType !== "hochzeit";
+	const isSolo = isSoloGame(gameState.contractType, gameState.teams);
 
 	// Kartenpunkte pro Team berechnen
 	let reCardPoints = 0;
@@ -273,6 +272,7 @@ export function calculateGamePoints(gameState: GameState): GamePointsResult {
 		totalReGamePoints,
 		totalKontraGamePoints,
 		netGamePoints,
+		isSolo,
 	};
 }
 

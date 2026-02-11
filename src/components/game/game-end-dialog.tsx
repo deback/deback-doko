@@ -10,7 +10,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+import { calculateBalanceChange, isSoloGame } from "@/lib/game/rules";
+import { cn, formatBalance } from "@/lib/utils";
 import type { GamePointsResult, GameState } from "@/types/game";
 import type { Player } from "@/types/tables";
 
@@ -62,9 +63,7 @@ export function GameEndDialog({
 		myTeam === "re" ? (gpr?.reCardPoints ?? 0) : (gpr?.kontraCardPoints ?? 0);
 	const iWon = myTeam === "re" ? gpr?.reWon : gpr?.kontraWon;
 
-	const isSolo =
-		gameState.contractType !== "normal" &&
-		gameState.contractType !== "hochzeit";
+	const isSolo = gpr?.isSolo ?? isSoloGame(gameState.contractType, gameState.teams);
 
 	const randomizeData = useCallback(() => {
 		const reCardPoints = Math.floor(Math.random() * 241);
@@ -121,6 +120,7 @@ export function GameEndDialog({
 			totalReGamePoints: totalRe,
 			totalKontraGamePoints: totalKontra,
 			netGamePoints: totalRe - totalKontra,
+			isSolo: false,
 		});
 	}, []);
 
@@ -221,27 +221,18 @@ export function GameEndDialog({
 	}, [animationDone, myCardPoints, gpr?.points]);
 
 	// Compute net points and money
-	const myNetPoints = gpr
+	const baseNetPoints = gpr
 		? myTeam === "re"
 			? gpr.netGamePoints
 			: -gpr.netGamePoints
 		: 0;
-	const absGamePoints = Math.abs(gpr?.netGamePoints ?? 0);
-	const pointsPerPlayer = absGamePoints * 50; // Cents
-
-	let myAmount = 0;
-	if (gpr && myTeam) {
-		if (isSolo && myTeam === "re") {
-			myAmount = (gpr.netGamePoints > 0 ? 1 : -1) * pointsPerPlayer * 3;
-		} else if (isSolo && myTeam === "kontra") {
-			myAmount = (gpr.netGamePoints < 0 ? 1 : -1) * pointsPerPlayer;
-		} else {
-			const teamWins =
-				(myTeam === "re" && gpr.netGamePoints > 0) ||
-				(myTeam === "kontra" && gpr.netGamePoints < 0);
-			myAmount = teamWins ? pointsPerPlayer : -pointsPerPlayer;
-		}
-	}
+	// Solo: Solist sieht dreifache Punkte, Gegner einfache
+	const myNetPoints =
+		isSolo && myTeam === "re" ? baseNetPoints * 3 : baseNetPoints;
+	const myAmount =
+		gpr && myTeam
+			? calculateBalanceChange(gpr.netGamePoints, myTeam, isSolo)
+			: 0;
 
 	// During animation: primary color. After: green (won) or red (lost)
 	const barColor = animationDone
@@ -416,6 +407,15 @@ export function GameEndDialog({
 									>
 										<span>Gesamt</span>
 										<span>
+											{isSolo && myTeam === "re" && (
+												<span className="font-normal text-muted-foreground">
+													({Math.abs(baseNetPoints)}{" "}
+													{Math.abs(baseNetPoints) === 1
+														? "Punkt"
+														: "Punkte"}{" "}
+													× 3){" "}
+												</span>
+											)}
 											{myNetPoints > 0 ? "+" : ""}
 											{myNetPoints}{" "}
 											{Math.abs(myNetPoints) === 1 ? "Punkt" : "Punkte"}
@@ -449,7 +449,7 @@ export function GameEndDialog({
 											)}
 										>
 											{myAmount > 0 ? "+" : ""}
-											{(myAmount / 100).toFixed(2).replace(".", ",")}$
+											{formatBalance(myAmount)}
 										</span>
 									</div>
 								</div>

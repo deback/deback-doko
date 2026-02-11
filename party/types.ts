@@ -138,6 +138,7 @@ export interface GamePointsResult {
 	totalReGamePoints: number;
 	totalKontraGamePoints: number;
 	netGamePoints: number; // positive = Re wins points, negative = Kontra wins
+	isSolo: boolean;
 }
 
 export interface GameState {

@@ -156,3 +156,41 @@ export function contractToTrumpMode(contract: ContractType): TrumpMode {
 export function isSoloContract(contract: ContractType): boolean {
 	return contract.startsWith("solo-");
 }
+
+/**
+ * Prüft ob ein Spiel als Solo gewertet wird (inkl. stille Hochzeit).
+ * Stille Hochzeit: Nur 1 Spieler im Re-Team (beide Kreuz-Damen, kein Partner gefunden).
+ */
+export function isSoloGame(
+	contractType: ContractType,
+	teams: Record<string, "re" | "kontra">,
+): boolean {
+	if (isSoloContract(contractType)) return true;
+	const rePlayerCount = Object.values(teams).filter((t) => t === "re").length;
+	return (
+		(contractType === "normal" || contractType === "hochzeit") &&
+		rePlayerCount === 1
+	);
+}
+
+/**
+ * Berechnet die Balance-Änderung eines Spielers in Cents.
+ * Solo: Solist bekommt/verliert 3x, jeder Gegner 1x.
+ * Normal: Jeder bekommt/verliert 1x.
+ */
+export function calculateBalanceChange(
+	netGamePoints: number,
+	team: "re" | "kontra",
+	isSolo: boolean,
+): number {
+	const pointsPerPlayer = Math.abs(netGamePoints) * 50;
+	const teamWins =
+		(team === "re" && netGamePoints > 0) ||
+		(team === "kontra" && netGamePoints < 0);
+	const sign = teamWins ? 1 : -1;
+	// Solo: Solist (Re, allein) zahlt/bekommt 3x
+	if (isSolo && team === "re") {
+		return sign * pointsPerPlayer * 3;
+	}
+	return sign * pointsPerPlayer;
+}

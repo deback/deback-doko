@@ -1,9 +1,11 @@
 import type * as Party from "partykit/server";
 import { env } from "@/env";
 import {
+	calculateBalanceChange,
 	canPlayCard,
 	contractToTrumpMode,
 	getPlayableCards,
+	isSoloGame,
 	isTrump,
 } from "../src/lib/game/rules";
 import { canMakeAnnouncement } from "./announcements";
@@ -49,6 +51,8 @@ export default class Server implements Party.Server {
 	// Map connection ID to player info (for targeted messages like redirect-to-lobby)
 	connectionToPlayer: Map<string, { gameId: string; playerId: string }> =
 		new Map();
+	// Map connection ID to player ID (for tables-room auto-leave on disconnect)
+	connectionToTablePlayer: Map<string, string> = new Map();
 
 	constructor(readonly room: Party.Room) {}
 
@@ -237,7 +241,45 @@ export default class Server implements Party.Server {
 	}
 
 	async onClose(conn: Party.Connection) {
-		// Handle player disconnect
+		// Tables-room: auto-leave table on disconnect (only if game not running)
+		if (this.room.id === "tables-room") {
+			const playerId = this.connectionToTablePlayer.get(conn.id);
+			if (playerId) {
+				this.connectionToTablePlayer.delete(conn.id);
+				const table = this.findPlayerTable(playerId);
+				if (table && !table.gameStarted) {
+					await this.leaveTable(table.id, playerId);
+				}
+			}
+		}
+
+		// Game-room: auto-leave game on disconnect (only if game in waiting state)
+		if (this.room.id.startsWith("game-")) {
+			const playerInfo = this.connectionToPlayer.get(conn.id);
+			if (playerInfo) {
+				const gameState = this.games.get(playerInfo.gameId);
+				if (gameState && !gameState.gameStarted) {
+					gameState.players = gameState.players.filter(
+						(p) => p.id !== playerInfo.playerId,
+					);
+					if (gameState.players.length === 0) {
+						this.games.delete(playerInfo.gameId);
+						await this.room.storage.delete("gameState");
+					} else {
+						await this.persistGameState(gameState);
+						this.broadcastGameState(gameState);
+						this.broadcastToSpectators(gameState);
+					}
+					// Also remove from table
+					this.removePlayerFromTable(
+						gameState.tableId,
+						playerInfo.playerId,
+					);
+				}
+			}
+		}
+
+		// Clean up connection tracking maps
 		for (const players of this.playerConnections.values()) {
 			players.delete(conn.id);
 		}
@@ -301,10 +343,12 @@ export default class Server implements Party.Server {
 				break;
 
 			case "create-table":
+				this.connectionToTablePlayer.set(sender.id, event.player.id);
 				await this.createTable(event.name, event.player, sender);
 				break;
 
 			case "join-table":
+				this.connectionToTablePlayer.set(sender.id, event.player.id);
 				await this.joinTable(event.tableId, event.player, sender);
 				break;
 
@@ -1752,34 +1796,16 @@ export default class Server implements Party.Server {
 
 		// Balance-Änderung nach DDV-Regeln: Jeder Spielpunkt = 50 Cents (0,50$)
 		// Solo (7.2.4): Solist bekommt 3x, Gegner je 1x
-		const isSolo =
-			gameState.contractType !== "normal" &&
-			gameState.contractType !== "hochzeit";
-
-		// Netto-Spielpunkte: positiv = Re gewinnt Punkte, negativ = Kontra gewinnt
-		const absGamePoints = Math.abs(gpr.netGamePoints);
-		const pointsPerPlayer = absGamePoints * 50; // Cents
+		const isSolo = isSoloGame(gameState.contractType, gameState.teams);
 
 		const playerResults = gameState.players.map((player) => {
 			const team = gameState.teams[player.id] || "kontra";
 			const won = team === "re" ? gpr.reWon : gpr.kontraWon;
-
-			let balanceChange: number;
-			if (isSolo && team === "re") {
-				// Solist bekommt/verliert 3x
-				balanceChange =
-					gpr.netGamePoints > 0 ? pointsPerPlayer * 3 : -pointsPerPlayer * 3;
-			} else if (isSolo && team === "kontra") {
-				// Solo-Gegner: bekommen/verlieren 1x
-				balanceChange =
-					gpr.netGamePoints < 0 ? pointsPerPlayer : -pointsPerPlayer;
-			} else {
-				// Normal/Hochzeit: Gewinner +, Verlierer -
-				const teamWinsPoints =
-					(team === "re" && gpr.netGamePoints > 0) ||
-					(team === "kontra" && gpr.netGamePoints < 0);
-				balanceChange = teamWinsPoints ? pointsPerPlayer : -pointsPerPlayer;
-			}
+			const balanceChange = calculateBalanceChange(
+				gpr.netGamePoints,
+				team,
+				isSolo,
+			);
 
 			return {
 				id: player.id,
