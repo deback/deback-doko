@@ -13,7 +13,6 @@ import { useGameConnection } from "./hooks/use-game-connection";
 interface GameContentProps {
 	player: Player;
 	gameId: string;
-	isSpectator?: boolean;
 }
 
 /**
@@ -22,17 +21,9 @@ interface GameContentProps {
  * Verwendet den Game Store für State-Management.
  * Zeigt Loading/Error States oder das Spielbrett.
  */
-export function GameContent({
-	player,
-	gameId,
-	isSpectator = false,
-}: GameContentProps) {
+export function GameContent({ player, gameId }: GameContentProps) {
 	// Initialize WebSocket connection and sync with store
-	useGameConnection({
-		gameId,
-		player,
-		isSpectator,
-	});
+	useGameConnection({ gameId, player });
 
 	// Read state from store
 	const gameState = useGameState();

@@ -208,7 +208,7 @@ export function TablesClient({ player }: TablesClientProps) {
 
 	const spectateGame = (table: Table) => {
 		if (table.gameId) {
-			router.push(`/game/${table.gameId}?spectate=true`);
+			router.push(`/game/${table.gameId}`);
 		}
 	};
 

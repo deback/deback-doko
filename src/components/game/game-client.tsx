@@ -8,7 +8,6 @@ import { GameContent } from "./game-content";
 interface GameClientProps {
 	player: Player;
 	gameId: string;
-	isSpectator?: boolean;
 }
 
 /**
@@ -17,19 +16,11 @@ interface GameClientProps {
  * Wrapped den GameContent mit dem GameStoreProvider und CardDesignProvider.
  * Der Store wird pro Game-Session erstellt.
  */
-export function GameClient({
-	player,
-	gameId,
-	isSpectator = false,
-}: GameClientProps) {
+export function GameClient({ player, gameId }: GameClientProps) {
 	return (
-		<GameStoreProvider initialState={{ currentPlayer: player, isSpectator }}>
+		<GameStoreProvider initialState={{ currentPlayer: player }}>
 			<CardDesignProvider>
-				<GameContent
-					gameId={gameId}
-					isSpectator={isSpectator}
-					player={player}
-				/>
+				<GameContent gameId={gameId} player={player} />
 			</CardDesignProvider>
 		</GameStoreProvider>
 	);

@@ -6,17 +6,11 @@ import type { Player } from "@/types/tables";
 
 interface GamePageProps {
 	params: Promise<{ gameId: string }>;
-	searchParams: Promise<{ spectate?: string }>;
 }
 
-export default async function GamePage({
-	params,
-	searchParams,
-}: GamePageProps) {
+export default async function GamePage({ params }: GamePageProps) {
 	const session = await getSession();
 	const { gameId } = await params;
-	const { spectate } = await searchParams;
-	const isSpectator = spectate === "true";
 
 	if (!session?.user) {
 		redirect("/login");
@@ -42,7 +36,7 @@ export default async function GamePage({
 
 	return (
 		<main>
-			<GameClient gameId={gameId} isSpectator={isSpectator} player={player} />
+			<GameClient gameId={gameId} player={player} />
 		</main>
 	);
 }

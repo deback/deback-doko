@@ -16,7 +16,6 @@ import type { Player } from "@/types/tables";
 interface UseGameConnectionOptions {
 	gameId: string;
 	player: Player;
-	isSpectator?: boolean;
 }
 
 /**
@@ -32,7 +31,6 @@ interface UseGameConnectionOptions {
 export function useGameConnection({
 	gameId,
 	player,
-	isSpectator = false,
 }: UseGameConnectionOptions): void {
 	const socketRef = useRef<PartySocket | null>(null);
 
@@ -57,48 +55,35 @@ export function useGameConnection({
 		socket.addEventListener("open", () => {
 			setConnected(true);
 
-			if (isSpectator) {
-				// Spectator mode: send spectate-game event
-				socket.send(
-					JSON.stringify({
-						type: "spectate-game",
-						gameId,
-						spectatorId: player.id,
-						spectatorName: player.name,
-						spectatorImage: player.image,
-					} satisfies GameEvent),
-				);
-			} else {
-				// Player mode: try to start game or get state
-				const gameInfoStr = sessionStorage.getItem(`game-${gameId}`);
-				if (gameInfoStr) {
-					try {
-						const gameInfo = JSON.parse(gameInfoStr);
-						// Start game if not already started
-						socket.send(
-							JSON.stringify({
-								type: "start-game",
-								players: gameInfo.players,
-								tableId: gameInfo.tableId,
-							} satisfies GameEvent),
-						);
-						// Clean up
-						sessionStorage.removeItem(`game-${gameId}`);
-					} catch (err) {
-						console.error("Error parsing game info:", err);
-					}
+			// Try to start game if we have game info in session storage
+			const gameInfoStr = sessionStorage.getItem(`game-${gameId}`);
+			if (gameInfoStr) {
+				try {
+					const gameInfo = JSON.parse(gameInfoStr);
+					// Start game if not already started
+					socket.send(
+						JSON.stringify({
+							type: "start-game",
+							players: gameInfo.players,
+							tableId: gameInfo.tableId,
+						} satisfies GameEvent),
+					);
+					// Clean up
+					sessionStorage.removeItem(`game-${gameId}`);
+				} catch (err) {
+					console.error("Error parsing game info:", err);
 				}
-
-				// Request current state (include player info so server can add player in waiting state)
-				socket.send(
-					JSON.stringify({
-						type: "get-state",
-						playerId: player.id,
-						playerName: player.name,
-						playerImage: player.image,
-					} satisfies GameEvent),
-				);
 			}
+
+			// Request current state (server auto-detects player vs spectator)
+			socket.send(
+				JSON.stringify({
+					type: "get-state",
+					playerId: player.id,
+					playerName: player.name,
+					playerImage: player.image,
+				} satisfies GameEvent),
+			);
 		});
 
 		// Connection closed
@@ -217,7 +202,6 @@ export function useGameConnection({
 		};
 	}, [
 		gameId,
-		isSpectator,
 		player.id,
 		player.name,
 		player.image,

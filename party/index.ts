@@ -660,17 +660,13 @@ export default class Server implements Party.Server {
 						}
 					} else {
 						// Not a player → register as spectator so they receive ongoing updates
-						if (!this.spectatorConnections.has(gameState.id)) {
-							this.spectatorConnections.set(gameState.id, new Set());
-						}
-						this.spectatorConnections.get(gameState.id)?.add(sender.id);
-						this.connectionToSpectator.set(sender.id, {
-							gameId: gameState.id,
-							spectatorId: event.playerId ?? sender.id,
-							spectatorName: "Zuschauer",
-							spectatorImage: null,
-						});
-						this.sendSpectatorState(sender, gameState);
+						await this.addSpectator(
+							gameState.id,
+							event.playerId ?? sender.id,
+							event.playerName ?? "Zuschauer",
+							event.playerImage ?? null,
+							sender,
+						);
 					}
 				}
 				break;
