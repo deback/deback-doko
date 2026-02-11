@@ -73,6 +73,9 @@ export function GameBoard() {
 	const playableCardIds = usePlayableCardIds();
 	const isMyTurn = useIsMyTurn();
 	const isBiddingActive = useIsBiddingActive();
+	const isServerTrickResolving =
+		gameState?.currentTrick.completed ||
+		gameState?.currentTrick.cards.length === 4;
 
 	// Player positions (relative to current player)
 	const bottomPlayer = usePlayerAtPosition(0);
@@ -147,6 +150,7 @@ export function GameBoard() {
 		setActiveDragCard(null);
 
 		if (over?.id !== "trick-area" || !active?.id) return;
+		if (isTrickAnimating || isServerTrickResolving) return;
 
 		const cardId = active.id as string;
 		if (!playableCardIds.includes(cardId)) return;

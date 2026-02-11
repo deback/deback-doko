@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
+	useGameState,
 	useHasPlayerPlayedInTrick,
 	useHasTrickStarted,
 	useIsBiddingActive,
@@ -50,10 +51,14 @@ export function PlayerHand({
 	const cards = useSortedHand();
 	const playableCardIds = usePlayableCardIds();
 	const isMyTurn = useIsMyTurn();
+	const gameState = useGameState();
 	const hasTrickStarted = useHasTrickStarted();
 	const hasPlayerPlayedInTrick = useHasPlayerPlayedInTrick();
 	const isBiddingActive = useIsBiddingActive();
 	const playCard = usePlayCard();
+	const isServerTrickResolving =
+		gameState?.currentTrick.completed ||
+		gameState?.currentTrick.cards.length === 4;
 
 	// Local UI State
 	const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -105,6 +110,7 @@ export function PlayerHand({
 		if (
 			isMyTurn &&
 			!isTrickAnimating &&
+			!isServerTrickResolving &&
 			selectedCardId &&
 			playableCardIds.includes(selectedCardId) &&
 			ghostCardId === null
@@ -140,6 +146,7 @@ export function PlayerHand({
 	}, [
 		isMyTurn,
 		isTrickAnimating,
+		isServerTrickResolving,
 		selectedCardId,
 		playableCardIds,
 		cards,
@@ -163,6 +170,10 @@ export function PlayerHand({
 
 	const handleCardClick = (card: Card, index: number) => {
 		if (ghostCardId !== null) return;
+		if (isServerTrickResolving) {
+			setSelectedCardId(card.id);
+			return;
+		}
 
 		const isCardPlayable = playableCardIds.includes(card.id);
 
@@ -237,7 +248,8 @@ export function PlayerHand({
 					const angle = t * 1.2;
 
 					const isCardPlayable = playableCardIds.includes(card.id);
-					const isPlayable = isMyTurn && isCardPlayable;
+					const isPlayable =
+						isMyTurn && isCardPlayable && !isServerTrickResolving;
 					const isDisabled = showTrickRestrictions && !isCardPlayable;
 					const isSelected = selectedCardId === card.id;
 					const isGhost = ghostCardId === card.id;
@@ -254,7 +266,10 @@ export function PlayerHand({
 							)}
 							isDisabled={isDisabled}
 							isDraggingDisabled={
-								!isMyTurn || isDisabled || ghostCardId !== null
+								!isMyTurn ||
+								isDisabled ||
+								ghostCardId !== null ||
+								isServerTrickResolving
 							}
 							isGhost={isGhost}
 							isPlayable={isPlayable}

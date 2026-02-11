@@ -1181,7 +1181,7 @@ export default class Server implements Party.Server {
 			gameState.currentTrick.completed ||
 			gameState.currentTrick.cards.length >= 4
 		) {
-			this.sendGameError(sender, "Stich wird gerade ausgewertet.");
+			logger.debug("[playCard] Ignoring card play while trick is resolving");
 			return;
 		}
 

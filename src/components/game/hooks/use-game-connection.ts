@@ -114,6 +114,12 @@ export function useGameConnection({
 					// Player has been removed from the game — redirect to tables
 					window.location.href = "/tables";
 				} else if (message.type === "error") {
+					if (message.message === "Stich wird gerade ausgewertet.") {
+						console.debug(
+							"Ignoring transient trick-resolution error from server",
+						);
+						return;
+					}
 					setError(message.message);
 					console.error("Error from server:", message.message);
 				}
