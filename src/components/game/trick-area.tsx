@@ -54,6 +54,7 @@ interface TrickAreaProps {
 	cardOrigin?: CardOrigin | null;
 	// Trick winner for end-of-trick animation
 	trickWinnerId?: string | null;
+	onAnimationPhaseChange?: (isAnimating: boolean) => void;
 	className?: string;
 }
 
@@ -129,6 +130,7 @@ export function TrickArea({
 	playedCard,
 	cardOrigin,
 	trickWinnerId,
+	onAnimationPhaseChange,
 	className,
 }: TrickAreaProps) {
 	const {
@@ -167,6 +169,11 @@ export function TrickArea({
 	const [cachedTrickCards, setCachedTrickCards] = useState<TrickCard[]>([]);
 	const [cachedWinnerId, setCachedWinnerId] = useState<string | null>(null);
 	const [flipProgress, setFlipProgress] = useState(0);
+
+	// Notify parent when animation phase changes
+	useEffect(() => {
+		onAnimationPhaseChange?.(animationPhase !== "playing");
+	}, [animationPhase, onAnimationPhaseChange]);
 
 	useEffect(() => {
 		setMounted(true);

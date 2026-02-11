@@ -21,6 +21,8 @@ const CLOSE_GAP_DELAY = 600;
 interface PlayerHandProps {
 	/** Card being dragged (from DnD context) */
 	activeDragCard?: string | null;
+	/** Whether the trick area is currently animating (blocks auto-play) */
+	isTrickAnimating?: boolean;
 	/** Callback when ghost card should be removed (for DnD coordination) */
 	onRemoveCard?: (cardId: string) => void;
 	/** Callback when card is played with animation origin (for TrickArea animation) */
@@ -38,6 +40,7 @@ interface PlayerHandProps {
  */
 export function PlayerHand({
 	activeDragCard,
+	isTrickAnimating,
 	onRemoveCard,
 	onPlayCardWithOrigin,
 	statusSlot,
@@ -95,6 +98,7 @@ export function PlayerHand({
 	useEffect(() => {
 		if (
 			isMyTurn &&
+			!isTrickAnimating &&
 			selectedCardId &&
 			playableCardIds.includes(selectedCardId) &&
 			ghostCardId === null
@@ -129,6 +133,7 @@ export function PlayerHand({
 		}
 	}, [
 		isMyTurn,
+		isTrickAnimating,
 		selectedCardId,
 		playableCardIds,
 		cards,

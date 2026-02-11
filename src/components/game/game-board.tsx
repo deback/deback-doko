@@ -112,6 +112,7 @@ export function GameBoard() {
 	const [showGameEndDialog, setShowGameEndDialog] = useState(true);
 	const [cachedEndGameState, setCachedEndGameState] =
 		useState<GameState | null>(null);
+	const [isTrickAnimating, setIsTrickAnimating] = useState(false);
 
 	// =========================================================================
 	// DnD Sensors
@@ -197,6 +198,13 @@ export function GameBoard() {
 	const handleRemoveCard = useCallback(() => {
 		setDragPlayedCard(null);
 	}, []);
+
+	const handleTrickAnimationPhaseChange = useCallback(
+		(isAnimating: boolean) => {
+			setIsTrickAnimating(isAnimating);
+		},
+		[],
+	);
 
 	const handleCloseGameEndDialog = useCallback(() => {
 		setShowGameEndDialog(false);
@@ -389,6 +397,7 @@ export function GameBoard() {
 				currentPlayerId={
 					isSpectator ? (bottomPlayer?.id ?? "") : (currentPlayer?.id ?? "")
 				}
+				onAnimationPhaseChange={handleTrickAnimationPhaseChange}
 				playedCard={playedCard}
 				players={gameState.players}
 				trickCards={gameState.currentTrick.cards}
@@ -429,6 +438,7 @@ export function GameBoard() {
 					) : (
 						<PlayerHand
 							activeDragCard={dragPlayedCard}
+							isTrickAnimating={isTrickAnimating}
 							onPlayCardWithOrigin={handlePlayCardWithOrigin}
 							onRemoveCard={handleRemoveCard}
 							statusSlot={
