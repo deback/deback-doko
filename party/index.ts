@@ -116,6 +116,7 @@ export default class Server implements Party.Server {
 				name?: string;
 				image?: string | null;
 				tableId?: string;
+				player?: Player;
 			};
 
 			if (
@@ -142,6 +143,33 @@ export default class Server implements Party.Server {
 						body.name ?? "",
 						body.image,
 					);
+				}
+				return new Response("OK", { status: 200 });
+			}
+
+			if (
+				body.type === "add-player" &&
+				this.room.id.startsWith("game-") &&
+				body.player
+			) {
+				const player = body.player;
+				const gameState = this.games.get(this.room.id);
+				if (
+					gameState &&
+					!gameState.gameStarted &&
+					gameState.players.length < 4
+				) {
+					// Add player if not already present
+					if (!gameState.players.some((p) => p.id === player.id)) {
+						gameState.players.push(player);
+					}
+					if (gameState.players.length === 4) {
+						await this.restartGame(gameState);
+					} else {
+						await this.persistGameState(gameState);
+						this.broadcastGameState(gameState);
+						this.broadcastToSpectators(gameState);
+					}
 				}
 				return new Response("OK", { status: 200 });
 			}
@@ -312,20 +340,21 @@ export default class Server implements Party.Server {
 		// Check if table is full (4 players) and start game
 		if (table.players.length === 4 && !table.gameStarted) {
 			await this.startGame(table);
-		} else if (
-			table.players.length === 4 &&
-			table.gameStarted &&
-			table.gameId
-		) {
-			// Game exists but was waiting for a 4th player — redirect new player to game
-			const message: TableMessage = {
-				type: "game-started",
-				gameId: table.gameId,
-				tableId: table.id,
-				players: table.players,
-			};
-			this.room.broadcast(JSON.stringify(message));
-			this.broadcastState();
+		} else if (table.gameStarted && table.gameId) {
+			if (table.players.length === 4) {
+				// All 4 players present — redirect everyone to game
+				const message: TableMessage = {
+					type: "game-started",
+					gameId: table.gameId,
+					tableId: table.id,
+					players: table.players,
+				};
+				this.room.broadcast(JSON.stringify(message));
+				this.broadcastState();
+			} else {
+				// < 4 players — notify game server about new player (no redirect)
+				this.addPlayerToGame(table.gameId, player);
+			}
 		}
 	}
 
@@ -499,6 +528,41 @@ export default class Server implements Party.Server {
 							playerId: event.playerId as string,
 						});
 						this.sendGameState(sender, gameState);
+					} else if (
+						!gameState.gameStarted &&
+						event.playerId &&
+						gameState.players.length < 4
+					) {
+						// Waiting state: add joining player to game
+						const newPlayer: Player = {
+							id: event.playerId,
+							name: event.playerName ?? "Spieler",
+							image: event.playerImage ?? null,
+							email: undefined,
+							gamesPlayed: 0,
+							gamesWon: 0,
+							balance: 0,
+						};
+						gameState.players.push(newPlayer);
+
+						// Register as player connection
+						if (!this.playerConnections.has(gameState.id)) {
+							this.playerConnections.set(gameState.id, new Set());
+						}
+						this.playerConnections.get(gameState.id)?.add(sender.id);
+						this.connectionToPlayer.set(sender.id, {
+							gameId: gameState.id,
+							playerId: event.playerId,
+						});
+
+						// If 4 players reached → restart game (deal cards + start)
+						if (gameState.players.length === 4) {
+							await this.restartGame(gameState);
+						} else {
+							await this.persistGameState(gameState);
+							this.broadcastGameState(gameState);
+							this.broadcastToSpectators(gameState);
+						}
 					} else {
 						// Not a player → register as spectator so they receive ongoing updates
 						if (!this.spectatorConnections.has(gameState.id)) {
@@ -602,6 +666,34 @@ export default class Server implements Party.Server {
 		// Only active players can toggle
 		const isPlayer = gameState.players.some((p) => p.id === playerId);
 		if (!isPlayer) return;
+
+		// If game is in waiting state, leave immediately
+		if (!gameState.gameStarted) {
+			// Remove player from game
+			gameState.players = gameState.players.filter(
+				(p) => p.id !== playerId,
+			);
+
+			// Redirect player to lobby
+			const msg: GameMessage = {
+				type: "redirect-to-lobby",
+				tableId: gameState.tableId,
+			};
+			sender.send(JSON.stringify(msg));
+
+			// Clean up connection
+			const connId = sender.id;
+			this.playerConnections.get(this.room.id)?.delete(connId);
+			this.connectionToPlayer.delete(connId);
+
+			// Remove player from table
+			this.removePlayerFromTable(gameState.tableId, playerId);
+
+			await this.persistGameState(gameState);
+			this.broadcastGameState(gameState);
+			this.broadcastToSpectators(gameState);
+			return;
+		}
 
 		// Toggle: add or remove from standingUpPlayers
 		const idx = gameState.standingUpPlayers.indexOf(playerId);
@@ -1543,6 +1635,24 @@ export default class Server implements Party.Server {
 		await this.persistGameState(gameState);
 		this.broadcastGameState(gameState);
 		this.broadcastToSpectators(gameState);
+	}
+
+	// Add a player to a game via HTTP call to game-room
+	private addPlayerToGame(gameId: string, player: Player) {
+		const partykitHost =
+			process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
+		const protocol = partykitHost.includes("localhost") ? "http" : "https";
+		const apiSecret = env.PARTYKIT_API_SECRET || "";
+		fetch(`${protocol}://${partykitHost}/parties/main/${gameId}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiSecret}`,
+			},
+			body: JSON.stringify({ type: "add-player", player }),
+		}).catch((error) => {
+			logger.error("Failed to add player to game:", error);
+		});
 	}
 
 	// Remove a player from their table via HTTP call to tables-room

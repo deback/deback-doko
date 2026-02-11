@@ -108,6 +108,8 @@ export function usePlayerAtPosition(position: 0 | 1 | 2 | 3): Player | null {
 
 	return useMemo(() => {
 		if (!gameState || !currentPlayer) return null;
+		// Bei weniger als 4 Spielern: keine Wraparound-Duplikate
+		if (position >= gameState.players.length) return null;
 		let currentIdx = gameState.players.findIndex(
 			(p) => p.id === currentPlayer.id,
 		);

@@ -211,12 +211,18 @@ export function PlayerHand({
 		<div
 			className={cn(
 				"fixed bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/3 sm:translate-y-1/2 landscape:translate-y-2/5 lg:landscape:translate-y-1/2",
-				isBiddingActive && "pointer-events-none",
 				className,
 			)}
 		>
-			<div className={`@container relative ${CARD_SIZE}`}>
-				{statusSlot}
+			<div
+				className={cn(
+					`@container relative ${CARD_SIZE}`,
+					isBiddingActive && "pointer-events-none",
+				)}
+			>
+				{statusSlot && (
+					<div className="pointer-events-auto">{statusSlot}</div>
+				)}
 				{cards.map((card, index) => {
 					const t = index - (cards.length - 1) / 2;
 					const angle = t * 1.2;

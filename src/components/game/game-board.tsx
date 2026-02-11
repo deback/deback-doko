@@ -16,6 +16,10 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Card as UiCard,
+	CardContent as UiCardContent,
+} from "@/components/ui/card";
 import { getCardImagePath } from "@/lib/card-config";
 import { cn } from "@/lib/utils";
 import {
@@ -359,6 +363,22 @@ export function GameBoard() {
 						}
 					/>
 				</>
+			)}
+
+			{/* Warte auf Spieler (wenn jemand aufgestanden ist) */}
+			{!gameState.gameStarted && gameState.players.length < 4 && (
+				<div className="pointer-events-none fixed top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
+					<UiCard className="border-none bg-black/40 text-white backdrop-blur-sm">
+						<UiCardContent className="pt-6">
+							<div className="flex flex-col items-center gap-3">
+								<div className="h-3 w-3 animate-pulse rounded-full bg-yellow-500" />
+								<p className="text-white/80">
+									Warte auf Spieler... ({gameState.players.length}/4)
+								</p>
+							</div>
+						</UiCardContent>
+					</UiCard>
+				</div>
 			)}
 
 			{/* Stich-Bereich (Mitte) */}

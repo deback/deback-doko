@@ -70,24 +70,6 @@ export function GameContent({
 		);
 	}
 
-	// Waiting for players (after someone stood up)
-	if (!gameState.gameStarted && gameState.players.length < 4) {
-		return (
-			<div className="flex h-dvh w-screen items-center justify-center">
-				<Card className="border-none bg-black/40 text-white backdrop-blur-sm">
-					<CardContent className="pt-6">
-						<div className="flex flex-col items-center gap-3">
-							<div className="h-3 w-3 animate-pulse rounded-full bg-yellow-500" />
-							<p className="text-white/80">
-								Warte auf Spieler... ({gameState.players.length}/4)
-							</p>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
-
-	// Game board (handles both player and spectator mode internally)
+	// Game board (handles both player and spectator mode internally, including waiting state)
 	return <GameBoard />;
 }

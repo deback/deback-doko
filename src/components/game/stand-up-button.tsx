@@ -8,7 +8,11 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useIsStandingUp, useToggleStandUp } from "@/stores/game-selectors";
+import {
+	useGameState,
+	useIsStandingUp,
+	useToggleStandUp,
+} from "@/stores/game-selectors";
 
 interface StandUpButtonProps {
 	className?: string;
@@ -17,6 +21,8 @@ interface StandUpButtonProps {
 export function StandUpButton({ className }: StandUpButtonProps) {
 	const isStandingUp = useIsStandingUp();
 	const toggleStandUp = useToggleStandUp();
+	const gameState = useGameState();
+	const isWaiting = gameState && !gameState.gameStarted;
 
 	return (
 		<Tooltip>
@@ -43,7 +49,9 @@ export function StandUpButton({ className }: StandUpButtonProps) {
 			<TooltipContent>
 				{isStandingUp
 					? "Am Tisch bleiben (Platz nehmen)"
-					: "Nach dieser Runde den Tisch verlassen"}
+					: isWaiting
+						? "Tisch sofort verlassen"
+						: "Nach dieser Runde den Tisch verlassen"}
 			</TooltipContent>
 		</Tooltip>
 	);

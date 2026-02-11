@@ -11,7 +11,12 @@ const playerSchema = z.object({
 });
 
 export const gameEventSchema = z.discriminatedUnion("type", [
-	z.object({ type: z.literal("get-state"), playerId: z.string().optional() }),
+	z.object({
+		type: z.literal("get-state"),
+		playerId: z.string().optional(),
+		playerName: z.string().optional(),
+		playerImage: z.string().nullable().optional(),
+	}),
 	z.object({
 		type: z.literal("play-card"),
 		cardId: z.string(),
