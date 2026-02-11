@@ -10,10 +10,21 @@ import {
 } from "../src/lib/game/rules";
 import { TRICK_ANIMATION_DELAY } from "../src/lib/trick-animation";
 import { canMakeAnnouncement } from "./announcements";
-import { createDeck, dealCards } from "./deck";
 import { calculateGamePoints } from "./game-scoring";
+import {
+	createStartedGameState,
+	createWaitingGameState,
+} from "./game-state-factory";
 import { logger } from "./logger";
+import { createPartykitHttpClient } from "./partykit-http";
 import { gameEventSchema, tableEventSchema } from "./schemas";
+import {
+	findPlayerTable,
+	handleTableEvent,
+	leaveTable as leaveTableRoom,
+	type TableRoomContext,
+	updatePlayerInfo as updateTableRoomPlayerInfo,
+} from "./table-room";
 import { calculateTrickPoints, determineTrickWinner } from "./trick-scoring";
 import type {
 	AnnouncementType,
@@ -54,6 +65,11 @@ export default class Server implements Party.Server {
 		new Map();
 	// Map connection ID to player ID (for tables-room auto-leave on disconnect)
 	connectionToTablePlayer: Map<string, string> = new Map();
+	private readonly partykitHttp = createPartykitHttpClient({
+		host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999",
+		apiSecret: env.PARTYKIT_API_SECRET || "",
+		logger,
+	});
 
 	constructor(readonly room: Party.Room) {}
 
@@ -103,6 +119,36 @@ export default class Server implements Party.Server {
 		await this.room.storage.put("gameState", gameState);
 	}
 
+	private async persistAndBroadcastGame(gameState: GameState) {
+		await this.persistGameState(gameState);
+		this.broadcastGameState(gameState);
+		this.broadcastToSpectators(gameState);
+	}
+
+	private getTableRoomContext(): TableRoomContext {
+		return {
+			room: this.room,
+			tables: this.tables,
+			connectionToTablePlayer: this.connectionToTablePlayer,
+			persistTables: () => this.persistTables(),
+			sendState: (conn) => this.sendState(conn),
+			broadcastState: () => this.broadcastState(),
+			sendError: (conn, message) => this.sendError(conn, message),
+			startGame: (table) => this.startGame(table),
+			initGameRoom: (gameId, tableId, player) =>
+				this.partykitHttp.initGameRoom(gameId, tableId, player),
+			addPlayerToGame: (gameId, player) =>
+				this.partykitHttp.addPlayerToGame(gameId, player),
+			updateGameRoomPlayerInfo: (gameId, playerId, name, image) =>
+				this.partykitHttp.updateGameRoomPlayerInfo(
+					gameId,
+					playerId,
+					name,
+					image,
+				),
+		};
+	}
+
 	async onRequest(req: Party.Request) {
 		if (req.method !== "POST") {
 			return new Response("Method not allowed", { status: 405 });
@@ -129,13 +175,18 @@ export default class Server implements Party.Server {
 				this.room.id === "tables-room" &&
 				body.tableId
 			) {
-				await this.leaveTable(body.tableId, body.playerId);
+				await leaveTableRoom(
+					this.getTableRoomContext(),
+					body.tableId,
+					body.playerId,
+				);
 				return new Response("OK", { status: 200 });
 			}
 
 			if (body.type === "update-player-info") {
 				if (this.room.id === "tables-room") {
-					const gameIds = await this.updatePlayerInfo(
+					const gameIds = await updateTableRoomPlayerInfo(
+						this.getTableRoomContext(),
 						body.playerId,
 						body.name ?? "",
 						body.image,
@@ -171,9 +222,7 @@ export default class Server implements Party.Server {
 					if (gameState.players.length === 4) {
 						await this.restartGame(gameState);
 					} else {
-						await this.persistGameState(gameState);
-						this.broadcastGameState(gameState);
-						this.broadcastToSpectators(gameState);
+						await this.persistAndBroadcastGame(gameState);
 					}
 				}
 				return new Response("OK", { status: 200 });
@@ -187,34 +236,12 @@ export default class Server implements Party.Server {
 			) {
 				// Only init if no game exists yet
 				if (!this.games.has(this.room.id)) {
-					const player = body.player;
-					const waitingState: GameState = {
-						id: this.room.id,
+					const waitingState = createWaitingGameState({
+						gameId: this.room.id,
 						tableId: body.tableId,
-						players: [player],
-						currentPlayerIndex: 0,
-						hands: {},
-						handCounts: {},
-						currentTrick: { cards: [], completed: false },
-						completedTricks: [],
-						trump: "jacks",
-						gameStarted: false,
-						gameEnded: false,
+						players: [body.player],
 						round: 1,
-						scores: {},
-						schweinereiPlayers: [],
-						standingUpPlayers: [],
-						teams: {},
-						spectatorCount: 0,
-						spectators: [],
-						announcements: {
-							re: { announced: false },
-							kontra: { announced: false },
-							rePointAnnouncements: [],
-							kontraPointAnnouncements: [],
-						},
-						contractType: "normal",
-					};
+					});
 					this.games.set(this.room.id, waitingState);
 					await this.persistGameState(waitingState);
 				}
@@ -247,9 +274,9 @@ export default class Server implements Party.Server {
 			const playerId = this.connectionToTablePlayer.get(conn.id);
 			if (playerId) {
 				this.connectionToTablePlayer.delete(conn.id);
-				const table = this.findPlayerTable(playerId);
+				const table = findPlayerTable(this.tables, playerId);
 				if (table && !table.gameStarted) {
-					await this.leaveTable(table.id, playerId);
+					await leaveTableRoom(this.getTableRoomContext(), table.id, playerId);
 				}
 			}
 		}
@@ -267,12 +294,13 @@ export default class Server implements Party.Server {
 						this.games.delete(playerInfo.gameId);
 						await this.room.storage.delete("gameState");
 					} else {
-						await this.persistGameState(gameState);
-						this.broadcastGameState(gameState);
-						this.broadcastToSpectators(gameState);
+						await this.persistAndBroadcastGame(gameState);
 					}
 					// Also remove from table
-					this.removePlayerFromTable(gameState.tableId, playerInfo.playerId);
+					this.partykitHttp.removePlayerFromTable(
+						gameState.tableId,
+						playerInfo.playerId,
+					);
 				}
 			}
 		}
@@ -316,148 +344,14 @@ export default class Server implements Party.Server {
 					this.sendError(sender, "Ungültiges Nachrichtenformat");
 					return;
 				}
-				this.handleEvent(parsed.data as TableEvent, sender);
+				handleTableEvent(
+					this.getTableRoomContext(),
+					parsed.data as TableEvent,
+					sender,
+				);
 			} catch (error) {
 				logger.error("Error parsing message:", error);
 				this.sendError(sender, "Ungültiges Nachrichtenformat");
-			}
-		}
-	}
-
-	// Helper method to find table where player is sitting
-	findPlayerTable(playerId: string): Table | undefined {
-		for (const table of this.tables.values()) {
-			if (table.players.some((p) => p.id === playerId)) {
-				return table;
-			}
-		}
-		return undefined;
-	}
-
-	async handleEvent(event: TableEvent, sender: Party.Connection) {
-		switch (event.type) {
-			case "get-state":
-				this.sendState(sender);
-				break;
-
-			case "create-table":
-				this.connectionToTablePlayer.set(sender.id, event.player.id);
-				await this.createTable(event.name, event.player, sender);
-				break;
-
-			case "join-table":
-				this.connectionToTablePlayer.set(sender.id, event.player.id);
-				await this.joinTable(event.tableId, event.player, sender);
-				break;
-
-			case "leave-table":
-				await this.leaveTable(event.tableId, event.playerId);
-				break;
-
-			case "delete-table":
-				await this.deleteTable(event.tableId, event.playerId);
-				break;
-
-			case "update-player-info": {
-				const gameIds = await this.updatePlayerInfo(
-					event.playerId,
-					event.name,
-					event.image,
-				);
-				for (const gameId of gameIds) {
-					this.updateGameRoomPlayerInfo(
-						gameId,
-						event.playerId,
-						event.name,
-						event.image,
-					);
-				}
-				break;
-			}
-		}
-	}
-
-	async createTable(name: string, player: Player, sender: Party.Connection) {
-		// Check if player is already at another table
-		const existingTable = this.findPlayerTable(player.id);
-		if (existingTable) {
-			this.sendError(
-				sender,
-				"Du sitzt bereits an einem Tisch. Verlasse zuerst den anderen Tisch.",
-			);
-			return;
-		}
-
-		const tableId = `table-${crypto.randomUUID()}`;
-		const table: Table = {
-			id: tableId,
-			name,
-			players: [player],
-			createdAt: Date.now(),
-			gameStarted: false,
-		};
-
-		// Create game room in waiting state so players can navigate to /game
-		const gameId = `game-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-		table.gameId = gameId;
-
-		this.tables.set(tableId, table);
-		await this.persistTables();
-		this.broadcastState();
-
-		// Initialize game room via HTTP (separate PartyKit room)
-		this.initGameRoom(gameId, tableId, player);
-	}
-
-	async joinTable(tableId: string, player: Player, sender: Party.Connection) {
-		const table = this.tables.get(tableId);
-		if (!table) {
-			this.sendError(sender, "Tisch nicht gefunden.");
-			return;
-		}
-
-		// Check if table is full (4 players for Doppelkopf)
-		if (table.players.length >= 4) {
-			this.sendError(sender, "Der Tisch ist bereits voll.");
-			return;
-		}
-
-		// Check if player is already at the table
-		if (table.players.some((p) => p.id === player.id)) {
-			return;
-		}
-
-		// Check if player is already at another table
-		const existingTable = this.findPlayerTable(player.id);
-		if (existingTable) {
-			this.sendError(
-				sender,
-				"Du sitzt bereits an einem Tisch. Verlasse zuerst den anderen Tisch.",
-			);
-			return;
-		}
-
-		table.players.push(player);
-		await this.persistTables();
-		this.broadcastState();
-
-		// Check if table is full (4 players) and start game
-		if (table.players.length === 4 && !table.gameStarted) {
-			await this.startGame(table);
-		} else if (table.gameId) {
-			if (table.players.length === 4) {
-				// All 4 players present — redirect everyone to game
-				const message: TableMessage = {
-					type: "game-started",
-					gameId: table.gameId,
-					tableId: table.id,
-					players: table.players,
-				};
-				this.room.broadcast(JSON.stringify(message));
-				this.broadcastState();
-			} else {
-				// < 4 players — notify game server about new player (no redirect)
-				this.addPlayerToGame(table.gameId, player);
 			}
 		}
 	}
@@ -484,65 +378,6 @@ export default class Server implements Party.Server {
 
 		// Also update state
 		this.broadcastState();
-	}
-
-	async leaveTable(tableId: string, playerId: string) {
-		const table = this.tables.get(tableId);
-		if (!table) {
-			return;
-		}
-
-		table.players = table.players.filter((p) => p.id !== playerId);
-
-		// Delete table if empty
-		if (table.players.length === 0) {
-			this.tables.delete(tableId);
-		}
-
-		await this.persistTables();
-		this.broadcastState();
-	}
-
-	async deleteTable(tableId: string, playerId: string) {
-		const table = this.tables.get(tableId);
-		if (!table) {
-			return;
-		}
-
-		// Only allow deletion if the player is the creator (first player)
-		if (table.players.length > 0 && table.players[0]?.id === playerId) {
-			this.tables.delete(tableId);
-			await this.persistTables();
-			this.broadcastState();
-		}
-	}
-
-	async updatePlayerInfo(
-		playerId: string,
-		name: string,
-		image?: string | null,
-	): Promise<string[]> {
-		let changed = false;
-		const gameIds: string[] = [];
-
-		for (const table of this.tables.values()) {
-			const player = table.players.find((p) => p.id === playerId);
-			if (player) {
-				player.name = name;
-				if (image !== undefined) player.image = image;
-				changed = true;
-				if (table.gameId) {
-					gameIds.push(table.gameId);
-				}
-			}
-		}
-
-		if (changed) {
-			await this.persistTables();
-			this.broadcastState();
-		}
-
-		return gameIds;
 	}
 
 	async updateGamePlayerInfo(
@@ -578,9 +413,7 @@ export default class Server implements Party.Server {
 		}
 
 		if (changed) {
-			await this.persistGameState(gameState);
-			this.broadcastGameState(gameState);
-			this.broadcastToSpectators(gameState);
+			await this.persistAndBroadcastGame(gameState);
 		}
 	}
 
@@ -665,9 +498,7 @@ export default class Server implements Party.Server {
 						if (gameState.players.length === 4) {
 							await this.restartGame(gameState);
 						} else {
-							await this.persistGameState(gameState);
-							this.broadcastGameState(gameState);
-							this.broadcastToSpectators(gameState);
+							await this.persistAndBroadcastGame(gameState);
 						}
 					} else {
 						// Not a player → register as spectator so they receive ongoing updates
@@ -787,11 +618,9 @@ export default class Server implements Party.Server {
 			this.connectionToPlayer.delete(connId);
 
 			// Remove player from table
-			this.removePlayerFromTable(gameState.tableId, playerId);
+			this.partykitHttp.removePlayerFromTable(gameState.tableId, playerId);
 
-			await this.persistGameState(gameState);
-			this.broadcastGameState(gameState);
-			this.broadcastToSpectators(gameState);
+			await this.persistAndBroadcastGame(gameState);
 			return;
 		}
 
@@ -803,9 +632,7 @@ export default class Server implements Party.Server {
 			gameState.standingUpPlayers.splice(idx, 1);
 		}
 
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 	}
 
 	// Vorbehaltsabfrage (Bidding) Logik
@@ -879,17 +706,13 @@ export default class Server implements Party.Server {
 
 		// Prüfe ob noch weitere Vorbehalt-Spieler deklarieren müssen
 		if (remaining.length > 0) {
-			await this.persistGameState(gameState);
-			this.broadcastGameState(gameState);
-			this.broadcastToSpectators(gameState);
+			await this.persistAndBroadcastGame(gameState);
 			return;
 		}
 
 		// Alle haben deklariert — Bidding auflösen
 		gameState.biddingPhase.awaitingContractDeclaration = undefined;
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 
 		setTimeout(() => {
 			this.resolveBidding(gameState);
@@ -932,16 +755,12 @@ export default class Server implements Party.Server {
 			const undeclared = this.findAllUndeclaredVorbehalt(gameState);
 			if (undeclared.length > 0) {
 				gameState.biddingPhase.awaitingContractDeclaration = undeclared;
-				await this.persistGameState(gameState);
-				this.broadcastGameState(gameState);
-				this.broadcastToSpectators(gameState);
+				await this.persistAndBroadcastGame(gameState);
 				return;
 			}
 
 			// Finalen Zustand broadcasten, damit der letzte Bid sichtbar wird
-			await this.persistGameState(gameState);
-			this.broadcastGameState(gameState);
-			this.broadcastToSpectators(gameState);
+			await this.persistAndBroadcastGame(gameState);
 
 			// Bidding nach 2s auflösen, damit der Dialog sichtbar bleibt
 			setTimeout(() => {
@@ -950,9 +769,7 @@ export default class Server implements Party.Server {
 			return;
 		}
 
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 	}
 
 	async resolveBidding(gameState: GameState) {
@@ -1025,9 +842,7 @@ export default class Server implements Party.Server {
 		gameState.contractType = "normal";
 		gameState.biddingPhase = undefined;
 
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 	}
 
 	async setupSolo(
@@ -1048,9 +863,7 @@ export default class Server implements Party.Server {
 
 		gameState.biddingPhase = undefined;
 
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 	}
 
 	async setupHochzeit(gameState: GameState, seekerPlayerId: string) {
@@ -1070,9 +883,7 @@ export default class Server implements Party.Server {
 
 		gameState.biddingPhase = undefined;
 
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 	}
 
 	// Hochzeit: Prüfe ob Partner gefunden wurde
@@ -1179,9 +990,7 @@ export default class Server implements Party.Server {
 			}
 		}
 
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 	}
 
 	// Spectator management
@@ -1342,91 +1151,16 @@ export default class Server implements Party.Server {
 			}
 			return;
 		}
-
-		const deck = createDeck();
-		const hands = dealCards(deck, players);
-		const trump = "jacks" as const;
-
-		// Prüfe, welche Spieler beide Karo-Assen haben (Schweinerei)
-		const schweinereiPlayers: string[] = [];
-		for (const player of players) {
-			const hand = hands[player.id];
-			if (hand) {
-				const diamondsAces = hand.filter(
-					(card) => card.suit === "diamonds" && card.rank === "ace",
-				);
-				if (diamondsAces.length === 2) {
-					schweinereiPlayers.push(player.id);
-				}
-			}
-		}
-
-		// Initialisiere Scores für alle Spieler mit 0
-		const scores: Record<string, number> = {};
-		for (const player of players) {
-			scores[player.id] = 0;
-		}
-
-		// Bestimme Re/Kontra-Teams: Spieler mit Kreuz-Dame = Re
-		const teams: Record<string, "re" | "kontra"> = {};
-		for (const player of players) {
-			const hand = hands[player.id];
-			if (hand) {
-				const hasClubsQueen = hand.some(
-					(card) => card.suit === "clubs" && card.rank === "queen",
-				);
-				teams[player.id] = hasClubsQueen ? "re" : "kontra";
-			}
-		}
-
-		// Create hand counts for spectators
-		const handCounts: Record<string, number> = {};
-		for (const player of players) {
-			handCounts[player.id] = hands[player.id]?.length || 0;
-		}
-
-		const gameState: GameState = {
-			id: gameId,
+		const gameState = createStartedGameState({
+			gameId,
 			tableId,
 			players,
-			currentPlayerIndex: 0,
-			hands,
-			handCounts,
-			initialHands: structuredClone(hands),
-			currentTrick: {
-				cards: [],
-				completed: false,
-			},
-			completedTricks: [],
-			trump,
-			gameStarted: true,
-			gameEnded: false,
 			round: 1,
-			scores,
-			schweinereiPlayers,
-			standingUpPlayers: [],
-			teams,
-			spectatorCount: 0,
-			spectators: [],
-			announcements: {
-				re: { announced: false },
-				kontra: { announced: false },
-				rePointAnnouncements: [],
-				kontraPointAnnouncements: [],
-			},
-			// Bidding-Phase: Spieler werden der Reihe nach gefragt
-			biddingPhase: {
-				active: true,
-				currentBidderIndex: 0,
-				bids: {},
-				pendingContracts: {},
-			},
-			contractType: "normal",
-		};
+			currentPlayerIndex: 0,
+		});
 
 		this.games.set(gameId, gameState);
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
+		await this.persistAndBroadcastGame(gameState);
 	}
 
 	async playCard(cardId: string, playerId: string, sender: Party.Connection) {
@@ -1496,9 +1230,7 @@ export default class Server implements Party.Server {
 			await this.completeTrick(gameState);
 		} else {
 			gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % 4;
-			await this.persistGameState(gameState);
-			this.broadcastGameState(gameState);
-			this.broadcastToSpectators(gameState);
+			await this.persistAndBroadcastGame(gameState);
 		}
 	}
 
@@ -1533,9 +1265,7 @@ export default class Server implements Party.Server {
 		}
 
 		// First broadcast: Show completed trick with winnerId (cards still visible)
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 
 		// After animation delay, clear the trick and start a new one
 		setTimeout(async () => {
@@ -1556,9 +1286,7 @@ export default class Server implements Party.Server {
 				gameState.gamePointsResult = calculateGamePoints(gameState);
 				this.saveGameResults(gameState);
 
-				await this.persistGameState(gameState);
-				this.broadcastGameState(gameState);
-				this.broadcastToSpectators(gameState);
+				await this.persistAndBroadcastGame(gameState);
 
 				// Restart game after 5 seconds
 				const RESTART_DELAY = 5000;
@@ -1568,9 +1296,7 @@ export default class Server implements Party.Server {
 				return;
 			}
 
-			await this.persistGameState(gameState);
-			this.broadcastGameState(gameState);
-			this.broadcastToSpectators(gameState);
+			await this.persistAndBroadcastGame(gameState);
 		}, TRICK_ANIMATION_DELAY);
 	}
 
@@ -1604,7 +1330,7 @@ export default class Server implements Party.Server {
 			}
 
 			// Remove player from table via HTTP call to tables-room
-			this.removePlayerFromTable(tableId, playerId);
+			this.partykitHttp.removePlayerFromTable(tableId, playerId);
 		}
 
 		// If fewer than 4 players remain, enter waiting state
@@ -1612,214 +1338,32 @@ export default class Server implements Party.Server {
 			logger.info(
 				`[restartGame] Only ${remainingPlayers.length} players remaining, entering waiting state`,
 			);
-			const waitingState: GameState = {
-				id: gameId,
+			const waitingState = createWaitingGameState({
+				gameId,
 				tableId,
 				players: remainingPlayers,
-				currentPlayerIndex: 0,
-				hands: {},
-				handCounts: {},
-				currentTrick: { cards: [], completed: false },
-				completedTricks: [],
-				trump: "jacks",
-				gameStarted: false,
-				gameEnded: false,
 				round: newRound,
-				scores: {},
-				schweinereiPlayers: [],
-				standingUpPlayers: [],
-				teams: {},
 				spectatorCount: oldGameState.spectatorCount,
 				spectators: oldGameState.spectators,
-				announcements: {
-					re: { announced: false },
-					kontra: { announced: false },
-					rePointAnnouncements: [],
-					kontraPointAnnouncements: [],
-				},
-				contractType: "normal",
-			};
+			});
 			this.games.set(gameId, waitingState);
-			await this.persistGameState(waitingState);
-			this.broadcastGameState(waitingState);
-			this.broadcastToSpectators(waitingState);
+			await this.persistAndBroadcastGame(waitingState);
 			return;
 		}
 
 		const players = remainingPlayers;
-
-		// Create new deck and deal
-		const deck = createDeck();
-		const hands = dealCards(deck, players);
-		const trump = "jacks" as const;
-
-		// Check for Schweinerei
-		const schweinereiPlayers: string[] = [];
-		for (const player of players) {
-			const hand = hands[player.id];
-			if (hand) {
-				const diamondsAces = hand.filter(
-					(card) => card.suit === "diamonds" && card.rank === "ace",
-				);
-				if (diamondsAces.length === 2) {
-					schweinereiPlayers.push(player.id);
-				}
-			}
-		}
-
-		// Reset scores
-		const scores: Record<string, number> = {};
-		for (const player of players) {
-			scores[player.id] = 0;
-		}
-
-		// Determine Re/Kontra teams
-		const teams: Record<string, "re" | "kontra"> = {};
-		for (const player of players) {
-			const hand = hands[player.id];
-			if (hand) {
-				const hasClubsQueen = hand.some(
-					(card) => card.suit === "clubs" && card.rank === "queen",
-				);
-				teams[player.id] = hasClubsQueen ? "re" : "kontra";
-			}
-		}
-
-		// Create hand counts for spectators
-		const handCounts: Record<string, number> = {};
-		for (const player of players) {
-			handCounts[player.id] = hands[player.id]?.length || 0;
-		}
-
-		const gameState: GameState = {
-			id: gameId,
+		const gameState = createStartedGameState({
+			gameId,
 			tableId,
 			players,
-			currentPlayerIndex: (newRound - 1) % 4,
-			hands,
-			handCounts,
-			initialHands: structuredClone(hands),
-			currentTrick: {
-				cards: [],
-				completed: false,
-			},
-			completedTricks: [],
-			trump,
-			gameStarted: true,
-			gameEnded: false,
 			round: newRound,
-			scores,
-			schweinereiPlayers,
-			standingUpPlayers: [],
-			teams,
+			currentPlayerIndex: (newRound - 1) % 4,
 			spectatorCount: oldGameState.spectatorCount,
 			spectators: oldGameState.spectators,
-			announcements: {
-				re: { announced: false },
-				kontra: { announced: false },
-				rePointAnnouncements: [],
-				kontraPointAnnouncements: [],
-			},
-			// Bidding-Phase: Spieler werden der Reihe nach gefragt
-			biddingPhase: {
-				active: true,
-				currentBidderIndex: (newRound - 1) % 4,
-				bids: {},
-				pendingContracts: {},
-			},
-			contractType: "normal",
-		};
+		});
 
 		this.games.set(gameId, gameState);
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
-	}
-
-	// Initialize a game room in waiting state via HTTP call
-	private initGameRoom(gameId: string, tableId: string, player: Player) {
-		const partykitHost =
-			process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
-		const protocol = partykitHost.includes("localhost") ? "http" : "https";
-		const apiSecret = env.PARTYKIT_API_SECRET || "";
-		fetch(`${protocol}://${partykitHost}/parties/main/${gameId}`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${apiSecret}`,
-			},
-			body: JSON.stringify({ type: "init-game", tableId, player }),
-		}).catch((error) => {
-			logger.error("Failed to init game room:", error);
-		});
-	}
-
-	// Add a player to a game via HTTP call to game-room
-	private addPlayerToGame(gameId: string, player: Player) {
-		const partykitHost =
-			process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
-		const protocol = partykitHost.includes("localhost") ? "http" : "https";
-		const apiSecret = env.PARTYKIT_API_SECRET || "";
-		fetch(`${protocol}://${partykitHost}/parties/main/${gameId}`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${apiSecret}`,
-			},
-			body: JSON.stringify({ type: "add-player", player }),
-		}).catch((error) => {
-			logger.error("Failed to add player to game:", error);
-		});
-	}
-
-	// Remove a player from their table via HTTP call to tables-room
-	private removePlayerFromTable(tableId: string, playerId: string) {
-		const partykitHost =
-			process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
-		const protocol = partykitHost.includes("localhost") ? "http" : "https";
-		const apiSecret = env.PARTYKIT_API_SECRET || "";
-		fetch(`${protocol}://${partykitHost}/parties/main/tables-room`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${apiSecret}`,
-			},
-			body: JSON.stringify({
-				type: "leave-table",
-				tableId,
-				playerId,
-			}),
-		}).catch((error) => {
-			logger.error("Failed to remove player from table:", error);
-		});
-	}
-
-	// Forward player info update to a game room via HTTP call
-	private updateGameRoomPlayerInfo(
-		gameId: string,
-		playerId: string,
-		name: string,
-		image?: string | null,
-	) {
-		const partykitHost =
-			process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
-		const protocol = partykitHost.includes("localhost") ? "http" : "https";
-		const apiSecret = env.PARTYKIT_API_SECRET || "";
-		fetch(`${protocol}://${partykitHost}/parties/main/${gameId}`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${apiSecret}`,
-			},
-			body: JSON.stringify({
-				type: "update-player-info",
-				playerId,
-				name,
-				image,
-			}),
-		}).catch((error) => {
-			logger.error("Failed to update player info in game room:", error);
-		});
+		await this.persistAndBroadcastGame(gameState);
 	}
 
 	async saveGameResults(gameState: GameState) {
@@ -2036,9 +1580,7 @@ export default class Server implements Party.Server {
 		}
 
 		// Final broadcast
-		await this.persistGameState(gameState);
-		this.broadcastGameState(gameState);
-		this.broadcastToSpectators(gameState);
+		await this.persistAndBroadcastGame(gameState);
 
 		// If game ended, restart after delay
 		if (gameState.gameEnded) {
