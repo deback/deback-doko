@@ -239,6 +239,25 @@
 	}
 }
 
+@keyframes hourglass-flip {
+	0%,
+	8% {
+		transform: rotate(0deg);
+	}
+	14%,
+	50% {
+		transform: rotate(180deg);
+	}
+	56%,
+	100% {
+		transform: rotate(0deg);
+	}
+}
+
+@utility animate-hourglass-flip {
+	animation: hourglass-flip 7s ease-in-out infinite;
+}
+
 @utility bg-wood {
 	background-color: oklch(0.76 0.0696 63.54);
 	background-image:

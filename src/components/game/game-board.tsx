@@ -10,7 +10,7 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { Bot, Eye, FastForward, RotateCcw } from "lucide-react";
+import { Bot, Eye, FastForward, Hourglass, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -371,7 +371,9 @@ export function GameBoard() {
 					<UiCard className="border-none bg-black/40 text-white backdrop-blur-sm">
 						<UiCardContent className="pt-6">
 							<div className="flex flex-col items-center gap-3">
-								<div className="h-3 w-3 animate-pulse rounded-full bg-yellow-500" />
+								<div className="flex size-10 animate-hourglass-flip items-center justify-center rounded-full bg-yellow-500">
+									<Hourglass className="size-5 text-white" />
+								</div>
 								<p className="text-white/80">
 									Warte auf Spieler... ({gameState.players.length}/4)
 								</p>

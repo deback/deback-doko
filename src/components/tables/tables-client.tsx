@@ -262,7 +262,7 @@ export function TablesClient({ player }: TablesClientProps) {
 									"pt-4",
 									isClickable &&
 										"cursor-pointer transition-colors hover:border-primary",
-									!isClickable && "cursor-not-allowed opacity-50",
+									!isClickable && "bg-muted",
 									canSpectate && "border-amber-500/50",
 									canRejoinGame && "border-emerald-500/50",
 								)}
