@@ -63,7 +63,8 @@ export function GameEndDialog({
 		myTeam === "re" ? (gpr?.reCardPoints ?? 0) : (gpr?.kontraCardPoints ?? 0);
 	const iWon = myTeam === "re" ? gpr?.reWon : gpr?.kontraWon;
 
-	const isSolo = gpr?.isSolo ?? isSoloGame(gameState.contractType, gameState.teams);
+	const isSolo =
+		gpr?.isSolo ?? isSoloGame(gameState.contractType, gameState.teams);
 
 	const randomizeData = useCallback(() => {
 		const reCardPoints = Math.floor(Math.random() * 241);
@@ -398,6 +399,27 @@ export function GameEndDialog({
 										},
 									)}
 
+									{/* Solomultiplikator */}
+									{isSolo && myTeam === "re" && (
+										<motion.div
+											animate={
+												showSummary
+													? { opacity: 1, x: 0 }
+													: { opacity: 0, x: -10 }
+											}
+											className="flex items-center justify-between text-sm"
+											initial={{ opacity: 0, x: -10 }}
+											transition={{ duration: 0.3 }}
+										>
+											<span className="text-muted-foreground">
+												Solomultiplikator
+											</span>
+											<span className="font-medium font-mono text-muted-foreground">
+												× 3
+											</span>
+										</motion.div>
+									)}
+
 									{/* Gesamt */}
 									<motion.div
 										animate={showSummary ? { opacity: 1 } : { opacity: 0 }}
@@ -407,15 +429,6 @@ export function GameEndDialog({
 									>
 										<span>Gesamt</span>
 										<span>
-											{isSolo && myTeam === "re" && (
-												<span className="font-normal text-muted-foreground">
-													({Math.abs(baseNetPoints)}{" "}
-													{Math.abs(baseNetPoints) === 1
-														? "Punkt"
-														: "Punkte"}{" "}
-													× 3){" "}
-												</span>
-											)}
 											{myNetPoints > 0 ? "+" : ""}
 											{myNetPoints}{" "}
 											{Math.abs(myNetPoints) === 1 ? "Punkt" : "Punkte"}
