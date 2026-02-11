@@ -162,7 +162,7 @@ export function BiddingSelect({
 
 			{/* Status message */}
 			{readOnly ? (
-				<p className="text-foreground/50 text-xs">
+				<p className="min-w-0 self-stretch truncate text-center text-foreground/50 text-xs">
 					{(() => {
 						const allBidsIn =
 							Object.keys(biddingPhase.bids).length >= players.length;
@@ -180,12 +180,12 @@ export function BiddingSelect({
 			) : (
 				<>
 					{!myBid && !isReady && !awaitingDeclaration && (
-						<p className="text-foreground/50 text-xs">
+						<p className="min-w-0 self-stretch truncate text-center text-foreground/50 text-xs">
 							Bitte wähle Gesund/Vorbehalt
 						</p>
 					)}
 					{(myBid || isReady) && !awaitingDeclaration && (
-						<p className="text-foreground/50 text-xs">
+						<p className="min-w-0 self-stretch truncate text-center text-foreground/50 text-xs">
 							{(() => {
 								const allBidsIn =
 									Object.keys(biddingPhase.bids).length >= players.length;
@@ -234,7 +234,7 @@ export function BiddingSelect({
 						>
 							<div
 								className={cn(
-									"flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1",
+									"flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden rounded-full px-2 py-1",
 									isCurrent && "bg-amber-500/20",
 									hasBid &&
 										(playerBid === "vorbehalt"
@@ -245,7 +245,7 @@ export function BiddingSelect({
 								<BidStatusIcon bid={playerBid} status={status} />
 								<span
 									className={cn(
-										"truncate text-xs",
+										"min-w-0 truncate text-xs",
 										player.id === currentPlayerId
 											? "font-medium text-foreground"
 											: "text-foreground/70",
