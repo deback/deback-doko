@@ -4,6 +4,10 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/server/better-auth/client";
 
+interface GitHubButtonProps {
+	returnTo: string | null;
+}
+
 function GitHubIcon({ className }: { className?: string }) {
 	return (
 		<svg
@@ -22,7 +26,7 @@ function GitHubIcon({ className }: { className?: string }) {
 	);
 }
 
-export function GitHubButton() {
+export function GitHubButton({ returnTo }: GitHubButtonProps) {
 	const [isPending, startTransition] = useTransition();
 
 	function handleGitHubSignIn() {
@@ -30,6 +34,7 @@ export function GitHubButton() {
 			try {
 				await authClient.signIn.social({
 					provider: "github",
+					callbackURL: returnTo ?? undefined,
 				});
 			} catch (error) {
 				console.error("Fehler bei GitHub-Anmeldung:", error);

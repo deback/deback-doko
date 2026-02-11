@@ -15,6 +15,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { appendReturnTo } from "@/lib/auth/return-to";
 import { signInEmailSchema } from "@/lib/validations/auth";
 import { type ActionState, signInEmailAction } from "@/server/actions/auth";
 
@@ -22,7 +23,11 @@ type FormValues = z.infer<typeof signInEmailSchema>;
 
 const initialState: ActionState = { success: false };
 
-export function PasswordLoginForm() {
+interface PasswordLoginFormProps {
+	returnTo: string | null;
+}
+
+export function PasswordLoginForm({ returnTo }: PasswordLoginFormProps) {
 	const [state, formAction, isPending] = useActionState(
 		signInEmailAction,
 		initialState,
@@ -40,6 +45,9 @@ export function PasswordLoginForm() {
 		const formData = new FormData();
 		formData.append("email", values.email);
 		formData.append("password", values.password);
+		if (returnTo) {
+			formData.append("returnTo", returnTo);
+		}
 		startTransition(() => {
 			formAction(formData);
 		});
@@ -102,13 +110,13 @@ export function PasswordLoginForm() {
 			<div className="flex flex-col gap-2 text-center text-sm">
 				<Link
 					className="text-muted-foreground transition-colors hover:text-foreground"
-					href="/forgot-password"
+					href={appendReturnTo("/forgot-password", returnTo)}
 				>
 					Passwort vergessen?
 				</Link>
 				<Link
 					className="text-muted-foreground transition-colors hover:text-foreground"
-					href="/register"
+					href={appendReturnTo("/register", returnTo)}
 				>
 					Noch kein Konto? Jetzt registrieren
 				</Link>

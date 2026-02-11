@@ -14,7 +14,11 @@ import { GoogleButton } from "./google-button";
 import { LoginForm } from "./login-form";
 import { PasswordLoginForm } from "./password-login-form";
 
-export function LoginClient() {
+interface LoginClientProps {
+	returnTo: string | null;
+}
+
+export function LoginClient({ returnTo }: LoginClientProps) {
 	const searchParams = useSearchParams();
 	const error = searchParams.get("error");
 
@@ -38,8 +42,8 @@ export function LoginClient() {
 			</CardHeader>
 			<CardContent className="flex flex-col gap-6">
 				<div className="flex flex-col gap-2">
-					<GitHubButton />
-					<GoogleButton />
+					<GitHubButton returnTo={returnTo} />
+					<GoogleButton returnTo={returnTo} />
 				</div>
 
 				<div className="relative">
@@ -57,10 +61,10 @@ export function LoginClient() {
 						<TabsTrigger value="magic-link">Magic Link</TabsTrigger>
 					</TabsList>
 					<TabsContent className="mt-4" value="password">
-						<PasswordLoginForm />
+						<PasswordLoginForm returnTo={returnTo} />
 					</TabsContent>
 					<TabsContent className="mt-4" value="magic-link">
-						<LoginForm />
+						<LoginForm returnTo={returnTo} />
 					</TabsContent>
 				</Tabs>
 			</CardContent>

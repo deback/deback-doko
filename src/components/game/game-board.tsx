@@ -53,6 +53,7 @@ import { BiddingSelect } from "./bidding-select";
 import { CARD_SIZE, type CardOrigin } from "./card";
 import { GameEndDialog } from "./game-end-dialog";
 import { GameSettingsMenu } from "./game-settings-menu";
+import { GameShareMenu } from "./game-share-menu";
 import { LastTrickPanel } from "./last-trick-panel";
 import { OpponentHand } from "./opponent-hand";
 import { PlayerHand } from "./player-hand";
@@ -525,6 +526,9 @@ export function GameBoard() {
 						/>
 						<span className="text-white/70 text-xs">Verbunden</span>
 					</div>
+					{!isSpectator && (
+						<GameShareMenu gameId={gameState.id} tableId={gameState.tableId} />
+					)}
 					<GameSettingsMenu />
 				</div>
 

@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { startTransition, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { InfoBox } from "@/components/ui/info-box";
 import { Input } from "@/components/ui/input";
+import { appendReturnTo, parseReturnTo } from "@/lib/auth/return-to";
 import { signUpSchema } from "@/lib/validations/auth";
 import { type ActionState, signUpAction } from "@/server/actions/auth";
 
@@ -31,6 +33,8 @@ type FormValues = z.infer<typeof signUpSchema>;
 const initialState: ActionState = { success: false };
 
 export default function RegisterPage() {
+	const searchParams = useSearchParams();
+	const returnTo = parseReturnTo(searchParams.get("returnTo"));
 	const [state, formAction, isPending] = useActionState(
 		signUpAction,
 		initialState,
@@ -50,6 +54,9 @@ export default function RegisterPage() {
 		formData.append("name", values.name);
 		formData.append("email", values.email);
 		formData.append("password", values.password);
+		if (returnTo) {
+			formData.append("returnTo", returnTo);
+		}
 		startTransition(() => {
 			formAction(formData);
 		});
@@ -73,7 +80,9 @@ export default function RegisterPage() {
 							und klicke auf den Bestätigungslink, um dein Konto zu aktivieren.
 						</InfoBox>
 						<Button asChild className="w-full" variant="outline">
-							<Link href="/login">Zur Anmeldung</Link>
+							<Link href={appendReturnTo("/login", returnTo)}>
+								Zur Anmeldung
+							</Link>
 						</Button>
 					</div>
 				) : (
@@ -155,7 +164,7 @@ export default function RegisterPage() {
 						<div className="text-center text-sm">
 							<Link
 								className="text-muted-foreground transition-colors hover:text-foreground"
-								href="/login"
+								href={appendReturnTo("/login", returnTo)}
 							>
 								Bereits ein Konto? Zur Anmeldung
 							</Link>

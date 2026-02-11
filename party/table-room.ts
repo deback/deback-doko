@@ -11,7 +11,7 @@ export interface TableRoomContext {
 	sendError: (conn: Party.Connection, message: string) => void;
 	startGame: (table: Table) => Promise<void>;
 	initGameRoom: (gameId: string, tableId: string, player: Player) => void;
-	addPlayerToGame: (gameId: string, player: Player) => void;
+	addPlayerToGame: (gameId: string, player: Player) => Promise<boolean>;
 	updateGameRoomPlayerInfo: (
 		gameId: string,
 		playerId: string,
@@ -95,6 +95,14 @@ export async function joinTable(
 		return;
 	}
 
+	if (table.gameId) {
+		const addedToGame = await ctx.addPlayerToGame(table.gameId, player);
+		if (!addedToGame) {
+			ctx.sendError(sender, "Beitritt fehlgeschlagen. Bitte erneut versuchen.");
+			return;
+		}
+	}
+
 	table.players.push(player);
 	await ctx.persistTables();
 	ctx.broadcastState();
@@ -117,8 +125,6 @@ export async function joinTable(
 		ctx.broadcastState();
 		return;
 	}
-
-	ctx.addPlayerToGame(table.gameId, player);
 }
 
 export async function leaveTable(

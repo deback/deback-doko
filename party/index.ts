@@ -44,6 +44,7 @@ import type {
 } from "./types";
 
 export default class Server implements Party.Server {
+	private static readonly WAITING_RECONNECT_GRACE_MS = 8_000;
 	tables: Map<string, Table> = new Map();
 	games: Map<string, GameState> = new Map();
 	// Track player connections per game: gameId -> Set of player connection IDs
@@ -65,6 +66,9 @@ export default class Server implements Party.Server {
 		new Map();
 	// Map connection ID to player ID (for tables-room auto-leave on disconnect)
 	connectionToTablePlayer: Map<string, string> = new Map();
+	// Waiting-game reconnect grace timers: `${gameId}:${playerId}` -> timeout
+	waitingPlayerDisconnectTimers: Map<string, ReturnType<typeof setTimeout>> =
+		new Map();
 	private readonly partykitHttp = createPartykitHttpClient({
 		host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999",
 		apiSecret: env.PARTYKIT_API_SECRET || "",
@@ -125,6 +129,105 @@ export default class Server implements Party.Server {
 		this.broadcastToSpectators(gameState);
 	}
 
+	private getWaitingDisconnectKey(gameId: string, playerId: string) {
+		return `${gameId}:${playerId}`;
+	}
+
+	private clearWaitingPlayerDisconnectTimer(gameId: string, playerId: string) {
+		const key = this.getWaitingDisconnectKey(gameId, playerId);
+		const timer = this.waitingPlayerDisconnectTimers.get(key);
+		if (!timer) return;
+
+		clearTimeout(timer);
+		this.waitingPlayerDisconnectTimers.delete(key);
+	}
+
+	private hasOtherActivePlayerConnection(
+		gameId: string,
+		playerId: string,
+		excludeConnId?: string,
+	): boolean {
+		for (const [connId, info] of this.connectionToPlayer.entries()) {
+			if (excludeConnId && connId === excludeConnId) continue;
+			if (info.gameId === gameId && info.playerId === playerId) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private scheduleWaitingPlayerDisconnect(gameId: string, playerId: string) {
+		const key = this.getWaitingDisconnectKey(gameId, playerId);
+		if (this.waitingPlayerDisconnectTimers.has(key)) return;
+
+		const timer = setTimeout(() => {
+			void this.handleWaitingPlayerDisconnect(gameId, playerId);
+		}, Server.WAITING_RECONNECT_GRACE_MS);
+
+		this.waitingPlayerDisconnectTimers.set(key, timer);
+	}
+
+	private async handleWaitingPlayerDisconnect(
+		gameId: string,
+		playerId: string,
+	) {
+		this.clearWaitingPlayerDisconnectTimer(gameId, playerId);
+
+		if (this.hasOtherActivePlayerConnection(gameId, playerId)) {
+			return;
+		}
+
+		const gameState = this.games.get(gameId);
+		if (!gameState || gameState.gameStarted) {
+			return;
+		}
+
+		const wasPlayer = gameState.players.some(
+			(player) => player.id === playerId,
+		);
+		if (!wasPlayer) {
+			return;
+		}
+
+		gameState.players = gameState.players.filter((p) => p.id !== playerId);
+		if (gameState.players.length === 0) {
+			this.games.delete(gameId);
+			await this.room.storage.delete("gameState");
+		} else {
+			await this.persistAndBroadcastGame(gameState);
+		}
+
+		this.partykitHttp.removePlayerFromTable(gameState.tableId, playerId);
+	}
+
+	private async removePlayerAsSpectator(gameId: string, playerId: string) {
+		const spectators = this.spectatorConnections.get(gameId);
+		if (!spectators || spectators.size === 0) return;
+
+		let removed = false;
+		for (const connId of Array.from(spectators)) {
+			const info = this.connectionToSpectator.get(connId);
+			if (info?.spectatorId !== playerId) continue;
+
+			spectators.delete(connId);
+			this.connectionToSpectator.delete(connId);
+			removed = true;
+		}
+
+		if (!removed) return;
+
+		const gameState = this.games.get(gameId);
+		if (!gameState) return;
+
+		gameState.spectatorCount = spectators.size;
+		gameState.spectators = this.getSpectatorList(gameId);
+		this.broadcastGameState(gameState);
+		await this.updateTableSpectatorCount(
+			gameState.tableId,
+			gameState.spectatorCount,
+		);
+	}
+
 	private getTableRoomContext(): TableRoomContext {
 		return {
 			room: this.room,
@@ -137,8 +240,8 @@ export default class Server implements Party.Server {
 			startGame: (table) => this.startGame(table),
 			initGameRoom: (gameId, tableId, player) =>
 				this.partykitHttp.initGameRoom(gameId, tableId, player),
-			addPlayerToGame: (gameId, player) =>
-				this.partykitHttp.addPlayerToGame(gameId, player),
+			addPlayerToGame: async (gameId, player) =>
+				await this.partykitHttp.addPlayerToGame(gameId, player),
 			updateGameRoomPlayerInfo: (gameId, playerId, name, image) =>
 				this.partykitHttp.updateGameRoomPlayerInfo(
 					gameId,
@@ -167,8 +270,52 @@ export default class Server implements Party.Server {
 				name?: string;
 				image?: string | null;
 				tableId?: string;
+				gameId?: string;
 				player?: Player;
 			};
+
+			if (
+				body.type === "ensure-player-at-table" &&
+				this.room.id === "tables-room" &&
+				body.tableId &&
+				body.gameId &&
+				body.player
+			) {
+				const table = this.tables.get(body.tableId);
+				if (!table) {
+					return new Response("OK", { status: 200 });
+				}
+
+				// If the table has no game id yet (legacy data), bind it now.
+				if (!table.gameId) {
+					table.gameId = body.gameId;
+				}
+
+				if (table.gameId !== body.gameId) {
+					return new Response("OK", { status: 200 });
+				}
+
+				const isAlreadyAtTable = table.players.some(
+					(player) => player.id === body.player?.id,
+				);
+				if (isAlreadyAtTable) {
+					return new Response("OK", { status: 200 });
+				}
+
+				const existingTable = findPlayerTable(this.tables, body.player.id);
+				if (existingTable && existingTable.id !== table.id) {
+					return new Response("OK", { status: 200 });
+				}
+
+				if (table.players.length >= 4) {
+					return new Response("OK", { status: 200 });
+				}
+
+				table.players.push(body.player);
+				await this.persistTables();
+				this.broadcastState();
+				return new Response("OK", { status: 200 });
+			}
 
 			if (
 				body.type === "leave-table" &&
@@ -210,20 +357,24 @@ export default class Server implements Party.Server {
 			) {
 				const player = body.player;
 				const gameState = this.games.get(this.room.id);
-				if (
-					gameState &&
-					!gameState.gameStarted &&
-					gameState.players.length < 4
-				) {
-					// Add player if not already present
-					if (!gameState.players.some((p) => p.id === player.id)) {
-						gameState.players.push(player);
-					}
-					if (gameState.players.length === 4) {
-						await this.restartGame(gameState);
-					} else {
-						await this.persistAndBroadcastGame(gameState);
-					}
+				if (!gameState) {
+					return new Response("Game not found", { status: 404 });
+				}
+
+				// Idempotent success for duplicate requests.
+				if (gameState.players.some((p) => p.id === player.id)) {
+					return new Response("OK", { status: 200 });
+				}
+
+				if (gameState.gameStarted || gameState.players.length >= 4) {
+					return new Response("Game not joinable", { status: 409 });
+				}
+
+				gameState.players.push(player);
+				if (gameState.players.length === 4) {
+					await this.restartGame(gameState);
+				} else {
+					await this.persistAndBroadcastGame(gameState);
 				}
 				return new Response("OK", { status: 200 });
 			}
@@ -269,13 +420,15 @@ export default class Server implements Party.Server {
 	}
 
 	async onClose(conn: Party.Connection) {
-		// Tables-room: auto-leave table on disconnect (only if game not running)
+		// Tables-room: auto-leave only for pre-game tables without game room binding.
+		// Tables that already have a gameId must survive lobby disconnects so invite joins
+		// from /game links can still resolve the table.
 		if (this.room.id === "tables-room") {
 			const playerId = this.connectionToTablePlayer.get(conn.id);
 			if (playerId) {
 				this.connectionToTablePlayer.delete(conn.id);
 				const table = findPlayerTable(this.tables, playerId);
-				if (table && !table.gameStarted) {
+				if (table && !table.gameStarted && !table.gameId) {
 					await leaveTableRoom(this.getTableRoomContext(), table.id, playerId);
 				}
 			}
@@ -287,20 +440,17 @@ export default class Server implements Party.Server {
 			if (playerInfo) {
 				const gameState = this.games.get(playerInfo.gameId);
 				if (gameState && !gameState.gameStarted) {
-					gameState.players = gameState.players.filter(
-						(p) => p.id !== playerInfo.playerId,
-					);
-					if (gameState.players.length === 0) {
-						this.games.delete(playerInfo.gameId);
-						await this.room.storage.delete("gameState");
-					} else {
-						await this.persistAndBroadcastGame(gameState);
-					}
-					// Also remove from table
-					this.partykitHttp.removePlayerFromTable(
-						gameState.tableId,
+					const hasOtherConnection = this.hasOtherActivePlayerConnection(
+						playerInfo.gameId,
 						playerInfo.playerId,
+						conn.id,
 					);
+					if (!hasOtherConnection) {
+						this.scheduleWaitingPlayerDisconnect(
+							playerInfo.gameId,
+							playerInfo.playerId,
+						);
+					}
 				}
 			}
 		}
@@ -457,6 +607,37 @@ export default class Server implements Party.Server {
 						event.playerId &&
 						gameState.players.some((p) => p.id === event.playerId);
 					if (isPlayer) {
+						// Reconnected player in waiting phase: cancel pending auto-remove timer.
+						this.clearWaitingPlayerDisconnectTimer(
+							gameState.id,
+							event.playerId as string,
+						);
+
+						// Ensure player is never tracked as spectator on any stale connection.
+						await this.removePlayerAsSpectator(
+							gameState.id,
+							event.playerId as string,
+						);
+
+						// Keep tables-room in sync: if game knows this player, table must too.
+						const gamePlayer = gameState.players.find(
+							(player) => player.id === event.playerId,
+						);
+						if (gamePlayer) {
+							this.partykitHttp.ensurePlayerAtTable(
+								gameState.tableId,
+								gameState.id,
+								gamePlayer,
+							);
+						}
+
+						// If this connection was previously registered as spectator,
+						// upgrade it to player by removing spectator tracking first.
+						if (this.connectionToSpectator.has(sender.id)) {
+							await this.removeSpectator(gameState.id, sender.id);
+							this.connectionToSpectator.delete(sender.id);
+						}
+
 						// Register as player connection
 						if (!this.playerConnections.has(gameState.id)) {
 							this.playerConnections.set(gameState.id, new Set());
@@ -467,41 +648,9 @@ export default class Server implements Party.Server {
 							playerId: event.playerId as string,
 						});
 						this.sendGameState(sender, gameState);
-					} else if (
-						!gameState.gameStarted &&
-						event.playerId &&
-						gameState.players.length < 4
-					) {
-						// Waiting state: add joining player to game
-						const newPlayer: Player = {
-							id: event.playerId,
-							name: event.playerName ?? "Spieler",
-							image: event.playerImage ?? null,
-							email: undefined,
-							gamesPlayed: 0,
-							gamesWon: 0,
-							balance: 0,
-						};
-						gameState.players.push(newPlayer);
-
-						// Register as player connection
-						if (!this.playerConnections.has(gameState.id)) {
-							this.playerConnections.set(gameState.id, new Set());
-						}
-						this.playerConnections.get(gameState.id)?.add(sender.id);
-						this.connectionToPlayer.set(sender.id, {
-							gameId: gameState.id,
-							playerId: event.playerId,
-						});
-
-						// If 4 players reached → restart game (deal cards + start)
-						if (gameState.players.length === 4) {
-							await this.restartGame(gameState);
-						} else {
-							await this.persistAndBroadcastGame(gameState);
-						}
 					} else {
-						// Not a player → register as spectator so they receive ongoing updates
+						// Not a player: always register as spectator.
+						// Seat joins must come through explicit join-table in tables-room.
 						await this.addSpectator(
 							gameState.id,
 							event.playerId ?? sender.id,

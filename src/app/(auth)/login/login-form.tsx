@@ -22,7 +22,11 @@ type FormValues = z.infer<typeof emailSchema>;
 
 const initialState: ActionState = { success: false };
 
-export function LoginForm() {
+interface LoginFormProps {
+	returnTo: string | null;
+}
+
+export function LoginForm({ returnTo }: LoginFormProps) {
 	const [state, formAction, isPending] = useActionState(
 		signInMagicLinkAction,
 		initialState,
@@ -38,6 +42,9 @@ export function LoginForm() {
 	function onSubmit(values: FormValues) {
 		const formData = new FormData();
 		formData.append("email", values.email);
+		if (returnTo) {
+			formData.append("returnTo", returnTo);
+		}
 		startTransition(() => {
 			formAction(formData);
 		});

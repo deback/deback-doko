@@ -2,6 +2,7 @@
 
 import PartySocket from "partysocket";
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { onProfileUpdate } from "@/lib/profile-sync";
 import {
 	useSetConnected,
@@ -11,7 +12,7 @@ import {
 	useSetSpectatorMode,
 } from "@/stores/game-selectors";
 import type { GameEvent, GameMessage } from "@/types/game";
-import type { Player } from "@/types/tables";
+import type { Player, TableEvent, TableMessage } from "@/types/tables";
 
 interface UseGameConnectionOptions {
 	gameId: string;
@@ -34,6 +35,7 @@ export function useGameConnection({
 }: UseGameConnectionOptions): void {
 	const socketRef = useRef<PartySocket | null>(null);
 	const playerRef = useRef(player);
+	const inviteJoinAttemptedRef = useRef(false);
 	const playerId = player.id;
 
 	// Store setters
@@ -49,6 +51,74 @@ export function useGameConnection({
 
 	useEffect(() => {
 		const host = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
+		const searchParams = new URLSearchParams(window.location.search);
+		const inviteTableId =
+			searchParams.get("invite") === "1" ? searchParams.get("tableId") : null;
+		let inviteJoinSocket: PartySocket | null = null;
+
+		const attemptInviteJoin = (tableId: string) => {
+			if (inviteJoinAttemptedRef.current) return;
+			inviteJoinAttemptedRef.current = true;
+
+			const tablesSocket = new PartySocket({
+				host,
+				room: "tables-room",
+			});
+			inviteJoinSocket = tablesSocket;
+			let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+			const cleanup = () => {
+				if (timeoutId !== undefined) {
+					clearTimeout(timeoutId);
+					timeoutId = undefined;
+				}
+				inviteJoinSocket = null;
+				tablesSocket.close();
+			};
+			timeoutId = setTimeout(() => {
+				cleanup();
+			}, 10_000);
+
+			tablesSocket.addEventListener("open", () => {
+				const joinEvent: TableEvent = {
+					type: "join-table",
+					tableId,
+					player: playerRef.current,
+				};
+				tablesSocket.send(JSON.stringify(joinEvent));
+			});
+
+			tablesSocket.addEventListener("message", (event) => {
+				try {
+					const message: TableMessage = JSON.parse(event.data as string);
+					if (message.type === "error") {
+						toast.error(message.message);
+						cleanup();
+						return;
+					}
+					if (message.type !== "state") return;
+
+					const joined = message.state.tables.some(
+						(table) =>
+							table.id === tableId &&
+							table.players.some((tablePlayer) => tablePlayer.id === playerId),
+					);
+					if (!joined) return;
+
+					socket.send(
+						JSON.stringify({
+							type: "get-state",
+							playerId: playerRef.current.id,
+							playerName: playerRef.current.name,
+							playerImage: playerRef.current.image,
+						} satisfies GameEvent),
+					);
+					cleanup();
+				} catch (error) {
+					console.error("Error parsing tables-room message:", error);
+				}
+			});
+		};
 
 		const socket = new PartySocket({
 			host,
@@ -105,11 +175,35 @@ export function useGameConnection({
 
 				if (message.type === "state") {
 					setGameState(message.state);
-					// Update spectator mode based on server response
-					if (message.isSpectator !== undefined) {
-						setSpectatorMode(message.isSpectator);
-					}
+					setSpectatorMode(Boolean(message.isSpectator));
 					setError(null);
+
+					if (!inviteTableId || inviteJoinAttemptedRef.current) {
+						return;
+					}
+
+					// Safety check: only honor invite links for the matching table.
+					if (message.state.tableId !== inviteTableId) {
+						inviteJoinAttemptedRef.current = true;
+						toast.error("Ungültiger Einladungslink.");
+						return;
+					}
+
+					const isAlreadyPlayer = message.state.players.some(
+						(tablePlayer) => tablePlayer.id === playerId,
+					);
+					if (isAlreadyPlayer) {
+						inviteJoinAttemptedRef.current = true;
+						return;
+					}
+
+					// If game is live or table is full, stay spectator by design.
+					if (message.state.gameStarted || message.state.players.length >= 4) {
+						inviteJoinAttemptedRef.current = true;
+						return;
+					}
+
+					attemptInviteJoin(inviteTableId);
 				} else if (message.type === "redirect-to-lobby") {
 					// Player has been removed from the game — redirect to tables
 					window.location.href = "/tables";
@@ -210,6 +304,8 @@ export function useGameConnection({
 
 		// Cleanup
 		return () => {
+			inviteJoinAttemptedRef.current = false;
+			inviteJoinSocket?.close();
 			socket.close();
 			cleanupProfileSync();
 		};

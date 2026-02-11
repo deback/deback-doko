@@ -4,6 +4,10 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/server/better-auth/client";
 
+interface GoogleButtonProps {
+	returnTo: string | null;
+}
+
 function GoogleIcon({ className }: { className?: string }) {
 	return (
 		<svg
@@ -34,7 +38,7 @@ function GoogleIcon({ className }: { className?: string }) {
 	);
 }
 
-export function GoogleButton() {
+export function GoogleButton({ returnTo }: GoogleButtonProps) {
 	const [isPending, startTransition] = useTransition();
 
 	function handleGoogleSignIn() {
@@ -42,6 +46,7 @@ export function GoogleButton() {
 			try {
 				await authClient.signIn.social({
 					provider: "google",
+					callbackURL: returnTo ?? undefined,
 				});
 			} catch (error) {
 				console.error("Fehler bei Google-Anmeldung:", error);

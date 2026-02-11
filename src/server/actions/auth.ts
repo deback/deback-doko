@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { parseReturnTo } from "@/lib/auth/return-to";
 import {
 	emailSchema,
 	resetPasswordSchema,
@@ -19,6 +20,7 @@ export async function signUpAction(
 	_prevState: ActionState,
 	formData: FormData,
 ): Promise<ActionState> {
+	const returnTo = parseReturnTo(formData.get("returnTo"));
 	const rawData = {
 		name: formData.get("name"),
 		email: formData.get("email"),
@@ -39,7 +41,7 @@ export async function signUpAction(
 				name: parsed.data.name,
 				email: parsed.data.email,
 				password: parsed.data.password,
-				callbackURL: "/welcome",
+				callbackURL: returnTo ?? "/welcome",
 			},
 			headers: await headers(),
 		});
@@ -68,6 +70,7 @@ export async function signInEmailAction(
 	_prevState: ActionState,
 	formData: FormData,
 ): Promise<ActionState> {
+	const returnTo = parseReturnTo(formData.get("returnTo"));
 	const rawData = {
 		email: formData.get("email"),
 		password: formData.get("password"),
@@ -88,6 +91,7 @@ export async function signInEmailAction(
 			body: {
 				email: parsed.data.email,
 				password: parsed.data.password,
+				callbackURL: returnTo ?? undefined,
 			},
 			headers: await headers(),
 		});
@@ -121,7 +125,7 @@ export async function signInEmailAction(
 	}
 
 	if (success) {
-		redirect("/");
+		redirect(returnTo ?? "/");
 	}
 
 	return { success: false };
@@ -131,6 +135,7 @@ export async function signInMagicLinkAction(
 	_prevState: ActionState,
 	formData: FormData,
 ): Promise<ActionState> {
+	const returnTo = parseReturnTo(formData.get("returnTo"));
 	const rawData = {
 		email: formData.get("email"),
 	};
@@ -147,6 +152,7 @@ export async function signInMagicLinkAction(
 		await auth.api.signInMagicLink({
 			body: {
 				email: parsed.data.email,
+				callbackURL: returnTo ?? undefined,
 			},
 			headers: await headers(),
 		});

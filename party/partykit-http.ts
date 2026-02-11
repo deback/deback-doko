@@ -16,37 +16,58 @@ export function createPartykitHttpClient(params: {
 		Authorization: `Bearer ${params.apiSecret}`,
 	};
 
-	const post = (
+	const post = async (
 		roomId: string,
 		body: Record<string, unknown>,
 		errorMsg: string,
-	) => {
-		fetch(`${baseUrl}/${roomId}`, {
-			method: "POST",
-			headers,
-			body: JSON.stringify(body),
-		}).catch((error) => {
+	): Promise<Response | null> => {
+		try {
+			return await fetch(`${baseUrl}/${roomId}`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify(body),
+			});
+		} catch (error) {
 			params.logger.error(errorMsg, error);
-		});
+			return null;
+		}
 	};
 
 	return {
 		initGameRoom(gameId: string, tableId: string, player: Player) {
-			post(
+			void post(
 				gameId,
 				{ type: "init-game", tableId, player },
 				"Failed to init game room:",
 			);
 		},
-		addPlayerToGame(gameId: string, player: Player) {
-			post(
+		async addPlayerToGame(gameId: string, player: Player): Promise<boolean> {
+			const response = await post(
 				gameId,
 				{ type: "add-player", player },
 				"Failed to add player to game:",
 			);
+			if (!response) {
+				return false;
+			}
+			if (!response.ok) {
+				params.logger.error(
+					"Failed to add player to game:",
+					new Error(`HTTP ${response.status}`),
+				);
+				return false;
+			}
+			return true;
+		},
+		ensurePlayerAtTable(tableId: string, gameId: string, player: Player) {
+			void post(
+				"tables-room",
+				{ type: "ensure-player-at-table", tableId, gameId, player },
+				"Failed to ensure player at table:",
+			);
 		},
 		removePlayerFromTable(tableId: string, playerId: string) {
-			post(
+			void post(
 				"tables-room",
 				{ type: "leave-table", tableId, playerId },
 				"Failed to remove player from table:",
@@ -58,7 +79,7 @@ export function createPartykitHttpClient(params: {
 			name: string,
 			image?: string | null,
 		) {
-			post(
+			void post(
 				gameId,
 				{ type: "update-player-info", playerId, name, image },
 				"Failed to update player info in game room:",
