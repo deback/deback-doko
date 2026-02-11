@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { sortDoppelkopfHand } from "@/lib/game-logic"; // Importiere die Logik
 import { cn } from "@/lib/utils";
@@ -97,11 +97,7 @@ const CardCorner = ({ rank, symbol, position, rotate }: CardCornerProps) => {
 
 // --- Hauptkomponente ---
 export function HandViewClient() {
-	const [cards, setCards] = useState<GameCard[]>([]);
-
-	useEffect(() => {
-		setCards(generateRandomCards(12));
-	}, []);
+	const [cards, setCards] = useState<GameCard[]>(() => generateRandomCards(12));
 
 	// Sortierung ist jetzt ausgelagert und viel sauberer
 	const sortedHand = useMemo(() => sortDoppelkopfHand(cards), [cards]);

@@ -217,31 +217,35 @@ export function GameBoard() {
 
 	// Track trick card count to detect when a new trick starts
 	const prevTrickLengthRef = useRef(gameState?.currentTrick.cards.length ?? 0);
+	const gameStateRef = useRef<GameState | null>(gameState);
+	gameStateRef.current = gameState;
+	const currentTrickLength = gameState?.currentTrick.cards.length;
+	const gameEnded = gameState?.gameEnded ?? false;
 
 	useEffect(() => {
-		if (!gameState) return;
-		const currentLength = gameState.currentTrick.cards.length;
+		if (currentTrickLength == null) return;
 		const prevLength = prevTrickLengthRef.current;
 
 		// If trick was reset (e.g., from 4 cards to 0), clear animation state
-		if (currentLength < prevLength) {
+		if (currentTrickLength < prevLength) {
 			setPlayedCard(null);
 			setCardOrigin(null);
 		}
 
-		prevTrickLengthRef.current = currentLength;
-	}, [gameState?.currentTrick.cards.length, gameState]);
+		prevTrickLengthRef.current = currentTrickLength;
+	}, [currentTrickLength]);
 
 	// Cache game state when game ends
 	useEffect(() => {
-		if (!gameState) return;
-
-		if (gameState.gameEnded) {
-			setCachedEndGameState(gameState);
+		if (gameEnded) {
+			const latestGameState = gameStateRef.current;
+			if (latestGameState) {
+				setCachedEndGameState(latestGameState);
+			}
 		} else if (cachedEndGameState?.gameEnded) {
 			setShowGameEndDialog(true);
 		}
-	}, [gameState?.gameEnded, gameState, cachedEndGameState?.gameEnded]);
+	}, [gameEnded, cachedEndGameState?.gameEnded]);
 
 	// =========================================================================
 	// Helper Functions

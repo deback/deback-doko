@@ -8,6 +8,12 @@ import {
 	useState,
 	useSyncExternalStore,
 } from "react";
+import {
+	TRICK_COLLECT_DURATION,
+	TRICK_FLIP_DURATION,
+	TRICK_TO_WINNER_DURATION,
+	TRICK_WAIT_DURATION,
+} from "@/lib/trick-animation";
 import { cn } from "@/lib/utils";
 import type { Card as CardType } from "@/types/game";
 import type { Player } from "@/types/tables";
@@ -225,7 +231,7 @@ export function TrickArea({
 		if (animationPhase === "waiting") {
 			const waitTimer = setTimeout(() => {
 				setAnimationPhase("collecting");
-			}, 1000);
+			}, TRICK_WAIT_DURATION);
 
 			return () => clearTimeout(waitTimer);
 		}
@@ -236,7 +242,7 @@ export function TrickArea({
 		if (animationPhase === "collecting") {
 			const collectTimer = setTimeout(() => {
 				setAnimationPhase("flipping");
-			}, 500);
+			}, TRICK_COLLECT_DURATION);
 
 			return () => clearTimeout(collectTimer);
 		}
@@ -244,25 +250,31 @@ export function TrickArea({
 
 	// Handle flipping animation
 	useEffect(() => {
-		if (animationPhase === "flipping") {
-			let startTime: number | null = null;
-			const duration = 400;
+		if (animationPhase !== "flipping") return;
 
-			const animateFlip = (timestamp: number) => {
-				if (!startTime) startTime = timestamp;
-				const elapsed = timestamp - startTime;
-				const progress = Math.min(elapsed / duration, 1);
-				setFlipProgress(progress);
+		let startTime: number | null = null;
+		let rafId: number | null = null;
 
-				if (progress < 1) {
-					requestAnimationFrame(animateFlip);
-				} else {
-					setAnimationPhase("toWinner");
-				}
-			};
+		const animateFlip = (timestamp: number) => {
+			if (!startTime) startTime = timestamp;
+			const elapsed = timestamp - startTime;
+			const progress = Math.min(elapsed / TRICK_FLIP_DURATION, 1);
+			setFlipProgress(progress);
 
-			requestAnimationFrame(animateFlip);
-		}
+			if (progress < 1) {
+				rafId = requestAnimationFrame(animateFlip);
+			} else {
+				setAnimationPhase("toWinner");
+			}
+		};
+
+		rafId = requestAnimationFrame(animateFlip);
+
+		return () => {
+			if (rafId !== null) {
+				cancelAnimationFrame(rafId);
+			}
+		};
 	}, [animationPhase]);
 
 	// Handle toWinner -> reset transition
@@ -276,7 +288,7 @@ export function TrickArea({
 				setFlipProgress(0);
 				anglesRef.current.clear();
 				animationInProgressRef.current = false;
-			}, 600);
+			}, TRICK_TO_WINNER_DURATION);
 
 			return () => clearTimeout(toWinnerTimer);
 		}

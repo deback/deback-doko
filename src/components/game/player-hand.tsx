@@ -85,12 +85,18 @@ export function PlayerHand({
 		const card = cards.find((c) => c.id === activeDragCard);
 		if (!card) return;
 
+		clearTimeout(ghostTimerRef.current);
 		setGhostCardId(activeDragCard);
 		setSelectedCardId(null);
-		ghostTimerRef.current = setTimeout(() => {
+		const timerId = setTimeout(() => {
 			onRemoveCard?.(activeDragCard);
 			setGhostCardId(null);
 		}, CLOSE_GAP_DELAY);
+		ghostTimerRef.current = timerId;
+
+		return () => {
+			clearTimeout(timerId);
+		};
 	}, [activeDragCard, cards, onRemoveCard]);
 
 	// Wenn der Spieler am Zug ist und eine vorher ausgewählte Karte spielbar ist,

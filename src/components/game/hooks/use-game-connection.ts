@@ -33,6 +33,8 @@ export function useGameConnection({
 	player,
 }: UseGameConnectionOptions): void {
 	const socketRef = useRef<PartySocket | null>(null);
+	const playerRef = useRef(player);
+	const playerId = player.id;
 
 	// Store setters
 	const setGameState = useSetGameState();
@@ -40,6 +42,10 @@ export function useGameConnection({
 	const setConnected = useSetConnected();
 	const setSpectatorMode = useSetSpectatorMode();
 	const setGameActions = useSetGameActions();
+
+	useEffect(() => {
+		playerRef.current = player;
+	}, [player]);
 
 	useEffect(() => {
 		const host = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
@@ -76,12 +82,13 @@ export function useGameConnection({
 			}
 
 			// Request current state (server auto-detects player vs spectator)
+			const playerSnapshot = playerRef.current;
 			socket.send(
 				JSON.stringify({
 					type: "get-state",
-					playerId: player.id,
-					playerName: player.name,
-					playerImage: player.image,
+					playerId: playerSnapshot.id,
+					playerName: playerSnapshot.name,
+					playerImage: playerSnapshot.image,
 				} satisfies GameEvent),
 			);
 		});
@@ -122,7 +129,7 @@ export function useGameConnection({
 				const event: GameEvent = {
 					type: "play-card",
 					cardId,
-					playerId: player.id,
+					playerId,
 				};
 				socket.send(JSON.stringify(event));
 			},
@@ -132,7 +139,7 @@ export function useGameConnection({
 				const event: GameEvent = {
 					type: "announce",
 					announcement,
-					playerId: player.id,
+					playerId,
 				};
 				socket.send(JSON.stringify(event));
 			},
@@ -141,7 +148,7 @@ export function useGameConnection({
 				if (!socket) return;
 				const event: GameEvent = {
 					type: "bid",
-					playerId: player.id,
+					playerId,
 					bid,
 				};
 				socket.send(JSON.stringify(event));
@@ -151,7 +158,7 @@ export function useGameConnection({
 				if (!socket) return;
 				const event: GameEvent = {
 					type: "declare-contract",
-					playerId: player.id,
+					playerId,
 					contract,
 				};
 				socket.send(JSON.stringify(event));
@@ -179,7 +186,7 @@ export function useGameConnection({
 				if (!socket) return;
 				const event: GameEvent = {
 					type: "toggle-stand-up",
-					playerId: player.id,
+					playerId,
 				};
 				socket.send(JSON.stringify(event));
 			},
@@ -202,9 +209,7 @@ export function useGameConnection({
 		};
 	}, [
 		gameId,
-		player.id,
-		player.name,
-		player.image,
+		playerId,
 		setGameState,
 		setError,
 		setConnected,

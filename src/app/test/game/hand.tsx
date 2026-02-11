@@ -118,12 +118,18 @@ export default function Hand({
 		if (!activeDragCard || opponent) return;
 		const idx = cards.indexOf(activeDragCard);
 		if (idx === -1) return;
+		clearTimeout(ghostTimerRef.current);
 		setGhostFile(activeDragCard);
 		setSelectedIndex(null);
-		ghostTimerRef.current = setTimeout(() => {
+		const timerId = setTimeout(() => {
 			onRemoveCard?.(activeDragCard);
 			setGhostFile(null);
 		}, CLOSE_GAP_DELAY);
+		ghostTimerRef.current = timerId;
+
+		return () => {
+			clearTimeout(timerId);
+		};
 	}, [activeDragCard, cards, opponent, onRemoveCard]);
 
 	function handleClick(card: string, index: number) {

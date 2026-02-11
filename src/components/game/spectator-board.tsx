@@ -1,7 +1,7 @@
 "use client";
 
 import { Eye } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Dialog,
 	DialogContent,
@@ -26,15 +26,17 @@ export function SpectatorBoard({ gameState, className }: SpectatorBoardProps) {
 	const [showGameEndDialog, setShowGameEndDialog] = useState(true);
 	const [cachedEndGameState, setCachedEndGameState] =
 		useState<GameState | null>(null);
+	const gameStateRef = useRef(gameState);
+	gameStateRef.current = gameState;
 
 	// Cache game state when game ends, reset dialog when new game starts
 	useEffect(() => {
 		if (gameState.gameEnded) {
-			setCachedEndGameState(gameState);
+			setCachedEndGameState(gameStateRef.current);
 		} else if (cachedEndGameState?.gameEnded) {
 			setShowGameEndDialog(true);
 		}
-	}, [gameState.gameEnded, gameState, cachedEndGameState?.gameEnded]);
+	}, [gameState.gameEnded, cachedEndGameState?.gameEnded]);
 
 	// Clear cached state when dialog is closed
 	const handleCloseGameEndDialog = useCallback(() => {

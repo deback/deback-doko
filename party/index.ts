@@ -8,6 +8,7 @@ import {
 	isSoloGame,
 	isTrump,
 } from "../src/lib/game/rules";
+import { TRICK_ANIMATION_DELAY } from "../src/lib/trick-animation";
 import { canMakeAnnouncement } from "./announcements";
 import { createDeck, dealCards } from "./deck";
 import { calculateGamePoints } from "./game-scoring";
@@ -1537,7 +1538,6 @@ export default class Server implements Party.Server {
 		this.broadcastToSpectators(gameState);
 
 		// After animation delay, clear the trick and start a new one
-		const TRICK_ANIMATION_DELAY = 2500; // 1s wait + ~1.5s animation
 		setTimeout(async () => {
 			// Move trick to completed
 			gameState.completedTricks.push({ ...trick });
