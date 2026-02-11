@@ -119,8 +119,8 @@ export function useGameConnection({
 					}
 					setError(null);
 				} else if (message.type === "redirect-to-lobby") {
-					// Player has been removed from the game — redirect to lobby
-					window.location.href = "/";
+					// Player has been removed from the game — redirect to tables
+					window.location.href = "/tables";
 				} else if (message.type === "error") {
 					setError(message.message);
 					console.error("Error from server:", message.message);
