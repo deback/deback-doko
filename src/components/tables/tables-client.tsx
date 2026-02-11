@@ -184,7 +184,10 @@ export function TablesClient({ player }: TablesClientProps) {
 		table.players.some((p) => p.id === player.id),
 	);
 	const isPlayerAtAnyTable = !!currentPlayerTable;
-	const isGameStarted = currentPlayerTable?.gameStarted ?? false;
+	const isGameRunning =
+		(currentPlayerTable?.gameStarted &&
+			currentPlayerTable.players.length >= 4) ??
+		false;
 
 	const canJoinTable = (table: Table) => {
 		const isAtThisTable = table.players.some((p) => p.id === player.id);
@@ -222,7 +225,7 @@ export function TablesClient({ player }: TablesClientProps) {
 		<>
 			<TablesHeader
 				isConnected={isConnected}
-				isGameStarted={isGameStarted}
+				isGameStarted={isGameRunning}
 				isPlayerAtAnyTable={isPlayerAtAnyTable}
 				onCreateTable={createTable}
 				onLeaveTable={leaveCurrentTable}
