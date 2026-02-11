@@ -220,9 +220,7 @@ export function PlayerHand({
 					isBiddingActive && "pointer-events-none",
 				)}
 			>
-				{statusSlot && (
-					<div className="pointer-events-auto">{statusSlot}</div>
-				)}
+				{statusSlot && <div className="pointer-events-auto">{statusSlot}</div>}
 				{cards.map((card, index) => {
 					const t = index - (cards.length - 1) / 2;
 					const angle = t * 1.2;

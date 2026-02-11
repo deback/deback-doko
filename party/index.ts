@@ -271,10 +271,7 @@ export default class Server implements Party.Server {
 						this.broadcastToSpectators(gameState);
 					}
 					// Also remove from table
-					this.removePlayerFromTable(
-						gameState.tableId,
-						playerInfo.playerId,
-					);
+					this.removePlayerFromTable(gameState.tableId, playerInfo.playerId);
 				}
 			}
 		}
@@ -360,9 +357,22 @@ export default class Server implements Party.Server {
 				await this.deleteTable(event.tableId, event.playerId);
 				break;
 
-			case "update-player-info":
-				await this.updatePlayerInfo(event.playerId, event.name, event.image);
+			case "update-player-info": {
+				const gameIds = await this.updatePlayerInfo(
+					event.playerId,
+					event.name,
+					event.image,
+				);
+				for (const gameId of gameIds) {
+					this.updateGameRoomPlayerInfo(
+						gameId,
+						event.playerId,
+						event.name,
+						event.image,
+					);
+				}
 				break;
+			}
 		}
 	}
 
@@ -761,9 +771,7 @@ export default class Server implements Party.Server {
 		// If game is in waiting state, leave immediately
 		if (!gameState.gameStarted) {
 			// Remove player from game
-			gameState.players = gameState.players.filter(
-				(p) => p.id !== playerId,
-			);
+			gameState.players = gameState.players.filter((p) => p.id !== playerId);
 
 			// Redirect player to lobby
 			const msg: GameMessage = {
@@ -1783,6 +1791,34 @@ export default class Server implements Party.Server {
 			}),
 		}).catch((error) => {
 			logger.error("Failed to remove player from table:", error);
+		});
+	}
+
+	// Forward player info update to a game room via HTTP call
+	private updateGameRoomPlayerInfo(
+		gameId: string,
+		playerId: string,
+		name: string,
+		image?: string | null,
+	) {
+		const partykitHost =
+			process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
+		const protocol = partykitHost.includes("localhost") ? "http" : "https";
+		const apiSecret = env.PARTYKIT_API_SECRET || "";
+		fetch(`${protocol}://${partykitHost}/parties/main/${gameId}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiSecret}`,
+			},
+			body: JSON.stringify({
+				type: "update-player-info",
+				playerId,
+				name,
+				image,
+			}),
+		}).catch((error) => {
+			logger.error("Failed to update player info in game room:", error);
 		});
 	}
 

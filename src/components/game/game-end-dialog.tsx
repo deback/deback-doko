@@ -306,7 +306,7 @@ export function GameEndDialog({
 									{gameState.players
 										.filter((p) => gameState.teams[p.id] === "re")
 										.map((p) => (
-											<div key={p.id} className="truncate">
+											<div className="truncate" key={p.id}>
 												{p.name}
 											</div>
 										))}
@@ -335,7 +335,7 @@ export function GameEndDialog({
 									{gameState.players
 										.filter((p) => gameState.teams[p.id] === "kontra")
 										.map((p) => (
-											<div key={p.id} className="truncate">
+											<div className="truncate" key={p.id}>
 												{p.name}
 											</div>
 										))}
