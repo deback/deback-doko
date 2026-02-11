@@ -10,7 +10,14 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { Bot, Eye, FastForward, Hourglass, RotateCcw } from "lucide-react";
+import {
+	Bot,
+	Eye,
+	FastForward,
+	History,
+	Hourglass,
+	RotateCcw,
+} from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -46,6 +53,7 @@ import { BiddingSelect } from "./bidding-select";
 import { CARD_SIZE, type CardOrigin } from "./card";
 import { GameEndDialog } from "./game-end-dialog";
 import { GameSettingsMenu } from "./game-settings-menu";
+import { LastTrickPanel } from "./last-trick-panel";
 import { OpponentHand } from "./opponent-hand";
 import { PlayerHand } from "./player-hand";
 import { PlayerInfo } from "./player-info";
@@ -116,6 +124,7 @@ export function GameBoard() {
 	const [cachedEndGameState, setCachedEndGameState] =
 		useState<GameState | null>(null);
 	const [isTrickAnimating, setIsTrickAnimating] = useState(false);
+	const [showLastTrick, setShowLastTrick] = useState(false);
 
 	// =========================================================================
 	// DnD Sensors
@@ -225,6 +234,7 @@ export function GameBoard() {
 	gameStateRef.current = gameState;
 	const currentTrickLength = gameState?.currentTrick.cards.length;
 	const gameEnded = gameState?.gameEnded ?? false;
+	const lastTrick = gameState?.completedTricks.at(-1);
 
 	useEffect(() => {
 		if (currentTrickLength == null) return;
@@ -238,6 +248,12 @@ export function GameBoard() {
 
 		prevTrickLengthRef.current = currentTrickLength;
 	}, [currentTrickLength]);
+
+	useEffect(() => {
+		if (!lastTrick) {
+			setShowLastTrick(false);
+		}
+	}, [lastTrick]);
 
 	// Cache game state when game ends
 	useEffect(() => {
@@ -548,6 +564,34 @@ export function GameBoard() {
 						<Eye className="h-4 w-4" />
 						Zuschauer-Modus
 					</Badge>
+				</div>
+			)}
+
+			{/* Last Trick Panel */}
+			{lastTrick && (
+				<div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2">
+					<LastTrickPanel
+						onOpenChange={setShowLastTrick}
+						open={showLastTrick}
+						perspectivePlayerId={
+							isSpectator
+								? (bottomPlayer?.id ?? gameState.players[0]?.id ?? "")
+								: (currentPlayer?.id ?? "")
+						}
+						players={gameState.players}
+						trick={lastTrick}
+						trickNumber={gameState.completedTricks.length}
+					/>
+					<Button
+						aria-label="Letzten Stich anzeigen"
+						className="flex h-8 items-center gap-2 rounded-full bg-black/50 px-3 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
+						onClick={() => setShowLastTrick((prev) => !prev)}
+						size="sm"
+						variant="ghost"
+					>
+						<History className="h-4 w-4" />
+						Letzter Stich
+					</Button>
 				</div>
 			)}
 
