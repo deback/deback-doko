@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { startTransition, useActionState } from "react";
+import { Suspense, startTransition, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ type FormValues = z.infer<typeof signUpSchema>;
 
 const initialState: ActionState = { success: false };
 
-export default function RegisterPage() {
+function RegisterContent() {
 	const searchParams = useSearchParams();
 	const returnTo = parseReturnTo(searchParams.get("returnTo"));
 	const [state, formAction, isPending] = useActionState(
@@ -173,5 +173,23 @@ export default function RegisterPage() {
 				)}
 			</CardContent>
 		</Card>
+	);
+}
+
+export default function RegisterPage() {
+	return (
+		<Suspense
+			fallback={
+				<Card className="w-full max-w-sm">
+					<CardHeader className="text-center">
+						<CardTitle className="font-serif text-2xl uppercase">
+							Laden...
+						</CardTitle>
+					</CardHeader>
+				</Card>
+			}
+		>
+			<RegisterContent />
+		</Suspense>
 	);
 }
