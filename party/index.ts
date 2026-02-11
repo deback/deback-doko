@@ -174,6 +174,48 @@ export default class Server implements Party.Server {
 				return new Response("OK", { status: 200 });
 			}
 
+			if (
+				body.type === "init-game" &&
+				this.room.id.startsWith("game-") &&
+				body.player &&
+				body.tableId
+			) {
+				// Only init if no game exists yet
+				if (!this.games.has(this.room.id)) {
+					const player = body.player;
+					const waitingState: GameState = {
+						id: this.room.id,
+						tableId: body.tableId,
+						players: [player],
+						currentPlayerIndex: 0,
+						hands: {},
+						handCounts: {},
+						currentTrick: { cards: [], completed: false },
+						completedTricks: [],
+						trump: "jacks",
+						gameStarted: false,
+						gameEnded: false,
+						round: 1,
+						scores: {},
+						schweinereiPlayers: [],
+						standingUpPlayers: [],
+						teams: {},
+						spectatorCount: 0,
+						spectators: [],
+						announcements: {
+							re: { announced: false },
+							kontra: { announced: false },
+							rePointAnnouncements: [],
+							kontraPointAnnouncements: [],
+						},
+						contractType: "normal",
+					};
+					this.games.set(this.room.id, waitingState);
+					await this.persistGameState(waitingState);
+				}
+				return new Response("OK", { status: 200 });
+			}
+
 			return new Response("Unknown event type", { status: 400 });
 		} catch {
 			return new Response("Invalid request body", { status: 400 });
@@ -300,9 +342,16 @@ export default class Server implements Party.Server {
 			gameStarted: false,
 		};
 
+		// Create game room in waiting state so players can navigate to /game
+		const gameId = `game-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+		table.gameId = gameId;
+
 		this.tables.set(tableId, table);
 		await this.persistTables();
 		this.broadcastState();
+
+		// Initialize game room via HTTP (separate PartyKit room)
+		this.initGameRoom(gameId, tableId, player);
 	}
 
 	async joinTable(tableId: string, player: Player, sender: Party.Connection) {
@@ -340,7 +389,7 @@ export default class Server implements Party.Server {
 		// Check if table is full (4 players) and start game
 		if (table.players.length === 4 && !table.gameStarted) {
 			await this.startGame(table);
-		} else if (table.gameStarted && table.gameId) {
+		} else if (table.gameId) {
 			if (table.players.length === 4) {
 				// All 4 players present — redirect everyone to game
 				const message: TableMessage = {
@@ -359,8 +408,10 @@ export default class Server implements Party.Server {
 	}
 
 	async startGame(table: Table) {
-		// Generate game ID
-		const gameId = `game-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+		// Use existing gameId (created in createTable) or generate new one
+		const gameId =
+			table.gameId ??
+			`game-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 		table.gameId = gameId;
 		table.gameStarted = true;
 
@@ -1635,6 +1686,24 @@ export default class Server implements Party.Server {
 		await this.persistGameState(gameState);
 		this.broadcastGameState(gameState);
 		this.broadcastToSpectators(gameState);
+	}
+
+	// Initialize a game room in waiting state via HTTP call
+	private initGameRoom(gameId: string, tableId: string, player: Player) {
+		const partykitHost =
+			process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
+		const protocol = partykitHost.includes("localhost") ? "http" : "https";
+		const apiSecret = env.PARTYKIT_API_SECRET || "";
+		fetch(`${protocol}://${partykitHost}/parties/main/${gameId}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiSecret}`,
+			},
+			body: JSON.stringify({ type: "init-game", tableId, player }),
+		}).catch((error) => {
+			logger.error("Failed to init game room:", error);
+		});
 	}
 
 	// Add a player to a game via HTTP call to game-room

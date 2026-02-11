@@ -239,11 +239,13 @@ export function TablesClient({ player }: TablesClientProps) {
 						const canSpectate = canSpectateTable(table);
 						const canRejoinGame =
 							isMyTable && table.gameStarted && table.gameId;
-						const isClickable = joinable || canSpectate || canRejoinGame;
+						const canGoToGame = isMyTable && table.gameId;
+						const isClickable =
+							joinable || canSpectate || canRejoinGame || canGoToGame;
 
 						const handleTableClick = () => {
-							if (canRejoinGame && table.gameId) {
-								// Player is at this table and game is running - rejoin game
+							if ((canRejoinGame || canGoToGame) && table.gameId) {
+								// Player is at this table — go to game
 								router.push(`/game/${table.gameId}`);
 							} else if (canSpectate) {
 								// Spectate game (won't happen since canSpectate excludes own tables)
