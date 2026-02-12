@@ -365,7 +365,7 @@ export function GameChatPanel() {
 			</SheetTrigger>
 
 			<SheetContent
-				className="flex h-full flex-col gap-0 bg-background/70 p-0 backdrop-blur-md"
+				className="flex h-full flex-col gap-0 border-none bg-background/70 p-0 backdrop-blur-md"
 				disableAnimation={disableInitialOpenAnimation}
 				showCloseButton={false}
 				showOverlay={false}
@@ -377,14 +377,16 @@ export function GameChatPanel() {
 						Alle Spieler und Zuschauer an diesem Tisch können schreiben.
 					</SheetDescription>
 				</SheetHeader>
-				<Button
-					className="absolute top-2 right-2 z-10"
-					onClick={() => setChatPanelOpen(false)}
-					size="icon"
-					variant="ghost"
-				>
-					<XIcon className="size-4" />
-				</Button>
+				<div className="absolute top-2 right-2 z-10 rounded bg-background">
+					<Button
+						className=""
+						onClick={() => setChatPanelOpen(false)}
+						size="icon"
+						variant="outline"
+					>
+						<XIcon className="size-4" />
+					</Button>
+				</div>
 				<div
 					className="flex min-h-0 flex-1 flex-col overflow-y-auto"
 					ref={messagesContainerRef}
@@ -479,7 +481,7 @@ export function GameChatPanel() {
 					</div>
 				</div>
 
-				<div className="shrink-0 border-t bg-background/80 px-3 py-2 shadow-lg">
+				<div className="shrink-0 bg-background/80 px-3 py-2 shadow-lg">
 					<div className="flex flex-row items-end gap-2">
 						<Textarea
 							className="min-h-9 resize-none overflow-hidden bg-background"
