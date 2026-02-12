@@ -55,6 +55,9 @@ const CHAT_COOLDOWN_MS = 1_000;
 const SMOOTH_SCROLL_SNAP_DELAY_MS = 250;
 const CHAT_SPEECH_LANGUAGE = "de-DE";
 const CHAT_SPEECH_SILENCE_TIMEOUT_MS = 3_000;
+const SPEECH_PERMISSION_DENIED_MESSAGE = "Mikrofonzugriff wurde nicht erlaubt.";
+const SPEECH_UNSUPPORTED_MESSAGE =
+	"Spracherkennung wird in diesem Browser nicht unterstützt.";
 
 export function GameChatPanel() {
 	const currentPlayer = useCurrentPlayer();
@@ -110,6 +113,11 @@ export function GameChatPanel() {
 		normalizedDraft.length <= MAX_CHAT_LENGTH &&
 		!isCooldownActive &&
 		!isSpeechActive;
+	const speechTooltipMessage = permissionDenied
+		? SPEECH_PERMISSION_DENIED_MESSAGE
+		: !isSpeechSupported
+			? SPEECH_UNSUPPORTED_MESSAGE
+			: null;
 
 	const timeFormatter = useMemo(
 		() =>
@@ -447,7 +455,7 @@ export function GameChatPanel() {
 										>
 											{showName && (
 												<div
-													className={`text-xs ${
+													className={`truncate text-xs ${
 														isOwnMessage
 															? "text-primary-foreground/80"
 															: "text-muted-foreground"
@@ -502,56 +510,51 @@ export function GameChatPanel() {
 						value={draft}
 					/>
 					<div className="flex items-center justify-between">
-						<Tooltip open={permissionDenied ? undefined : false}>
-							<TooltipTrigger asChild>
-								<Button
-									aria-label={
-										isSpeechActive
-											? "Spracherkennung stoppen"
-											: "Spracherkennung starten"
-									}
-									className={
-										speechStatus === "listening" ? "animate-pulse" : ""
-									}
-									disabled={!isSpeechSupported}
-									onClick={onSpeechButtonClick}
-									size="icon"
-									type="button"
-									variant={
-										speechStatus === "listening" ? "destructive" : "outline"
-									}
-								>
-									{speechStatus === "processing" ? (
-										<Loader2 className="size-4 animate-spin" />
-									) : speechStatus === "listening" ? (
-										<Square className="size-4" />
-									) : permissionDenied ? (
-										<MicOff className="size-4" />
-									) : (
-										<Mic className="size-4" />
-									)}
-								</Button>
-							</TooltipTrigger>
-							{permissionDenied && (
-								<TooltipContent>
-									Mikrofonzugriff wurde nicht erlaubt.
-								</TooltipContent>
-							)}
-						</Tooltip>
 						{/*<span className="text-muted-foreground text-xs">
 								{normalizedDraft.length}/{MAX_CHAT_LENGTH}
 							</span>*/}
-						<Button disabled={!canSend} onClick={onSendMessage} size="icon">
-							<Send className="size-4" />
-						</Button>
+						{canSend ? (
+							<Button onClick={onSendMessage} size="icon">
+								<Send className="size-4" />
+							</Button>
+						) : (
+							<Tooltip open={speechTooltipMessage ? undefined : false}>
+								<TooltipTrigger asChild>
+									<Button
+										aria-label={
+											isSpeechActive
+												? "Spracherkennung stoppen"
+												: "Spracherkennung starten"
+										}
+										className={`${speechStatus === "listening" ? "animate-pulse" : ""} ${
+											!isSpeechSupported ? "cursor-not-allowed opacity-50" : ""
+										}`}
+										onClick={onSpeechButtonClick}
+										size="icon"
+										type="button"
+										variant={
+											speechStatus === "listening" ? "destructive" : "outline"
+										}
+									>
+										{speechStatus === "processing" ? (
+											<Loader2 className="size-4 animate-spin" />
+										) : speechStatus === "listening" ? (
+											<Square className="size-4" />
+										) : permissionDenied || !isSpeechSupported ? (
+											<MicOff className="size-4" />
+										) : (
+											<Mic className="size-4" />
+										)}
+									</Button>
+								</TooltipTrigger>
+								{speechTooltipMessage && (
+									<TooltipContent>{speechTooltipMessage}</TooltipContent>
+								)}
+							</Tooltip>
+						)}
 					</div>
 					{chatLocalError && (
 						<p className="text-destructive text-xs">{chatLocalError}</p>
-					)}
-					{!isSpeechSupported && (
-						<p className="text-muted-foreground text-xs">
-							Spracherkennung wird in diesem Browser nicht unterstützt.
-						</p>
 					)}
 				</div>
 			</SheetContent>
