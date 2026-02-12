@@ -68,17 +68,26 @@ function SheetContent({
 	className,
 	children,
 	side = "right",
+	disableAnimation = false,
+	showOverlay = true,
 	showCloseButton = true,
 	...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> &
 	VariantProps<typeof sheetVariants> & {
+		disableAnimation?: boolean;
+		showOverlay?: boolean;
 		showCloseButton?: boolean;
 	}) {
 	return (
 		<SheetPortal>
-			<SheetOverlay />
+			{showOverlay && <SheetOverlay />}
 			<SheetPrimitive.Content
-				className={cn(sheetVariants({ side }), className)}
+				className={cn(
+					sheetVariants({ side }),
+					disableAnimation &&
+						"data-[state=open]:animate-none data-[state=closed]:animate-none data-[state=open]:duration-0 data-[state=closed]:duration-0",
+					className,
+				)}
 				data-slot="sheet-content"
 				{...props}
 			>

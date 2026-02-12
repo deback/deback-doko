@@ -5,6 +5,7 @@
  * Der Store wird pro Game-Session über einen Context Provider erstellt.
  */
 
+import { createJSONStorage, persist } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
 import type {
 	AnnouncementType,
@@ -15,6 +16,8 @@ import type {
 	TrumpMode,
 } from "@/types/game";
 import type { Player } from "@/types/tables";
+
+const CHAT_UI_PERSIST_KEY = "doko:game-chat-ui";
 
 // =============================================================================
 // State Types
@@ -39,6 +42,10 @@ export interface GameStoreState {
 	chatCooldownUntil: number | null;
 	/** Lokaler Chat-Fehler */
 	chatLocalError: string | null;
+	/** Chat-Panel Open-State (persistiert) */
+	chatPanelOpen: boolean;
+	/** Persist-Rehydration abgeschlossen */
+	chatPanelHydrated: boolean;
 }
 
 // =============================================================================
@@ -57,6 +64,8 @@ export interface GameStoreActions {
 	appendChatMessage: (message: ChatMessage) => void;
 	setChatCooldownUntil: (timestamp: number | null) => void;
 	setChatLocalError: (message: string | null) => void;
+	setChatPanelOpen: (open: boolean) => void;
+	setChatPanelHydrated: (hydrated: boolean) => void;
 
 	// Game Actions (WebSocket calls, set by useGameConnection)
 	playCard: (cardId: string) => void;
@@ -107,6 +116,8 @@ export const defaultInitState: GameStoreState = {
 	chatMessages: [],
 	chatCooldownUntil: null,
 	chatLocalError: null,
+	chatPanelOpen: false,
+	chatPanelHydrated: false,
 };
 
 // =============================================================================
@@ -118,47 +129,78 @@ export const defaultInitState: GameStoreState = {
  * Called once per game session by GameStoreProvider.
  */
 export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
-	return createStore<GameStore>()((set) => ({
-		// Initial State
+	const resolvedInitState: GameStoreState = {
 		...defaultInitState,
 		...initState,
+		chatPanelHydrated: false,
+	};
 
-		// State Setters
-		setGameState: (gameState) =>
-			set((state) => ({
-				gameState,
-				// Clear preview trump when bidding phase ends (resolved by server)
-				previewTrumpMode: gameState?.biddingPhase?.active
-					? state.previewTrumpMode
-					: null,
-			})),
-		setCurrentPlayer: (currentPlayer) => set({ currentPlayer }),
-		setSpectatorMode: (isSpectator) => set({ isSpectator }),
-		setConnected: (isConnected) => set({ isConnected }),
-		setError: (error) => set({ error }),
-		setPreviewTrumpMode: (previewTrumpMode) => set({ previewTrumpMode }),
-		setChatHistory: (chatMessages) => set({ chatMessages }),
-		appendChatMessage: (message) =>
-			set((state) => ({
-				chatMessages: [...state.chatMessages, message],
-			})),
-		setChatCooldownUntil: (chatCooldownUntil) => set({ chatCooldownUntil }),
-		setChatLocalError: (chatLocalError) => set({ chatLocalError }),
+	const store = createStore<GameStore>()(
+		persist(
+			(set) => ({
+				// Initial State
+				...resolvedInitState,
 
-		// Game Actions (no-op until set by useGameConnection)
-		playCard: () => {},
-		announce: () => {},
-		bid: () => {},
-		declareContract: () => {},
-		autoPlay: () => {},
-		autoPlayAll: () => {},
-		resetGame: () => {},
-		toggleStandUp: () => {},
-		sendChatMessage: () => {},
+				// State Setters
+				setGameState: (gameState) =>
+					set((state) => ({
+						gameState,
+						// Clear preview trump when bidding phase ends (resolved by server)
+						previewTrumpMode: gameState?.biddingPhase?.active
+							? state.previewTrumpMode
+							: null,
+					})),
+				setCurrentPlayer: (currentPlayer) => set({ currentPlayer }),
+				setSpectatorMode: (isSpectator) => set({ isSpectator }),
+				setConnected: (isConnected) => set({ isConnected }),
+				setError: (error) => set({ error }),
+				setPreviewTrumpMode: (previewTrumpMode) => set({ previewTrumpMode }),
+				setChatHistory: (chatMessages) => set({ chatMessages }),
+				appendChatMessage: (message) =>
+					set((state) => ({
+						chatMessages: [...state.chatMessages, message],
+					})),
+				setChatCooldownUntil: (chatCooldownUntil) => set({ chatCooldownUntil }),
+				setChatLocalError: (chatLocalError) => set({ chatLocalError }),
+				setChatPanelOpen: (chatPanelOpen) => set({ chatPanelOpen }),
+				setChatPanelHydrated: (chatPanelHydrated) => set({ chatPanelHydrated }),
 
-		// Action Setter
-		setGameActions: (actions) => set(actions),
-	}));
+				// Game Actions (no-op until set by useGameConnection)
+				playCard: () => {},
+				announce: () => {},
+				bid: () => {},
+				declareContract: () => {},
+				autoPlay: () => {},
+				autoPlayAll: () => {},
+				resetGame: () => {},
+				toggleStandUp: () => {},
+				sendChatMessage: () => {},
+
+				// Action Setter
+				setGameActions: (actions) => set(actions),
+			}),
+			{
+				name: CHAT_UI_PERSIST_KEY,
+				storage: createJSONStorage(() => localStorage),
+				partialize: (state) => ({
+					chatPanelOpen: state.chatPanelOpen,
+				}),
+				skipHydration: true,
+				onRehydrateStorage: () => (state, error) => {
+					state?.setChatPanelHydrated(true);
+					if (error) {
+						console.error("Failed to rehydrate chat panel state:", error);
+					}
+				},
+			},
+		),
+	);
+
+	if (typeof window !== "undefined") {
+		void store.persist.rehydrate();
+	}
+
+	return store;
 };
 
 // =============================================================================

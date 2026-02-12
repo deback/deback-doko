@@ -1,7 +1,14 @@
 "use client";
 
 import { MessageSquare, Send } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,10 +26,13 @@ import {
 	useChatCooldownUntil,
 	useChatLocalError,
 	useChatMessages,
+	useChatPanelHydrated,
+	useChatPanelOpen,
 	useCurrentPlayer,
 	useSendChatMessage,
 	useSetChatCooldownUntil,
 	useSetChatLocalError,
+	useSetChatPanelOpen,
 } from "@/stores/game-selectors";
 
 const MAX_CHAT_LENGTH = 500;
@@ -33,20 +43,27 @@ export function GameChatPanel() {
 	const chatMessages = useChatMessages();
 	const chatCooldownUntil = useChatCooldownUntil();
 	const chatLocalError = useChatLocalError();
+	const chatPanelOpen = useChatPanelOpen();
+	const chatPanelHydrated = useChatPanelHydrated();
 	const sendChatMessage = useSendChatMessage();
 	const setChatCooldownUntil = useSetChatCooldownUntil();
 	const setChatLocalError = useSetChatLocalError();
-
-	const [open, setOpen] = useState(false);
+	const setChatPanelOpen = useSetChatPanelOpen();
 	const [draft, setDraft] = useState("");
 	const [nowMs, setNowMs] = useState(() => Date.now());
 	const [unreadCount, setUnreadCount] = useState(0);
+	const [hasMounted, setHasMounted] = useState(false);
+	const [disableInitialOpenAnimation, setDisableInitialOpenAnimation] =
+		useState(false);
 	const chatTextareaId = useId();
+	const chatTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const hasInitializedAnimationRef = useRef(false);
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const previousMessageCountRef = useRef(chatMessages.length);
 	const normalizedDraft = draft.trim();
 	const remainingCooldownMs = Math.max(0, (chatCooldownUntil ?? 0) - nowMs);
 	const isCooldownActive = remainingCooldownMs > 0;
+	const open = chatPanelOpen;
 	const canSend =
 		normalizedDraft.length > 0 &&
 		normalizedDraft.length <= MAX_CHAT_LENGTH &&
@@ -60,6 +77,16 @@ export function GameChatPanel() {
 			}),
 		[],
 	);
+
+	const resizeTextarea = useCallback((element: HTMLTextAreaElement | null) => {
+		if (!element) return;
+		element.style.height = "auto";
+		element.style.height = `${element.scrollHeight}px`;
+	}, []);
+
+	useEffect(() => {
+		setHasMounted(true);
+	}, []);
 
 	useEffect(() => {
 		const previousCount = previousMessageCountRef.current;
@@ -75,6 +102,19 @@ export function GameChatPanel() {
 
 		previousMessageCountRef.current = chatMessages.length;
 	}, [chatMessages, open, currentPlayer?.id]);
+
+	useEffect(() => {
+		if (!chatPanelHydrated) return;
+		if (hasInitializedAnimationRef.current) return;
+		hasInitializedAnimationRef.current = true;
+		setDisableInitialOpenAnimation(open);
+	}, [chatPanelHydrated, open]);
+
+	useEffect(() => {
+		if (!disableInitialOpenAnimation) return;
+		if (open) return;
+		setDisableInitialOpenAnimation(false);
+	}, [disableInitialOpenAnimation, open]);
 
 	useEffect(() => {
 		if (!open) return;
@@ -113,10 +153,17 @@ export function GameChatPanel() {
 		setChatCooldownUntil(Date.now() + CHAT_COOLDOWN_MS);
 		setNowMs(Date.now());
 		setDraft("");
+		window.requestAnimationFrame(() => {
+			resizeTextarea(chatTextareaRef.current);
+		});
+	}
+
+	if (!hasMounted || !chatPanelHydrated) {
+		return null;
 	}
 
 	return (
-		<Sheet onOpenChange={setOpen} open={open}>
+		<Sheet modal={false} onOpenChange={setChatPanelOpen} open={open}>
 			<SheetTrigger asChild>
 				<Button
 					aria-label="Chat öffnen"
@@ -133,7 +180,12 @@ export function GameChatPanel() {
 				</Button>
 			</SheetTrigger>
 
-			<SheetContent className="flex h-full flex-col p-0" side="right">
+			<SheetContent
+				className="flex h-full flex-col p-0"
+				disableAnimation={disableInitialOpenAnimation}
+				showOverlay={false}
+				side="right"
+			>
 				<SheetHeader className="border-b p-4 pr-10">
 					<SheetTitle>Tisch-Chat</SheetTitle>
 					<SheetDescription>
@@ -141,7 +193,7 @@ export function GameChatPanel() {
 					</SheetDescription>
 				</SheetHeader>
 
-				<div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+				<div className="flex min-h-0 flex-1 flex-col gap-3">
 					<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
 						{chatMessages.length === 0 ? (
 							<Card className="border-dashed py-4 text-center text-muted-foreground text-sm shadow-none">
@@ -207,13 +259,14 @@ export function GameChatPanel() {
 
 					<Card className="flex flex-row items-end gap-2 p-3 shadow-none">
 						<Textarea
-							className="resize-none"
+							className="h-9 min-h-9 resize-none overflow-hidden"
 							id={chatTextareaId}
 							maxLength={MAX_CHAT_LENGTH}
 							name="table-chat-message"
 							onChange={(event) => {
 								setDraft(event.target.value);
 								setChatLocalError(null);
+								resizeTextarea(event.currentTarget);
 							}}
 							onKeyDown={(event) => {
 								if (event.key === "Enter" && !event.shiftKey) {
@@ -222,7 +275,8 @@ export function GameChatPanel() {
 								}
 							}}
 							placeholder="Nachricht schreiben..."
-							rows={3}
+							ref={chatTextareaRef}
+							rows={1}
 							value={draft}
 						/>
 						<div className="flex items-center justify-between">

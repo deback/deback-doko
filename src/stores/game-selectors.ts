@@ -37,6 +37,11 @@ export const useChatCooldownUntil = () =>
 	useGameStore((s) => s.chatCooldownUntil);
 /** Lokaler Chat-Fehler */
 export const useChatLocalError = () => useGameStore((s) => s.chatLocalError);
+/** Chat-Panel Open-State */
+export const useChatPanelOpen = () => useGameStore((s) => s.chatPanelOpen);
+/** Chat-Panel Hydration-State */
+export const useChatPanelHydrated = () =>
+	useGameStore((s) => s.chatPanelHydrated);
 
 // =============================================================================
 // Abgeleitete Selektoren (memoized)
@@ -330,3 +335,7 @@ export const useSetChatCooldownUntil = () =>
 	useGameStore((s) => s.setChatCooldownUntil);
 export const useSetChatLocalError = () =>
 	useGameStore((s) => s.setChatLocalError);
+export const useSetChatPanelOpen = () =>
+	useGameStore((s) => s.setChatPanelOpen);
+export const useSetChatPanelHydrated = () =>
+	useGameStore((s) => s.setChatPanelHydrated);
