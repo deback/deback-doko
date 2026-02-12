@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, XIcon } from "lucide-react";
 import {
 	useCallback,
 	useEffect,
@@ -58,8 +58,11 @@ export function GameChatPanel() {
 	const chatTextareaId = useId();
 	const chatTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const hasInitializedAnimationRef = useRef(false);
+	const wasOpenRef = useRef(chatPanelOpen);
+	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const previousMessageCountRef = useRef(chatMessages.length);
+	const previousOpenMessageCountRef = useRef(chatMessages.length);
 	const normalizedDraft = draft.trim();
 	const remainingCooldownMs = Math.max(0, (chatCooldownUntil ?? 0) - nowMs);
 	const isCooldownActive = remainingCooldownMs > 0;
@@ -117,15 +120,40 @@ export function GameChatPanel() {
 	}, [disableInitialOpenAnimation, open]);
 
 	useEffect(() => {
+		const wasOpen = wasOpenRef.current;
+		wasOpenRef.current = open;
 		if (!open) return;
+		if (wasOpen) return;
 		setUnreadCount(0);
 		const hasMessages = chatMessages.length > 0;
 		if (!hasMessages) return;
 		const id = window.requestAnimationFrame(() => {
-			messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+			const container = messagesContainerRef.current;
+			if (!container) return;
+			container.scrollTop = container.scrollHeight;
 		});
+		previousOpenMessageCountRef.current = chatMessages.length;
 		return () => window.cancelAnimationFrame(id);
-	}, [open, chatMessages]);
+	}, [open, chatMessages.length]);
+
+	useEffect(() => {
+		if (!open) {
+			previousOpenMessageCountRef.current = chatMessages.length;
+			return;
+		}
+
+		const previousCount = previousOpenMessageCountRef.current;
+		if (chatMessages.length <= previousCount) return;
+
+		const id = window.requestAnimationFrame(() => {
+			messagesEndRef.current?.scrollIntoView({
+				behavior: "smooth",
+				block: "end",
+			});
+		});
+		previousOpenMessageCountRef.current = chatMessages.length;
+		return () => window.cancelAnimationFrame(id);
+	}, [chatMessages, open]);
 
 	useEffect(() => {
 		if (!chatCooldownUntil) return;
@@ -167,7 +195,7 @@ export function GameChatPanel() {
 			<SheetTrigger asChild>
 				<Button
 					aria-label="Chat öffnen"
-					className="fixed relative top-1/2 right-4 z-50 -translate-y-1/2 rounded-full shadow-lg"
+					className="fixed right-4 bottom-4 z-50 -translate-y-1/2 rounded-full shadow-lg"
 					size="icon-lg"
 					variant="secondary"
 				>
@@ -181,34 +209,61 @@ export function GameChatPanel() {
 			</SheetTrigger>
 
 			<SheetContent
-				className="flex h-full flex-col p-0"
+				className="flex h-full flex-col gap-0 bg-background/70 p-0 backdrop-blur-md"
 				disableAnimation={disableInitialOpenAnimation}
+				showCloseButton={false}
 				showOverlay={false}
 				side="right"
 			>
-				<SheetHeader className="border-b p-4 pr-10">
+				<SheetHeader className="hidden">
 					<SheetTitle>Tisch-Chat</SheetTitle>
 					<SheetDescription>
 						Alle Spieler und Zuschauer an diesem Tisch können schreiben.
 					</SheetDescription>
 				</SheetHeader>
-
-				<div className="flex min-h-0 flex-1 flex-col gap-3">
-					<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+				<Button
+					className="absolute top-2 right-2 z-10"
+					onClick={() => setChatPanelOpen(false)}
+					size="icon"
+					variant="ghost"
+				>
+					<XIcon className="size-4" />
+				</Button>
+				<div
+					className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1"
+					ref={messagesContainerRef}
+				>
+					<div className="py-4 pr-2 pl-3">
 						{chatMessages.length === 0 ? (
 							<Card className="border-dashed py-4 text-center text-muted-foreground text-sm shadow-none">
 								Noch keine Nachrichten.
 							</Card>
 						) : (
-							chatMessages.map((message) => {
+							chatMessages.map((message, index) => {
 								const isSystem = message.author.role === "system";
 								const isOwnMessage =
 									!isSystem && message.author.id === currentPlayer?.id;
+								const prevMessage = chatMessages[index - 1];
+								const nextMessage = chatMessages[index + 1];
+								const isPrevSameAuthor =
+									!!prevMessage &&
+									prevMessage.author.role !== "system" &&
+									prevMessage.author.id === message.author.id &&
+									prevMessage.author.role === message.author.role;
+								const isNextSameAuthor =
+									!!nextMessage &&
+									nextMessage.author.role !== "system" &&
+									nextMessage.author.id === message.author.id &&
+									nextMessage.author.role === message.author.role;
+								const showName = !isPrevSameAuthor;
+								const isGroupBottom = !isNextSameAuthor;
+								const rowMarginClass =
+									index === 0 ? "mt-0" : isPrevSameAuthor ? "mt-1" : "mt-2";
 
 								if (isSystem) {
 									return (
 										<div
-											className="px-2 py-1 text-center text-muted-foreground text-xs"
+											className={`${index === 0 ? "mt-0" : "mt-2"} px-2 py-1 text-center text-muted-foreground text-xs`}
 											key={message.id}
 										>
 											{message.text}
@@ -218,79 +273,97 @@ export function GameChatPanel() {
 
 								return (
 									<div
-										className={`flex items-end gap-2 ${isOwnMessage ? "justify-end" : "justify-start"}`}
+										className={`flex items-end gap-2 ${rowMarginClass} ${isOwnMessage ? "justify-end" : "justify-start"}`}
 										key={message.id}
 									>
 										{!isOwnMessage && (
-											<Avatar
-												alt={message.author.name}
-												fallback={message.author.name.charAt(0).toUpperCase()}
-												size="xs"
-												src={message.author.image}
-											/>
+											<div className="flex size-6 items-end justify-center">
+												{isGroupBottom && (
+													<Avatar
+														alt={message.author.name}
+														fallback={message.author.name
+															.charAt(0)
+															.toUpperCase()}
+														size="xs"
+														src={message.author.image}
+													/>
+												)}
+											</div>
 										)}
-										<Card
-											className={`max-w-[80%] gap-2 px-3 py-2 shadow-sm ${
+										<div
+											className={`max-w-[80%] gap-2 rounded-xl px-2 py-1 shadow-sm ${
 												isOwnMessage
 													? "bg-primary text-primary-foreground"
 													: "bg-background"
 											}`}
 										>
-											<div
-												className={`text-[11px] ${
-													isOwnMessage
-														? "text-primary-foreground/80"
-														: "text-muted-foreground"
-												}`}
-											>
-												{message.author.name} ·{" "}
-												{timeFormatter.format(message.createdAt)}
+											{showName && (
+												<div
+													className={`text-xs ${
+														isOwnMessage
+															? "text-primary-foreground/80"
+															: "text-muted-foreground"
+													}`}
+												>
+													{message.author.name}
+												</div>
+											)}
+											<div className="relative">
+												<div className="wrap-break-words whitespace-pre-wrap text-sm after:inline-block after:h-0 after:w-8 after:content-['']">
+													{message.text}
+												</div>
+												<div
+													className={`absolute right-0 bottom-0 text-[11px] ${
+														isOwnMessage
+															? "text-primary-foreground/70"
+															: "text-muted-foreground"
+													}`}
+												>
+													{timeFormatter.format(message.createdAt)}
+												</div>
 											</div>
-											<div className="whitespace-pre-wrap break-words text-sm">
-												{message.text}
-											</div>
-										</Card>
+										</div>
 									</div>
 								);
 							})
 						)}
 						<div ref={messagesEndRef} />
 					</div>
+				</div>
 
-					<Card className="flex flex-row items-end gap-2 p-3 shadow-none">
-						<Textarea
-							className="h-9 min-h-9 resize-none overflow-hidden"
-							id={chatTextareaId}
-							maxLength={MAX_CHAT_LENGTH}
-							name="table-chat-message"
-							onChange={(event) => {
-								setDraft(event.target.value);
-								setChatLocalError(null);
-								resizeTextarea(event.currentTarget);
-							}}
-							onKeyDown={(event) => {
-								if (event.key === "Enter" && !event.shiftKey) {
-									event.preventDefault();
-									onSendMessage();
-								}
-							}}
-							placeholder="Nachricht schreiben..."
-							ref={chatTextareaRef}
-							rows={1}
-							value={draft}
-						/>
-						<div className="flex items-center justify-between">
-							{/*<span className="text-muted-foreground text-xs">
+				<div className="flex flex-row items-end gap-2 border-t bg-background p-3">
+					<Textarea
+						className="h-9 min-h-9 resize-none overflow-hidden"
+						id={chatTextareaId}
+						maxLength={MAX_CHAT_LENGTH}
+						name="table-chat-message"
+						onChange={(event) => {
+							setDraft(event.target.value);
+							setChatLocalError(null);
+							resizeTextarea(event.currentTarget);
+						}}
+						onKeyDown={(event) => {
+							if (event.key === "Enter" && !event.shiftKey) {
+								event.preventDefault();
+								onSendMessage();
+							}
+						}}
+						placeholder="Nachricht schreiben..."
+						ref={chatTextareaRef}
+						rows={1}
+						value={draft}
+					/>
+					<div className="flex items-center justify-between">
+						{/*<span className="text-muted-foreground text-xs">
 								{normalizedDraft.length}/{MAX_CHAT_LENGTH}
 							</span>*/}
-							<Button disabled={!canSend} onClick={onSendMessage} size="icon">
-								<Send className="size-4" />
-							</Button>
-						</div>
-						{chatLocalError && (
-							<p className="text-destructive text-xs">{chatLocalError}</p>
-						)}
-					</Card>
+						<Button disabled={!canSend} onClick={onSendMessage} size="icon">
+							<Send className="size-4" />
+						</Button>
+					</div>
+					{chatLocalError && (
+						<p className="text-destructive text-xs">{chatLocalError}</p>
+					)}
 				</div>
 			</SheetContent>
 		</Sheet>
