@@ -55,7 +55,7 @@ export default async function GamePage({
 	};
 
 	return (
-		<main>
+		<main className="h-dvh overflow-hidden overscroll-none">
 			<GameClient gameId={gameId} player={player} />
 		</main>
 	);

@@ -367,6 +367,7 @@ export function GameChatPanel() {
 			<SheetContent
 				className="flex h-full flex-col gap-0 border-none bg-background/70 p-0 backdrop-blur-md"
 				disableAnimation={disableInitialOpenAnimation}
+				onInteractOutside={(event) => event.preventDefault()}
 				showCloseButton={false}
 				showOverlay={false}
 				side="right"

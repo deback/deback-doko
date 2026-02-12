@@ -33,6 +33,7 @@ import {
 	useAutoPlay,
 	useAutoPlayAll,
 	useBid,
+	useChatPanelOpen,
 	useContractDeclarer,
 	useCurrentPlayer,
 	useDeclareContract,
@@ -83,6 +84,7 @@ export function GameBoard() {
 	const playableCardIds = usePlayableCardIds();
 	const isMyTurn = useIsMyTurn();
 	const isBiddingActive = useIsBiddingActive();
+	const chatPanelOpen = useChatPanelOpen();
 	const isServerTrickResolving =
 		gameState?.currentTrick.completed ||
 		gameState?.currentTrick.cards.length === 4;
@@ -312,361 +314,379 @@ export function GameBoard() {
 			onDragStart={handleDragStart}
 			sensors={sensors}
 		>
-			{/* Oberer Gegner */}
-			{topPlayer && (
-				<>
-					<PlayerInfo
-						isCurrentTurn={
-							gameState.players[gameState.currentPlayerIndex]?.id ===
-							topPlayer.id
-						}
-						player={topPlayer}
-						position="top"
-					/>
-					<OpponentHand
-						cardCount={getCardCount(topPlayer.id)}
-						position="top"
-						statusSlot={
-							<PlayerStatus
-								announcements={formatAnnouncementsForStatus(topAnnouncements)}
-								declaredContract={
-									contractDeclarer?.playerId === topPlayer.id
-										? contractDeclarer.contractType
-										: undefined
-								}
-								position="top"
-							/>
-						}
-					/>
-				</>
-			)}
-
-			{/* Linker Gegner */}
-			{leftPlayer && (
-				<>
-					<PlayerInfo
-						isCurrentTurn={
-							gameState.players[gameState.currentPlayerIndex]?.id ===
-							leftPlayer.id
-						}
-						player={leftPlayer}
-						position="left"
-					/>
-					<OpponentHand
-						cardCount={getCardCount(leftPlayer.id)}
-						position="left"
-						statusSlot={
-							<PlayerStatus
-								announcements={formatAnnouncementsForStatus(leftAnnouncements)}
-								declaredContract={
-									contractDeclarer?.playerId === leftPlayer.id
-										? contractDeclarer.contractType
-										: undefined
-								}
-								position="left"
-							/>
-						}
-					/>
-				</>
-			)}
-
-			{/* Rechter Gegner */}
-			{rightPlayer && (
-				<>
-					<PlayerInfo
-						isCurrentTurn={
-							gameState.players[gameState.currentPlayerIndex]?.id ===
-							rightPlayer.id
-						}
-						player={rightPlayer}
-						position="right"
-					/>
-					<OpponentHand
-						cardCount={getCardCount(rightPlayer.id)}
-						position="right"
-						statusSlot={
-							<PlayerStatus
-								announcements={formatAnnouncementsForStatus(rightAnnouncements)}
-								declaredContract={
-									contractDeclarer?.playerId === rightPlayer.id
-										? contractDeclarer.contractType
-										: undefined
-								}
-								position="right"
-							/>
-						}
-					/>
-				</>
-			)}
-
-			{/* Warte auf Spieler (wenn jemand aufgestanden ist) */}
-			{!gameState.gameStarted && gameState.players.length < 4 && (
-				<div className="pointer-events-none fixed top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
-					<UiCard className="border-none bg-black/40 text-white backdrop-blur-sm">
-						<UiCardContent className="pt-6">
-							<div className="flex flex-col items-center gap-3">
-								<div className="flex size-10 animate-hourglass-flip items-center justify-center rounded-full bg-yellow-500">
-									<Hourglass className="size-5 text-white" />
-								</div>
-								<p className="text-white/80">
-									Warte auf Spieler... ({gameState.players.length}/4)
-								</p>
-							</div>
-						</UiCardContent>
-					</UiCard>
-				</div>
-			)}
-
-			{/* Stich-Bereich (Mitte) */}
-			<TrickArea
-				cardOrigin={cardOrigin}
-				currentPlayerId={
-					isSpectator ? (bottomPlayer?.id ?? "") : (currentPlayer?.id ?? "")
-				}
-				onAnimationPhaseChange={handleTrickAnimationPhaseChange}
-				playedCard={playedCard}
-				players={gameState.players}
-				trickCards={gameState.currentTrick.cards}
-				trickWinnerId={gameState.currentTrick.winnerId}
-			/>
-
-			{/* Unterer Spieler (aktueller Benutzer / Spectator-Ansicht) */}
-			{bottomPlayer && (
-				<>
-					<PlayerInfo
-						isCurrentTurn={
-							isSpectator
-								? gameState.players[gameState.currentPlayerIndex]?.id ===
-									bottomPlayer.id
-								: isMyTurn
-						}
-						player={bottomPlayer}
-						position="bottom"
-					/>
-					{isSpectator ? (
+			<div
+				className={cn(
+					"transform-[translateZ(0)] relative h-dvh w-screen overflow-hidden overscroll-none transition-[width] ease-in-out",
+					chatPanelOpen ? "duration-500" : "duration-300",
+					chatPanelOpen && "md:w-[calc(100vw-24rem)]",
+				)}
+			>
+				{/* Oberer Gegner */}
+				{topPlayer && (
+					<>
+						<PlayerInfo
+							isCurrentTurn={
+								gameState.players[gameState.currentPlayerIndex]?.id ===
+								topPlayer.id
+							}
+							player={topPlayer}
+							position="top"
+						/>
 						<OpponentHand
-							cardCount={getCardCount(bottomPlayer.id)}
-							position="bottom"
+							cardCount={getCardCount(topPlayer.id)}
+							position="top"
 							statusSlot={
 								<PlayerStatus
-									announcements={formatAnnouncementsForStatus(
-										bottomAnnouncements,
-									)}
+									announcements={formatAnnouncementsForStatus(topAnnouncements)}
 									declaredContract={
-										contractDeclarer?.playerId === bottomPlayer.id
+										contractDeclarer?.playerId === topPlayer.id
 											? contractDeclarer.contractType
 											: undefined
 									}
-									position="bottom"
+									position="top"
 								/>
 							}
 						/>
-					) : (
-						<PlayerHand
-							activeDragCard={dragPlayedCard}
-							isTrickAnimating={isTrickAnimating}
-							onPlayCardWithOrigin={handlePlayCardWithOrigin}
-							onRemoveCard={handleRemoveCard}
+					</>
+				)}
+
+				{/* Linker Gegner */}
+				{leftPlayer && (
+					<>
+						<PlayerInfo
+							isCurrentTurn={
+								gameState.players[gameState.currentPlayerIndex]?.id ===
+								leftPlayer.id
+							}
+							player={leftPlayer}
+							position="left"
+						/>
+						<OpponentHand
+							cardCount={getCardCount(leftPlayer.id)}
+							position="left"
 							statusSlot={
 								<PlayerStatus
 									announcements={formatAnnouncementsForStatus(
-										bottomAnnouncements,
+										leftAnnouncements,
 									)}
 									declaredContract={
-										contractDeclarer?.playerId === bottomPlayer.id
+										contractDeclarer?.playerId === leftPlayer.id
 											? contractDeclarer.contractType
 											: undefined
 									}
-									position="bottom"
-								>
-									<div className="flex items-center gap-1.5">
-										{!isBiddingActive && <AnnouncementButtons />}
-										<StandUpButton />
-									</div>
-								</PlayerStatus>
+									position="left"
+								/>
 							}
 						/>
-					)}
-				</>
-			)}
+					</>
+				)}
 
-			{/* Drag Overlay (nur für Spieler) */}
-			{!isSpectator && (
-				<DragOverlay dropAnimation={null}>
-					{activeDragCard && (
-						<div className={`relative ${CARD_SIZE}`}>
-							<Image
-								alt={`${activeDragCard.rank} of ${activeDragCard.suit}`}
-								className="rounded-[1cqw] shadow-xl"
-								draggable={false}
-								fill
-								src={getCardImagePath(activeDragCard.suit, activeDragCard.rank)}
-							/>
-						</div>
-					)}
-				</DragOverlay>
-			)}
-
-			{/* Turn-Indikator */}
-			<TurnIndicator
-				currentPlayerName={
-					gameState.players[gameState.currentPlayerIndex]?.name ?? ""
-				}
-				isMyTurn={isMyTurn}
-			/>
-
-			{/* Verbindungsstatus & Zuschauer */}
-			<div className="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
-				<div className="flex items-center gap-2">
-					<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
-						<div
-							className={cn(
-								"h-2 w-2 rounded-full",
-								"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
-							)}
+				{/* Rechter Gegner */}
+				{rightPlayer && (
+					<>
+						<PlayerInfo
+							isCurrentTurn={
+								gameState.players[gameState.currentPlayerIndex]?.id ===
+								rightPlayer.id
+							}
+							player={rightPlayer}
+							position="right"
 						/>
-						<span className="text-white/70 text-xs">Verbunden</span>
-					</div>
-					{!isSpectator && (
-						<GameShareMenu gameId={gameState.id} tableId={gameState.tableId} />
-					)}
-					<GameSettingsMenu />
-				</div>
+						<OpponentHand
+							cardCount={getCardCount(rightPlayer.id)}
+							position="right"
+							statusSlot={
+								<PlayerStatus
+									announcements={formatAnnouncementsForStatus(
+										rightAnnouncements,
+									)}
+									declaredContract={
+										contractDeclarer?.playerId === rightPlayer.id
+											? contractDeclarer.contractType
+											: undefined
+									}
+									position="right"
+								/>
+							}
+						/>
+					</>
+				)}
 
-				{/* Zuschauer-Liste */}
-				{gameState.spectators && gameState.spectators.length > 0 && (
-					<div className="rounded-lg bg-black/40 px-3 py-2 backdrop-blur-sm">
-						<div className="mb-1.5 flex items-center gap-1.5 text-white/50 text-xs">
-							<Eye className="h-3 w-3" />
-							Zuschauer ({gameState.spectators.length})
-						</div>
-						<div className="flex flex-col gap-1.5">
-							{gameState.spectators.map((spectator) => (
-								<div className="flex items-center gap-2" key={spectator.id}>
-									<Avatar
-										alt={spectator.name}
-										fallback={spectator.name.charAt(0).toUpperCase()}
-										size="xs"
-										src={spectator.image}
-									/>
-									<span className="text-white/70 text-xs">
-										{spectator.name}
-									</span>
+				{/* Warte auf Spieler (wenn jemand aufgestanden ist) */}
+				{!gameState.gameStarted && gameState.players.length < 4 && (
+					<div className="pointer-events-none fixed top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
+						<UiCard className="border-none bg-black/40 text-white backdrop-blur-sm">
+							<UiCardContent className="pt-6">
+								<div className="flex flex-col items-center gap-3">
+									<div className="flex size-10 animate-hourglass-flip items-center justify-center rounded-full bg-yellow-500">
+										<Hourglass className="size-5 text-white" />
+									</div>
+									<p className="text-white/80">
+										Warte auf Spieler... ({gameState.players.length}/4)
+									</p>
 								</div>
-							))}
-						</div>
+							</UiCardContent>
+						</UiCard>
 					</div>
 				)}
-			</div>
 
-			{/* Spectator Badge */}
-			{isSpectator && (
-				<div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
-					<Badge
-						className="gap-2 bg-amber-500/20 px-4 py-2 text-amber-700 dark:text-amber-400"
-						variant="secondary"
-					>
-						<Eye className="h-4 w-4" />
-						Zuschauer-Modus
-					</Badge>
-				</div>
-			)}
-
-			<GameChatPanel />
-
-			{/* Last Trick Panel */}
-			{lastTrick && (
-				<div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2">
-					<LastTrickPanel
-						onOpenChange={setShowLastTrick}
-						open={showLastTrick}
-						perspectivePlayerId={
-							isSpectator
-								? (bottomPlayer?.id ?? gameState.players[0]?.id ?? "")
-								: (currentPlayer?.id ?? "")
-						}
-						players={gameState.players}
-						trick={lastTrick}
-						trickNumber={gameState.completedTricks.length}
-					/>
-					<Button
-						aria-label="Letzten Stich anzeigen"
-						className="flex h-8 items-center gap-2 rounded-full bg-black/50 px-3 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
-						onClick={() => setShowLastTrick((prev) => !prev)}
-						size="sm"
-						variant="ghost"
-					>
-						<History className="h-4 w-4" />
-						Letzter Stich
-					</Button>
-				</div>
-			)}
-
-			{/* Auto-Play & Reset Game Buttons (Development only, nicht für Zuschauer) */}
-			{!isSpectator && process.env.NODE_ENV === "development" && (
-				<div className="fixed bottom-4 left-4 z-50 flex items-center gap-1">
-					<Button
-						className="flex size-8 items-center gap-2 rounded-full bg-amber-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-amber-600"
-						onClick={autoPlay}
-						size="icon"
-						variant="ghost"
-					>
-						<Bot className="size-4" />
-						<span className="hidden">Auto-Play</span>
-					</Button>
-					<Button
-						className="flex size-8 items-center justify-center gap-2 rounded-full bg-purple-500/90 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-purple-600"
-						onClick={autoPlayAll}
-						size="icon"
-						variant="ghost"
-					>
-						<FastForward className="size-4" />
-						<span className="hidden">Alle spielen</span>
-					</Button>
-					<Button
-						className="flex size-8 items-center gap-2 rounded-full bg-slate-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-slate-600"
-						onClick={resetGame}
-						size="icon"
-						variant="ghost"
-					>
-						<RotateCcw className="h-4 w-4" />
-						<span className="hidden">Reset</span>
-					</Button>
-				</div>
-			)}
-
-			{/* Spielende Dialog */}
-			{cachedEndGameState && (
-				<GameEndDialog
-					currentPlayer={isSpectator ? null : currentPlayer}
-					gameState={cachedEndGameState}
-					onClose={handleCloseGameEndDialog}
-					open={showGameEndDialog}
+				{/* Stich-Bereich (Mitte) */}
+				<TrickArea
+					cardOrigin={cardOrigin}
+					currentPlayerId={
+						isSpectator ? (bottomPlayer?.id ?? "") : (currentPlayer?.id ?? "")
+					}
+					onAnimationPhaseChange={handleTrickAnimationPhaseChange}
+					playedCard={playedCard}
+					players={gameState.players}
+					trickCards={gameState.currentTrick.cards}
+					trickWinnerId={gameState.currentTrick.winnerId}
 				/>
-			)}
 
-			{/* Bidding Select */}
-			{gameState.biddingPhase?.active &&
-				(isSpectator ? (
-					<BiddingSelect
-						biddingPhase={gameState.biddingPhase}
-						players={gameState.players}
-						readOnly
-						startingPlayerIndex={gameState.currentPlayerIndex}
+				{/* Unterer Spieler (aktueller Benutzer / Spectator-Ansicht) */}
+				{bottomPlayer && (
+					<>
+						<PlayerInfo
+							isCurrentTurn={
+								isSpectator
+									? gameState.players[gameState.currentPlayerIndex]?.id ===
+										bottomPlayer.id
+									: isMyTurn
+							}
+							player={bottomPlayer}
+							position="bottom"
+						/>
+						{isSpectator ? (
+							<OpponentHand
+								cardCount={getCardCount(bottomPlayer.id)}
+								position="bottom"
+								statusSlot={
+									<PlayerStatus
+										announcements={formatAnnouncementsForStatus(
+											bottomAnnouncements,
+										)}
+										declaredContract={
+											contractDeclarer?.playerId === bottomPlayer.id
+												? contractDeclarer.contractType
+												: undefined
+										}
+										position="bottom"
+									/>
+								}
+							/>
+						) : (
+							<PlayerHand
+								activeDragCard={dragPlayedCard}
+								isTrickAnimating={isTrickAnimating}
+								onPlayCardWithOrigin={handlePlayCardWithOrigin}
+								onRemoveCard={handleRemoveCard}
+								statusSlot={
+									<PlayerStatus
+										announcements={formatAnnouncementsForStatus(
+											bottomAnnouncements,
+										)}
+										declaredContract={
+											contractDeclarer?.playerId === bottomPlayer.id
+												? contractDeclarer.contractType
+												: undefined
+										}
+										position="bottom"
+									>
+										<div className="flex items-center gap-1.5">
+											{!isBiddingActive && <AnnouncementButtons />}
+											<StandUpButton />
+										</div>
+									</PlayerStatus>
+								}
+							/>
+						)}
+					</>
+				)}
+
+				{/* Drag Overlay (nur für Spieler) */}
+				{!isSpectator && (
+					<DragOverlay dropAnimation={null}>
+						{activeDragCard && (
+							<div className={`relative ${CARD_SIZE}`}>
+								<Image
+									alt={`${activeDragCard.rank} of ${activeDragCard.suit}`}
+									className="rounded-[1cqw] shadow-xl"
+									draggable={false}
+									fill
+									src={getCardImagePath(
+										activeDragCard.suit,
+										activeDragCard.rank,
+									)}
+								/>
+							</div>
+						)}
+					</DragOverlay>
+				)}
+
+				{/* Turn-Indikator */}
+				<TurnIndicator
+					currentPlayerName={
+						gameState.players[gameState.currentPlayerIndex]?.name ?? ""
+					}
+					isMyTurn={isMyTurn}
+				/>
+
+				{/* Verbindungsstatus & Zuschauer */}
+				<div className="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
+					<div className="flex items-center gap-2">
+						<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+							<div
+								className={cn(
+									"h-2 w-2 rounded-full",
+									"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
+								)}
+							/>
+							<span className="text-white/70 text-xs">Verbunden</span>
+						</div>
+						{!isSpectator && (
+							<GameShareMenu
+								gameId={gameState.id}
+								tableId={gameState.tableId}
+							/>
+						)}
+						<GameSettingsMenu />
+					</div>
+
+					{/* Zuschauer-Liste */}
+					{gameState.spectators && gameState.spectators.length > 0 && (
+						<div className="rounded-lg bg-black/40 px-3 py-2 backdrop-blur-sm">
+							<div className="mb-1.5 flex items-center gap-1.5 text-white/50 text-xs">
+								<Eye className="h-3 w-3" />
+								Zuschauer ({gameState.spectators.length})
+							</div>
+							<div className="flex flex-col gap-1.5">
+								{gameState.spectators.map((spectator) => (
+									<div className="flex items-center gap-2" key={spectator.id}>
+										<Avatar
+											alt={spectator.name}
+											fallback={spectator.name.charAt(0).toUpperCase()}
+											size="xs"
+											src={spectator.image}
+										/>
+										<span className="text-white/70 text-xs">
+											{spectator.name}
+										</span>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* Spectator Badge */}
+				{isSpectator && (
+					<div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
+						<Badge
+							className="gap-2 bg-amber-500/20 px-4 py-2 text-amber-700 dark:text-amber-400"
+							variant="secondary"
+						>
+							<Eye className="h-4 w-4" />
+							Zuschauer-Modus
+						</Badge>
+					</div>
+				)}
+
+				{/* Last Trick Panel */}
+				{lastTrick && (
+					<div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2">
+						<LastTrickPanel
+							onOpenChange={setShowLastTrick}
+							open={showLastTrick}
+							perspectivePlayerId={
+								isSpectator
+									? (bottomPlayer?.id ?? gameState.players[0]?.id ?? "")
+									: (currentPlayer?.id ?? "")
+							}
+							players={gameState.players}
+							trick={lastTrick}
+							trickNumber={gameState.completedTricks.length}
+						/>
+						<Button
+							aria-label="Letzten Stich anzeigen"
+							className="flex h-8 items-center gap-2 rounded-full bg-black/50 px-3 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
+							onClick={() => setShowLastTrick((prev) => !prev)}
+							size="sm"
+							variant="ghost"
+						>
+							<History className="h-4 w-4" />
+							Letzter Stich
+						</Button>
+					</div>
+				)}
+
+				{/* Auto-Play & Reset Game Buttons (Development only, nicht für Zuschauer) */}
+				{!isSpectator && process.env.NODE_ENV === "development" && (
+					<div className="fixed bottom-4 left-4 z-50 flex items-center gap-1">
+						<Button
+							className="flex size-8 items-center gap-2 rounded-full bg-amber-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-amber-600"
+							onClick={autoPlay}
+							size="icon"
+							variant="ghost"
+						>
+							<Bot className="size-4" />
+							<span className="hidden">Auto-Play</span>
+						</Button>
+						<Button
+							className="flex size-8 items-center justify-center gap-2 rounded-full bg-purple-500/90 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-purple-600"
+							onClick={autoPlayAll}
+							size="icon"
+							variant="ghost"
+						>
+							<FastForward className="size-4" />
+							<span className="hidden">Alle spielen</span>
+						</Button>
+						<Button
+							className="flex size-8 items-center gap-2 rounded-full bg-slate-500/90 px-4 py-2 font-medium text-sm text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-slate-600"
+							onClick={resetGame}
+							size="icon"
+							variant="ghost"
+						>
+							<RotateCcw className="h-4 w-4" />
+							<span className="hidden">Reset</span>
+						</Button>
+					</div>
+				)}
+
+				{/* Spielende Dialog */}
+				{cachedEndGameState && (
+					<GameEndDialog
+						currentPlayer={isSpectator ? null : currentPlayer}
+						gameState={cachedEndGameState}
+						onClose={handleCloseGameEndDialog}
+						open={showGameEndDialog}
 					/>
-				) : (
-					currentPlayer && (
+				)}
+
+				{/* Bidding Select */}
+				{gameState.biddingPhase?.active &&
+					(isSpectator ? (
 						<BiddingSelect
 							biddingPhase={gameState.biddingPhase}
-							currentPlayerId={currentPlayer.id}
-							onBid={bid}
-							onDeclareContract={declareContract}
-							playerHand={sortedHand}
 							players={gameState.players}
+							readOnly
 							startingPlayerIndex={gameState.currentPlayerIndex}
 						/>
-					)
-				))}
+					) : (
+						currentPlayer && (
+							<BiddingSelect
+								biddingPhase={gameState.biddingPhase}
+								currentPlayerId={currentPlayer.id}
+								onBid={bid}
+								onDeclareContract={declareContract}
+								playerHand={sortedHand}
+								players={gameState.players}
+								startingPlayerIndex={gameState.currentPlayerIndex}
+							/>
+						)
+					))}
+			</div>
+
+			<GameChatPanel />
 		</DndContext>
 	);
 }
