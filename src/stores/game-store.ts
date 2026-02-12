@@ -44,7 +44,7 @@ export interface GameStoreState {
 	chatCooldownUntil: number | null;
 	/** Lokaler Chat-Fehler */
 	chatLocalError: string | null;
-	/** Chat-Panel Open-State (persistiert) */
+	/** Chat-Panel Open-State (startet nach Reload immer geschlossen) */
 	chatPanelOpen: boolean;
 	/** Persist-Rehydration abgeschlossen */
 	chatPanelHydrated: boolean;
@@ -194,6 +194,7 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 				}),
 				skipHydration: true,
 				onRehydrateStorage: () => (state, error) => {
+					state?.setChatPanelOpen(false);
 					state?.setChatPanelHydrated(true);
 					if (error) {
 						console.error("Failed to rehydrate chat panel state:", error);

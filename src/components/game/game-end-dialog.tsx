@@ -282,7 +282,7 @@ export function GameEndDialog({
 					{/* Right: Game Points + Summary */}
 					<div className="min-w-0 flex-1 space-y-3">
 						{/* Team Overview (compact) - win/loss hidden until animation done */}
-						<div className="flex gap-2 text-xs">
+						<div className="flex flex-col gap-2 text-xs sm:flex-row">
 							<div
 								className={cn(
 									"min-w-0 flex-1 rounded-md px-2 py-1.5 transition-colors duration-500",

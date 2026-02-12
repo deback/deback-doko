@@ -28,7 +28,6 @@ import {
 	SheetDescription,
 	SheetHeader,
 	SheetTitle,
-	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -347,22 +346,27 @@ export function GameChatPanel() {
 	}
 
 	return (
-		<Sheet modal={false} onOpenChange={setChatPanelOpen} open={open}>
-			<SheetTrigger asChild>
-				<Button
-					aria-label="Chat öffnen"
-					className="fixed right-4 bottom-4 z-50 -translate-y-1/2 rounded-full shadow-lg"
-					size="icon-lg"
-					variant="secondary"
-				>
-					<MessageSquare className="size-5" />
-					{unreadCount > 0 && (
-						<Badge className="absolute -top-1 -right-1 px-1.5 py-0 text-[10px]">
-							{unreadCount}
-						</Badge>
-					)}
-				</Button>
-			</SheetTrigger>
+		<Sheet
+			modal={false}
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) setChatPanelOpen(false);
+			}}
+			open={open}
+		>
+			<Button
+				aria-label="Chat öffnen"
+				className="fixed right-4 bottom-4 z-50 -translate-y-1/2 rounded-full shadow-lg"
+				onClick={() => setChatPanelOpen(true)}
+				size="icon-lg"
+				variant="secondary"
+			>
+				<MessageSquare className="size-5" />
+				{unreadCount > 0 && (
+					<Badge className="absolute -top-1 -right-1 px-1.5 py-0 text-[10px]">
+						{unreadCount}
+					</Badge>
+				)}
+			</Button>
 
 			<SheetContent
 				className="flex h-full flex-col gap-0 border-none bg-background/70 p-0 backdrop-blur-md"

@@ -316,7 +316,7 @@ export function GameBoard() {
 		>
 			<div
 				className={cn(
-					"transform-[translateZ(0)] relative h-dvh w-screen overflow-hidden overscroll-none transition-[width] ease-in-out",
+					"transform-[translateZ(0)] relative h-dvh w-screen overscroll-none transition-[width] ease-in-out",
 					chatPanelOpen ? "duration-500" : "duration-300",
 					chatPanelOpen && "md:w-[calc(100vw-24rem)]",
 				)}
