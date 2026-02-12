@@ -1,10 +1,7 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { notifyPlayerInfoUpdate } from "@/lib/notify-partykit";
-import { db } from "@/server/db";
-import { user } from "@/server/db/schema";
+import { updateUserNameService } from "@/server/services/profile-service";
 
 const updateUserNameSchema = z.object({
 	name: z
@@ -15,7 +12,6 @@ const updateUserNameSchema = z.object({
 
 export async function updateUserName(userId: string, newName: string) {
 	try {
-		// Validiere den neuen Namen
 		const validationResult = updateUserNameSchema.safeParse({ name: newName });
 		if (!validationResult.success) {
 			return {
@@ -24,30 +20,10 @@ export async function updateUserName(userId: string, newName: string) {
 			};
 		}
 
-		// Prüfe, ob der User existiert
-		const existingUser = await db
-			.select({ id: user.id })
-			.from(user)
-			.where(eq(user.id, userId))
-			.limit(1);
-
-		if (existingUser.length === 0) {
-			return { success: false, error: "User nicht gefunden" };
-		}
-
-		// Aktualisiere den Username
-		await db
-			.update(user)
-			.set({
-				name: validationResult.data.name,
-				updatedAt: new Date(),
-			})
-			.where(eq(user.id, userId));
-
-		// Notify PartyKit about the name update
-		await notifyPlayerInfoUpdate(userId, validationResult.data.name);
-
-		return { success: true };
+		return await updateUserNameService({
+			userId,
+			name: validationResult.data.name,
+		});
 	} catch (error) {
 		console.error("Fehler beim Aktualisieren des Usernamens:", error);
 		return {

@@ -1,13 +1,12 @@
 "use server";
 
-import { del } from "@vercel/blob";
-import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { notifyPlayerInfoUpdate } from "@/lib/notify-partykit";
 import { getSession } from "@/server/better-auth/server";
-import { db } from "@/server/db";
-import { user } from "@/server/db/schema";
+import {
+	updateProfileService,
+	updateUserImageService,
+} from "@/server/services/profile-service";
 
 const updateProfileSchema = z.object({
 	name: z
@@ -36,49 +35,18 @@ export async function updateProfile(data: {
 			};
 		}
 
-		// Get current user to check for old image
-		const currentUser = await db
-			.select({ image: user.image })
-			.from(user)
-			.where(eq(user.id, session.user.id))
-			.limit(1);
-
-		const oldImageUrl = currentUser[0]?.image;
-
-		// Update user profile
-		await db
-			.update(user)
-			.set({
-				name: validationResult.data.name,
-				image: validationResult.data.image ?? null,
-				updatedAt: new Date(),
-			})
-			.where(eq(user.id, session.user.id));
-
-		// Delete old avatar from Blob store if it exists and is different
-		if (
-			oldImageUrl &&
-			oldImageUrl !== validationResult.data.image &&
-			oldImageUrl.includes("blob.vercel-storage.com")
-		) {
-			try {
-				await del(oldImageUrl);
-			} catch (error) {
-				console.error("Fehler beim Loeschen des alten Avatars:", error);
-				// Don't fail the whole operation if deletion fails
-			}
+		const result = await updateProfileService({
+			userId: session.user.id,
+			name: validationResult.data.name,
+			image: validationResult.data.image ?? null,
+		});
+		if (!result.success) {
+			return result;
 		}
 
 		revalidatePath("/profile/me");
 		revalidatePath("/players");
 		revalidatePath("/tables");
-
-		// Notify PartyKit about the profile update
-		await notifyPlayerInfoUpdate(
-			session.user.id,
-			validationResult.data.name,
-			validationResult.data.image ?? null,
-		);
 
 		return { success: true };
 	} catch (error) {
@@ -97,35 +65,12 @@ export async function updateUserImage(imageUrl: string | null) {
 			return { success: false, error: "Nicht autorisiert" };
 		}
 
-		// Get current user to check for old image
-		const currentUser = await db
-			.select({ image: user.image })
-			.from(user)
-			.where(eq(user.id, session.user.id))
-			.limit(1);
-
-		const oldImageUrl = currentUser[0]?.image;
-
-		// Update user image
-		await db
-			.update(user)
-			.set({
-				image: imageUrl,
-				updatedAt: new Date(),
-			})
-			.where(eq(user.id, session.user.id));
-
-		// Delete old avatar from Blob store if it exists and is different
-		if (
-			oldImageUrl &&
-			oldImageUrl !== imageUrl &&
-			oldImageUrl.includes("blob.vercel-storage.com")
-		) {
-			try {
-				await del(oldImageUrl);
-			} catch (error) {
-				console.error("Fehler beim Loeschen des alten Avatars:", error);
-			}
+		const result = await updateUserImageService({
+			userId: session.user.id,
+			image: imageUrl,
+		});
+		if (!result.success) {
+			return result;
 		}
 
 		revalidatePath("/profile/me");

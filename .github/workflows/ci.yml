@@ -41,6 +41,10 @@ jobs:
         run: pnpm run test:contracts
         # Runtime + compile-time payload contract checks
 
+      - name: Run service tests
+        run: pnpm run test:services
+        # Service-layer unit tests (business logic)
+
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest

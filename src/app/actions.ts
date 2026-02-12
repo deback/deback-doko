@@ -1,31 +1,7 @@
 "use server";
 
-import { desc } from "drizzle-orm";
-import { db } from "@/server/db";
-import { user } from "@/server/db/schema";
+import { getAllUsersService } from "@/server/services/user-service";
 
 export async function getAllUsers() {
-	try {
-		const result = await db
-			.select({
-				id: user.id,
-				name: user.name,
-				email: user.email,
-				image: user.image,
-				balance: user.balance,
-				gamesPlayed: user.gamesPlayed,
-				gamesWon: user.gamesWon,
-			})
-			.from(user)
-			.orderBy(desc(user.createdAt));
-
-		return { success: true, data: result };
-	} catch (error) {
-		console.error("Fehler beim Abrufen der User:", error);
-		return {
-			success: false,
-			error: "Fehler beim Abrufen der User-Daten",
-			data: [],
-		};
-	}
+	return await getAllUsersService();
 }

@@ -1,6 +1,7 @@
-import { type HandleUploadBody, handleUpload } from "@vercel/blob/client";
+import type { HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { getSession } from "@/server/better-auth/server";
+import { processAvatarUpload } from "@/server/services/avatar-upload-service";
 
 export async function POST(request: Request): Promise<NextResponse> {
 	const session = await getSession();
@@ -12,22 +13,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 	const body = (await request.json()) as HandleUploadBody;
 
 	try {
-		const jsonResponse = await handleUpload({
-			body,
+		const jsonResponse = await processAvatarUpload({
 			request,
-			onBeforeGenerateToken: async (_pathname) => {
-				// User is already authenticated above
-				return {
-					allowedContentTypes: ["image/jpeg", "image/png", "image/webp"],
-					maximumSizeInBytes: 5 * 1024 * 1024, // 5MB
-					addRandomSuffix: true,
-				};
-			},
-			onUploadCompleted: async ({ blob }) => {
-				// This callback won't work on localhost
-				// The actual profile update is done via server action after upload
-				console.log("Avatar upload completed:", blob.url);
-			},
+			body,
 		});
 
 		return NextResponse.json(jsonResponse);

@@ -20,6 +20,7 @@
 		"start": "next start",
 		"test:contracts": "pnpm run typecheck && pnpm run test:contracts:runtime",
 		"test:contracts:runtime": "vitest run party/contracts.runtime.test.ts",
+		"test:services": "vitest run src/server/services/*.test.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
