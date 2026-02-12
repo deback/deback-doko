@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { GameState } from "./types";
 
 const playerSchema = z.object({
 	id: z.string(),
@@ -71,6 +72,35 @@ export const gameEventSchema = z.discriminatedUnion("type", [
 		playerId: z.string(),
 		name: z.string(),
 		image: z.string().nullable().optional(),
+	}),
+]);
+
+const gameStateSchema = z.custom<GameState>(
+	(value) => typeof value === "object" && value !== null,
+);
+
+export const gameMessageSchema = z.discriminatedUnion("type", [
+	z.object({
+		type: z.literal("state"),
+		state: gameStateSchema,
+		isSpectator: z.boolean().optional(),
+	}),
+	z.object({
+		type: z.literal("error"),
+		message: z.string(),
+	}),
+	z.object({
+		type: z.literal("game-started"),
+		gameId: z.string(),
+	}),
+	z.object({
+		type: z.literal("spectator-count"),
+		gameId: z.string(),
+		count: z.number(),
+	}),
+	z.object({
+		type: z.literal("redirect-to-lobby"),
+		tableId: z.string(),
 	}),
 ]);
 

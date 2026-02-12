@@ -37,6 +37,10 @@ jobs:
         # Exit code will be non-zero if type checking fails, which will fail the job
         # This creates a status check that Vercel can wait for
 
+      - name: Run contract tests
+        run: pnpm run test:contracts
+        # Runtime + compile-time payload contract checks
+
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
