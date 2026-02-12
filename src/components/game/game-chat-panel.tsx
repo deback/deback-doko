@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
 	useChatCooldownUntil,
+	useChatHistoryVersion,
 	useChatLocalError,
 	useChatMessages,
 	useChatPanelHydrated,
@@ -37,10 +38,12 @@ import {
 
 const MAX_CHAT_LENGTH = 500;
 const CHAT_COOLDOWN_MS = 1_000;
+const SMOOTH_SCROLL_SNAP_DELAY_MS = 250;
 
 export function GameChatPanel() {
 	const currentPlayer = useCurrentPlayer();
 	const chatMessages = useChatMessages();
+	const chatHistoryVersion = useChatHistoryVersion();
 	const chatCooldownUntil = useChatCooldownUntil();
 	const chatLocalError = useChatLocalError();
 	const chatPanelOpen = useChatPanelOpen();
@@ -60,9 +63,12 @@ export function GameChatPanel() {
 	const hasInitializedAnimationRef = useRef(false);
 	const wasOpenRef = useRef(chatPanelOpen);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
-	const messagesEndRef = useRef<HTMLDivElement | null>(null);
+	const smoothSnapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+		null,
+	);
 	const previousMessageCountRef = useRef(chatMessages.length);
 	const previousOpenMessageCountRef = useRef(chatMessages.length);
+	const lastHandledHistoryVersionRef = useRef(chatHistoryVersion);
 	const normalizedDraft = draft.trim();
 	const remainingCooldownMs = Math.max(0, (chatCooldownUntil ?? 0) - nowMs);
 	const isCooldownActive = remainingCooldownMs > 0;
@@ -87,9 +93,48 @@ export function GameChatPanel() {
 		element.style.height = `${element.scrollHeight}px`;
 	}, []);
 
+	const clearSmoothSnapTimeout = useCallback(() => {
+		if (smoothSnapTimeoutRef.current === null) return;
+		clearTimeout(smoothSnapTimeoutRef.current);
+		smoothSnapTimeoutRef.current = null;
+	}, []);
+
+	const scrollToBottomInstant = useCallback(
+		(container: HTMLDivElement | null) => {
+			if (!container) return;
+			container.scrollTop = container.scrollHeight;
+		},
+		[],
+	);
+
+	const scrollToBottomSmoothWithSnap = useCallback(
+		(container: HTMLDivElement | null) => {
+			if (!container) return;
+			clearSmoothSnapTimeout();
+			container.scrollTo({
+				top: container.scrollHeight,
+				behavior: "smooth",
+			});
+			smoothSnapTimeoutRef.current = setTimeout(() => {
+				window.requestAnimationFrame(() => {
+					const currentContainer = messagesContainerRef.current ?? container;
+					currentContainer.scrollTop = currentContainer.scrollHeight;
+					smoothSnapTimeoutRef.current = null;
+				});
+			}, SMOOTH_SCROLL_SNAP_DELAY_MS);
+		},
+		[clearSmoothSnapTimeout],
+	);
+
 	useEffect(() => {
 		setHasMounted(true);
 	}, []);
+
+	useEffect(() => {
+		return () => {
+			clearSmoothSnapTimeout();
+		};
+	}, [clearSmoothSnapTimeout]);
 
 	useEffect(() => {
 		const previousCount = previousMessageCountRef.current;
@@ -128,17 +173,32 @@ export function GameChatPanel() {
 		const hasMessages = chatMessages.length > 0;
 		if (!hasMessages) return;
 		const id = window.requestAnimationFrame(() => {
-			const container = messagesContainerRef.current;
-			if (!container) return;
-			container.scrollTop = container.scrollHeight;
+			scrollToBottomInstant(messagesContainerRef.current);
 		});
 		previousOpenMessageCountRef.current = chatMessages.length;
 		return () => window.cancelAnimationFrame(id);
-	}, [open, chatMessages.length]);
+	}, [open, chatMessages.length, scrollToBottomInstant]);
+
+	useEffect(() => {
+		if (!open) return;
+		if (chatHistoryVersion <= lastHandledHistoryVersionRef.current) return;
+
+		lastHandledHistoryVersionRef.current = chatHistoryVersion;
+		previousOpenMessageCountRef.current = chatMessages.length;
+
+		const id = window.requestAnimationFrame(() => {
+			scrollToBottomInstant(messagesContainerRef.current);
+		});
+
+		return () => window.cancelAnimationFrame(id);
+	}, [open, chatHistoryVersion, chatMessages.length, scrollToBottomInstant]);
 
 	useEffect(() => {
 		if (!open) {
 			previousOpenMessageCountRef.current = chatMessages.length;
+			return;
+		}
+		if (chatHistoryVersion > lastHandledHistoryVersionRef.current) {
 			return;
 		}
 
@@ -146,14 +206,20 @@ export function GameChatPanel() {
 		if (chatMessages.length <= previousCount) return;
 
 		const id = window.requestAnimationFrame(() => {
-			messagesEndRef.current?.scrollIntoView({
-				behavior: "smooth",
-				block: "end",
-			});
+			scrollToBottomSmoothWithSnap(messagesContainerRef.current);
 		});
 		previousOpenMessageCountRef.current = chatMessages.length;
-		return () => window.cancelAnimationFrame(id);
-	}, [chatMessages, open]);
+		return () => {
+			window.cancelAnimationFrame(id);
+			clearSmoothSnapTimeout();
+		};
+	}, [
+		chatMessages,
+		open,
+		chatHistoryVersion,
+		scrollToBottomSmoothWithSnap,
+		clearSmoothSnapTimeout,
+	]);
 
 	useEffect(() => {
 		if (!chatCooldownUntil) return;
@@ -230,10 +296,10 @@ export function GameChatPanel() {
 					<XIcon className="size-4" />
 				</Button>
 				<div
-					className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1"
+					className="flex min-h-0 flex-1 flex-col overflow-y-auto"
 					ref={messagesContainerRef}
 				>
-					<div className="py-4 pr-2 pl-3">
+					<div className="p-3">
 						{chatMessages.length === 0 ? (
 							<Card className="border-dashed py-4 text-center text-muted-foreground text-sm shadow-none">
 								Noch keine Nachrichten.
@@ -327,13 +393,12 @@ export function GameChatPanel() {
 								);
 							})
 						)}
-						<div ref={messagesEndRef} />
 					</div>
 				</div>
 
-				<div className="flex flex-row items-end gap-2 border-t bg-background p-3">
+				<div className="flex flex-row items-end gap-2 bg-background/1 p-3 shadow-lg">
 					<Textarea
-						className="h-9 min-h-9 resize-none overflow-hidden"
+						className="h-9 min-h-9 resize-none overflow-hidden bg-background"
 						id={chatTextareaId}
 						maxLength={MAX_CHAT_LENGTH}
 						name="table-chat-message"

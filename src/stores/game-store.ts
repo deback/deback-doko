@@ -38,6 +38,8 @@ export interface GameStoreState {
 	previewTrumpMode: TrumpMode | null;
 	/** Chat-Nachrichten für den aktuellen Tisch */
 	chatMessages: ChatMessage[];
+	/** Version der zuletzt übernommenen Chat-History (für UI-Scroll-Steuerung) */
+	chatHistoryVersion: number;
 	/** Lokaler Chat-Cooldown bis Timestamp (ms) */
 	chatCooldownUntil: number | null;
 	/** Lokaler Chat-Fehler */
@@ -114,6 +116,7 @@ export const defaultInitState: GameStoreState = {
 	error: null,
 	previewTrumpMode: null,
 	chatMessages: [],
+	chatHistoryVersion: 0,
 	chatCooldownUntil: null,
 	chatLocalError: null,
 	chatPanelOpen: false,
@@ -155,7 +158,11 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 				setConnected: (isConnected) => set({ isConnected }),
 				setError: (error) => set({ error }),
 				setPreviewTrumpMode: (previewTrumpMode) => set({ previewTrumpMode }),
-				setChatHistory: (chatMessages) => set({ chatMessages }),
+				setChatHistory: (chatMessages) =>
+					set((state) => ({
+						chatMessages,
+						chatHistoryVersion: state.chatHistoryVersion + 1,
+					})),
 				appendChatMessage: (message) =>
 					set((state) => ({
 						chatMessages: [...state.chatMessages, message],

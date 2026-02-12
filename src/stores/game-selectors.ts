@@ -32,6 +32,9 @@ export const useIsConnected = () => useGameStore((s) => s.isConnected);
 export const useError = () => useGameStore((s) => s.error);
 /** Chat-Nachrichten */
 export const useChatMessages = () => useGameStore((s) => s.chatMessages);
+/** Version der zuletzt übernommenen Chat-History */
+export const useChatHistoryVersion = () =>
+	useGameStore((s) => s.chatHistoryVersion);
 /** Chat-Cooldown bis Timestamp */
 export const useChatCooldownUntil = () =>
 	useGameStore((s) => s.chatCooldownUntil);
