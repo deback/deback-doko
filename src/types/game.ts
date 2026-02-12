@@ -51,6 +51,7 @@ import type {
 	TeamsState,
 	TricksState,
 } from "./game/state";
+import type { Player } from "./tables";
 
 // =============================================================================
 // GameState - Vollständiger Spielzustand
@@ -102,7 +103,7 @@ export type GameEvent =
 	| { type: "reset-game" }
 	| {
 			type: "start-game";
-			players: Array<{ id: string; name: string }>;
+			players: Player[];
 			tableId: string;
 	  }
 	| {
