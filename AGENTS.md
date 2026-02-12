@@ -37,6 +37,7 @@
 - [ ] Payload schema changes are reflected in `party/schemas.ts`.
 - [ ] `party/contracts.typecheck.ts` still compiles.
 - [ ] `pnpm run test:contracts` passes.
+- [ ] `pnpm run test:engine` passes.
 - [ ] `pnpm run test:services` passes.
 - [ ] `pnpm run typecheck` passes.
 - [ ] `pnpm exec biome check party/**/*.ts src/types/**/*.ts` passes.

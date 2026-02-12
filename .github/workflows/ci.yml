@@ -41,6 +41,10 @@ jobs:
         run: pnpm run test:contracts
         # Runtime + compile-time payload contract checks
 
+      - name: Run engine tests
+        run: pnpm run test:engine
+        # Rule-engine unit tests (trick/announcement/scoring logic)
+
       - name: Run service tests
         run: pnpm run test:services
         # Service-layer unit tests (business logic)
