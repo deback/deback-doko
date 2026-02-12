@@ -44,6 +44,10 @@ export function PlayerInfo({
 		>
 			<Avatar
 				alt={player.name}
+				className={cn({
+					"rotate-90": position === "left",
+					"-rotate-90": position === "right",
+				})}
 				fallback={player.name.charAt(0).toUpperCase()}
 				size="xs"
 				src={player.image}

@@ -415,6 +415,11 @@ export function GameChatPanel() {
 								const isGroupBottom = !isNextSameAuthor;
 								const rowMarginClass =
 									index === 0 ? "mt-0" : isPrevSameAuthor ? "mt-1" : "mt-2";
+								const bubbleTailClass = isGroupBottom
+									? isOwnMessage
+										? "before:absolute before:right-[-5px] before:bottom-[7px] before:h-0 before:w-0 before:border-y-[5px] before:border-l-[8px] before:border-y-transparent before:border-l-[#D3C4B5] dark:before:border-l-[#5A4A3B] before:content-['']"
+										: "before:absolute before:bottom-[7px] before:left-[-5px] before:h-0 before:w-0 before:border-y-[5px] before:border-r-[8px] before:border-y-transparent before:border-r-background before:content-['']"
+									: "";
 
 								if (isSystem) {
 									return (
@@ -447,20 +452,14 @@ export function GameChatPanel() {
 											</div>
 										)}
 										<div
-											className={`max-w-[80%] gap-2 rounded-xl px-2 py-1 shadow-sm ${
+											className={`relative max-w-[80%] gap-2 overflow-visible rounded-xl px-2 py-1 shadow-sm ${bubbleTailClass} ${
 												isOwnMessage
-													? "bg-primary text-primary-foreground"
+													? "bg-[#D3C4B5] text-foreground dark:bg-[#5A4A3B]"
 													: "bg-background"
 											}`}
 										>
 											{showName && (
-												<div
-													className={`truncate text-xs ${
-														isOwnMessage
-															? "text-primary-foreground/80"
-															: "text-muted-foreground"
-													}`}
-												>
+												<div className="truncate text-muted-foreground text-xs">
 													{message.author.name}
 												</div>
 											)}
@@ -468,13 +467,7 @@ export function GameChatPanel() {
 												<div className="wrap-break-words whitespace-pre-wrap text-sm after:inline-block after:h-0 after:w-8 after:content-['']">
 													{message.text}
 												</div>
-												<div
-													className={`absolute right-0 bottom-0 text-[11px] ${
-														isOwnMessage
-															? "text-primary-foreground/70"
-															: "text-muted-foreground"
-													}`}
-												>
+												<div className="absolute right-0 bottom-0 text-[11px] text-muted-foreground">
 													{timeFormatter.format(message.createdAt)}
 												</div>
 											</div>
@@ -486,75 +479,79 @@ export function GameChatPanel() {
 					</div>
 				</div>
 
-				<div className="flex flex-row items-end gap-2 bg-background/1 p-3 shadow-lg">
-					<Textarea
-						className="h-9 min-h-9 resize-none overflow-hidden bg-background"
-						disabled={isSpeechActive}
-						id={chatTextareaId}
-						maxLength={MAX_CHAT_LENGTH}
-						name="table-chat-message"
-						onChange={(event) => {
-							setDraft(event.target.value);
-							setChatLocalError(null);
-							resizeTextarea(event.currentTarget);
-						}}
-						onKeyDown={(event) => {
-							if (event.key === "Enter" && !event.shiftKey) {
-								event.preventDefault();
-								onSendMessage();
-							}
-						}}
-						placeholder="Nachricht schreiben..."
-						ref={chatTextareaRef}
-						rows={1}
-						value={draft}
-					/>
-					<div className="flex items-center justify-between">
-						{/*<span className="text-muted-foreground text-xs">
-								{normalizedDraft.length}/{MAX_CHAT_LENGTH}
-							</span>*/}
-						{canSend ? (
-							<Button onClick={onSendMessage} size="icon">
-								<Send className="size-4" />
-							</Button>
-						) : (
-							<Tooltip open={speechTooltipMessage ? undefined : false}>
-								<TooltipTrigger asChild>
-									<Button
-										aria-label={
-											isSpeechActive
-												? "Spracherkennung stoppen"
-												: "Spracherkennung starten"
-										}
-										className={`${speechStatus === "listening" ? "animate-pulse" : ""} ${
-											!isSpeechSupported ? "cursor-not-allowed opacity-50" : ""
-										}`}
-										onClick={onSpeechButtonClick}
-										size="icon"
-										type="button"
-										variant={
-											speechStatus === "listening" ? "destructive" : "outline"
-										}
-									>
-										{speechStatus === "processing" ? (
-											<Loader2 className="size-4 animate-spin" />
-										) : speechStatus === "listening" ? (
-											<Square className="size-4" />
-										) : permissionDenied || !isSpeechSupported ? (
-											<MicOff className="size-4" />
-										) : (
-											<Mic className="size-4" />
-										)}
-									</Button>
-								</TooltipTrigger>
-								{speechTooltipMessage && (
-									<TooltipContent>{speechTooltipMessage}</TooltipContent>
-								)}
-							</Tooltip>
-						)}
+				<div className="shrink-0 border-t bg-background/80 px-3 py-2 shadow-lg">
+					<div className="flex flex-row items-end gap-2">
+						<Textarea
+							className="min-h-9 resize-none overflow-hidden bg-background"
+							disabled={isSpeechActive}
+							id={chatTextareaId}
+							maxLength={MAX_CHAT_LENGTH}
+							name="table-chat-message"
+							onChange={(event) => {
+								setDraft(event.target.value);
+								setChatLocalError(null);
+								resizeTextarea(event.currentTarget);
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter" && !event.shiftKey) {
+									event.preventDefault();
+									onSendMessage();
+								}
+							}}
+							placeholder="Nachricht schreiben..."
+							ref={chatTextareaRef}
+							rows={1}
+							value={draft}
+						/>
+						<div className="flex items-center justify-between">
+							{/*<span className="text-muted-foreground text-xs">
+									{normalizedDraft.length}/{MAX_CHAT_LENGTH}
+								</span>*/}
+							{canSend ? (
+								<Button onClick={onSendMessage} size="icon">
+									<Send className="size-4" />
+								</Button>
+							) : (
+								<Tooltip open={speechTooltipMessage ? undefined : false}>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label={
+												isSpeechActive
+													? "Spracherkennung stoppen"
+													: "Spracherkennung starten"
+											}
+											className={`${speechStatus === "listening" ? "animate-pulse" : ""} ${
+												!isSpeechSupported
+													? "cursor-not-allowed opacity-50"
+													: ""
+											}`}
+											onClick={onSpeechButtonClick}
+											size="icon"
+											type="button"
+											variant={
+												speechStatus === "listening" ? "destructive" : "outline"
+											}
+										>
+											{speechStatus === "processing" ? (
+												<Loader2 className="size-4 animate-spin" />
+											) : speechStatus === "listening" ? (
+												<Square className="size-4" />
+											) : permissionDenied || !isSpeechSupported ? (
+												<MicOff className="size-4" />
+											) : (
+												<Mic className="size-4" />
+											)}
+										</Button>
+									</TooltipTrigger>
+									{speechTooltipMessage && (
+										<TooltipContent>{speechTooltipMessage}</TooltipContent>
+									)}
+								</Tooltip>
+							)}
+						</div>
 					</div>
 					{chatLocalError && (
-						<p className="text-destructive text-xs">{chatLocalError}</p>
+						<p className="mt-1 text-destructive text-xs">{chatLocalError}</p>
 					)}
 				</div>
 			</SheetContent>
