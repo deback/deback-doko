@@ -1,6 +1,14 @@
 "use client";
 
-import { MessageSquare, Send, XIcon } from "lucide-react";
+import {
+	Loader2,
+	MessageSquare,
+	Mic,
+	MicOff,
+	Send,
+	Square,
+	XIcon,
+} from "lucide-react";
 import {
 	useCallback,
 	useEffect,
@@ -9,6 +17,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useSpeechToText } from "@/components/game/hooks/use-speech-to-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +31,11 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
 	useChatCooldownUntil,
 	useChatHistoryVersion,
@@ -39,6 +53,8 @@ import {
 const MAX_CHAT_LENGTH = 500;
 const CHAT_COOLDOWN_MS = 1_000;
 const SMOOTH_SCROLL_SNAP_DELAY_MS = 250;
+const CHAT_SPEECH_LANGUAGE = "de-DE";
+const CHAT_SPEECH_SILENCE_TIMEOUT_MS = 3_000;
 
 export function GameChatPanel() {
 	const currentPlayer = useCurrentPlayer();
@@ -52,6 +68,19 @@ export function GameChatPanel() {
 	const setChatCooldownUntil = useSetChatCooldownUntil();
 	const setChatLocalError = useSetChatLocalError();
 	const setChatPanelOpen = useSetChatPanelOpen();
+	const {
+		status: speechStatus,
+		isSupported: isSpeechSupported,
+		permissionDenied,
+		finalText: speechFinalText,
+		interimText: speechInterimText,
+		errorMessage: speechErrorMessage,
+		start: startSpeechToText,
+		stop: stopSpeechToText,
+	} = useSpeechToText({
+		lang: CHAT_SPEECH_LANGUAGE,
+		silenceTimeoutMs: CHAT_SPEECH_SILENCE_TIMEOUT_MS,
+	});
 	const [draft, setDraft] = useState("");
 	const [nowMs, setNowMs] = useState(() => Date.now());
 	const [unreadCount, setUnreadCount] = useState(0);
@@ -69,14 +98,18 @@ export function GameChatPanel() {
 	const previousMessageCountRef = useRef(chatMessages.length);
 	const previousOpenMessageCountRef = useRef(chatMessages.length);
 	const lastHandledHistoryVersionRef = useRef(chatHistoryVersion);
+	const speechBaseDraftRef = useRef("");
 	const normalizedDraft = draft.trim();
 	const remainingCooldownMs = Math.max(0, (chatCooldownUntil ?? 0) - nowMs);
 	const isCooldownActive = remainingCooldownMs > 0;
 	const open = chatPanelOpen;
+	const isSpeechActive =
+		speechStatus === "listening" || speechStatus === "processing";
 	const canSend =
 		normalizedDraft.length > 0 &&
 		normalizedDraft.length <= MAX_CHAT_LENGTH &&
-		!isCooldownActive;
+		!isCooldownActive &&
+		!isSpeechActive;
 
 	const timeFormatter = useMemo(
 		() =>
@@ -135,6 +168,44 @@ export function GameChatPanel() {
 			clearSmoothSnapTimeout();
 		};
 	}, [clearSmoothSnapTimeout]);
+
+	useEffect(() => {
+		if (!speechErrorMessage) return;
+		if (permissionDenied) {
+			if (chatLocalError === speechErrorMessage) {
+				setChatLocalError(null);
+			}
+			return;
+		}
+		setChatLocalError(speechErrorMessage);
+	}, [chatLocalError, permissionDenied, speechErrorMessage, setChatLocalError]);
+
+	useEffect(() => {
+		if (!isSpeechActive && !speechFinalText && !speechInterimText) return;
+
+		const combinedSpeech = [speechFinalText, speechInterimText]
+			.map((part) => part.trim())
+			.filter(Boolean)
+			.join(" ");
+
+		if (!combinedSpeech) {
+			setDraft(speechBaseDraftRef.current);
+			return;
+		}
+
+		const baseDraft = speechBaseDraftRef.current;
+		const separator = baseDraft.trim().length > 0 ? " " : "";
+		setDraft(`${baseDraft}${separator}${combinedSpeech}`);
+	}, [isSpeechActive, speechFinalText, speechInterimText]);
+
+	useEffect(() => {
+		const currentDraftLength = draft.length;
+		const id = window.requestAnimationFrame(() => {
+			if (currentDraftLength < 0) return;
+			resizeTextarea(chatTextareaRef.current);
+		});
+		return () => window.cancelAnimationFrame(id);
+	}, [draft, resizeTextarea]);
 
 	useEffect(() => {
 		const previousCount = previousMessageCountRef.current;
@@ -250,6 +321,17 @@ export function GameChatPanel() {
 		window.requestAnimationFrame(() => {
 			resizeTextarea(chatTextareaRef.current);
 		});
+	}
+
+	function onSpeechButtonClick() {
+		if (!isSpeechSupported) return;
+		if (isSpeechActive) {
+			stopSpeechToText();
+			return;
+		}
+		speechBaseDraftRef.current = draft;
+		setChatLocalError(null);
+		startSpeechToText();
 	}
 
 	if (!hasMounted || !chatPanelHydrated) {
@@ -399,6 +481,7 @@ export function GameChatPanel() {
 				<div className="flex flex-row items-end gap-2 bg-background/1 p-3 shadow-lg">
 					<Textarea
 						className="h-9 min-h-9 resize-none overflow-hidden bg-background"
+						disabled={isSpeechActive}
 						id={chatTextareaId}
 						maxLength={MAX_CHAT_LENGTH}
 						name="table-chat-message"
@@ -419,6 +502,42 @@ export function GameChatPanel() {
 						value={draft}
 					/>
 					<div className="flex items-center justify-between">
+						<Tooltip open={permissionDenied ? undefined : false}>
+							<TooltipTrigger asChild>
+								<Button
+									aria-label={
+										isSpeechActive
+											? "Spracherkennung stoppen"
+											: "Spracherkennung starten"
+									}
+									className={
+										speechStatus === "listening" ? "animate-pulse" : ""
+									}
+									disabled={!isSpeechSupported}
+									onClick={onSpeechButtonClick}
+									size="icon"
+									type="button"
+									variant={
+										speechStatus === "listening" ? "destructive" : "outline"
+									}
+								>
+									{speechStatus === "processing" ? (
+										<Loader2 className="size-4 animate-spin" />
+									) : speechStatus === "listening" ? (
+										<Square className="size-4" />
+									) : permissionDenied ? (
+										<MicOff className="size-4" />
+									) : (
+										<Mic className="size-4" />
+									)}
+								</Button>
+							</TooltipTrigger>
+							{permissionDenied && (
+								<TooltipContent>
+									Mikrofonzugriff wurde nicht erlaubt.
+								</TooltipContent>
+							)}
+						</Tooltip>
 						{/*<span className="text-muted-foreground text-xs">
 								{normalizedDraft.length}/{MAX_CHAT_LENGTH}
 							</span>*/}
@@ -428,6 +547,11 @@ export function GameChatPanel() {
 					</div>
 					{chatLocalError && (
 						<p className="text-destructive text-xs">{chatLocalError}</p>
+					)}
+					{!isSpeechSupported && (
+						<p className="text-muted-foreground text-xs">
+							Spracherkennung wird in diesem Browser nicht unterstützt.
+						</p>
 					)}
 				</div>
 			</SheetContent>
