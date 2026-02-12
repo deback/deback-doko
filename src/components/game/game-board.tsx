@@ -51,6 +51,7 @@ import type { Card, GameState } from "@/types/game";
 import { AnnouncementButtons } from "./announcement-buttons";
 import { BiddingSelect } from "./bidding-select";
 import { CARD_SIZE, type CardOrigin } from "./card";
+import { GameChatPanel } from "./game-chat-panel";
 import { GameEndDialog } from "./game-end-dialog";
 import { GameSettingsMenu } from "./game-settings-menu";
 import { GameShareMenu } from "./game-share-menu";
@@ -570,6 +571,8 @@ export function GameBoard() {
 					</Badge>
 				</div>
 			)}
+
+			<GameChatPanel />
 
 			{/* Last Trick Panel */}
 			{lastTrick && (

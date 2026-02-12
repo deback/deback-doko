@@ -3,6 +3,8 @@ export type {
 	AnnouncementType,
 	BiddingPhase,
 	Card,
+	ChatAuthorRole,
+	ChatMessage,
 	ContractType,
 	GameEvent,
 	GameMessage,

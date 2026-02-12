@@ -5,6 +5,7 @@ import { createPartykitHttpClient } from "../partykit-http";
 import type { TableRoomContext } from "../table-room";
 import type {
 	AnnouncementType,
+	ChatMessage,
 	ContractType,
 	GameEvent,
 	GameMessage,
@@ -16,6 +17,7 @@ import type {
 	TablesState,
 	Trick,
 } from "../types";
+import type { ChatPresenceEntry } from "./chat-registry";
 import {
 	addSpectator as addSpectatorHandler,
 	broadcastToSpectators as broadcastToSpectatorsHandler,
@@ -50,6 +52,11 @@ import {
 	setupNormalGame as setupNormalGameHandler,
 	setupSolo as setupSoloHandler,
 } from "./message-handlers/bidding";
+import {
+	handleChatSend as handleChatSendHandler,
+	onChatParticipantConnected as onChatParticipantConnectedHandler,
+	onChatParticipantDisconnected as onChatParticipantDisconnectedHandler,
+} from "./message-handlers/chat";
 import {
 	onClose as onCloseHandler,
 	onConnect as onConnectHandler,
@@ -92,6 +99,10 @@ export default class Server implements Party.Server {
 	connectionToTablePlayer: Map<string, string> = new Map();
 	waitingPlayerDisconnectTimers: Map<string, ReturnType<typeof setTimeout>> =
 		new Map();
+	chatMessagesByTable: Map<string, ChatMessage[]> = new Map();
+	chatPresenceByKey: Map<string, ChatPresenceEntry> = new Map();
+	chatPresenceKeyByConnection: Map<string, string> = new Map();
+	chatLastMessageAtByParticipant: Map<string, number> = new Map();
 	readonly partykitHttp = createPartykitHttpClient({
 		host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999",
 		apiSecret: env.PARTYKIT_API_SECRET || "",
@@ -233,6 +244,18 @@ export default class Server implements Party.Server {
 
 	async handleGameEvent(event: GameEvent, sender: Party.Connection) {
 		await handleGameEventHandler(this, event, sender);
+	}
+
+	handleChatSend(text: string, sender: Party.Connection) {
+		handleChatSendHandler(this, text, sender);
+	}
+
+	onChatParticipantConnected(conn: Party.Connection) {
+		onChatParticipantConnectedHandler(this, conn);
+	}
+
+	onChatParticipantDisconnected(connectionId: string) {
+		onChatParticipantDisconnectedHandler(this, connectionId);
 	}
 
 	async handleResetGame(sender: Party.Connection) {

@@ -30,6 +30,13 @@ export const useIsConnected = () => useGameStore((s) => s.isConnected);
 
 /** Fehlermeldung */
 export const useError = () => useGameStore((s) => s.error);
+/** Chat-Nachrichten */
+export const useChatMessages = () => useGameStore((s) => s.chatMessages);
+/** Chat-Cooldown bis Timestamp */
+export const useChatCooldownUntil = () =>
+	useGameStore((s) => s.chatCooldownUntil);
+/** Lokaler Chat-Fehler */
+export const useChatLocalError = () => useGameStore((s) => s.chatLocalError);
 
 // =============================================================================
 // Abgeleitete Selektoren (memoized)
@@ -298,6 +305,8 @@ export const useResetGame = () => useGameStore((s) => s.resetGame);
 
 /** Aufstehen/Platz nehmen umschalten */
 export const useToggleStandUp = () => useGameStore((s) => s.toggleStandUp);
+/** Chat-Nachricht senden */
+export const useSendChatMessage = () => useGameStore((s) => s.sendChatMessage);
 
 // =============================================================================
 // Store Setter Hooks (für useGameConnection)
@@ -314,3 +323,10 @@ export const useSetError = () => useGameStore((s) => s.setError);
 export const useSetGameActions = () => useGameStore((s) => s.setGameActions);
 export const useSetPreviewTrumpMode = () =>
 	useGameStore((s) => s.setPreviewTrumpMode);
+export const useSetChatHistory = () => useGameStore((s) => s.setChatHistory);
+export const useAppendChatMessage = () =>
+	useGameStore((s) => s.appendChatMessage);
+export const useSetChatCooldownUntil = () =>
+	useGameStore((s) => s.setChatCooldownUntil);
+export const useSetChatLocalError = () =>
+	useGameStore((s) => s.setChatLocalError);

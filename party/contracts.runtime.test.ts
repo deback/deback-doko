@@ -12,6 +12,19 @@ const validPlayer = {
 	balance: 150,
 };
 
+const validChatMessage = {
+	id: "chat-1",
+	tableId: "table-1",
+	text: "Hallo zusammen!",
+	createdAt: Date.now(),
+	author: {
+		id: "player-1",
+		name: "Alice",
+		image: null,
+		role: "player" as const,
+	},
+};
+
 function expectValid(schema: ZodType, payload: unknown) {
 	const result = schema.safeParse(payload);
 	expect(result.success).toBe(true);
@@ -64,6 +77,10 @@ describe("GameEvent runtime contract", () => {
 				playerId: "player-1",
 				name: "Alice Updated",
 				image: "https://example.com/avatar.png",
+			},
+			{
+				type: "chat-send",
+				text: "Hallo Tisch!",
 			},
 		];
 
@@ -118,6 +135,8 @@ describe("GameEvent runtime contract", () => {
 			{ type: "toggle-stand-up" },
 			// update-player-info
 			{ type: "update-player-info", playerId: "player-1" },
+			// chat-send
+			{ type: "chat-send" },
 		];
 
 		for (const payload of invalidEvents) {
@@ -149,6 +168,8 @@ describe("GameMessage runtime contract", () => {
 			{ type: "game-started", gameId: "game-1" },
 			{ type: "spectator-count", gameId: "game-1", count: 3 },
 			{ type: "redirect-to-lobby", tableId: "table-1" },
+			{ type: "chat-history", messages: [validChatMessage] },
+			{ type: "chat-message", message: validChatMessage },
 		];
 
 		for (const payload of validMessages) {
@@ -179,6 +200,17 @@ describe("GameMessage runtime contract", () => {
 		expectInvalid(gameMessageSchema, {
 			type: "state",
 			state: "not-an-object",
+		});
+		expectInvalid(gameMessageSchema, {
+			type: "chat-history",
+			messages: [{ ...validChatMessage, createdAt: "now" }],
+		});
+		expectInvalid(gameMessageSchema, {
+			type: "chat-message",
+			message: {
+				...validChatMessage,
+				author: { ...validChatMessage.author, role: "invalid" },
+			},
 		});
 	});
 });

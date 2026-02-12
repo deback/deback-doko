@@ -148,6 +148,7 @@ export async function addSpectator(
 		gameState.spectators = server.getSpectatorList(gameId);
 
 		server.sendSpectatorState(conn, gameState);
+		server.onChatParticipantConnected(conn);
 		server.broadcastGameState(gameState);
 		await server.updateTableSpectatorCount(
 			gameState.tableId,

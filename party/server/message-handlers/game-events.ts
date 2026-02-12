@@ -53,6 +53,7 @@ export async function handleGameEvent(
 						playerId: event.playerId as string,
 					});
 					server.sendGameState(sender, gameState);
+					server.onChatParticipantConnected(sender);
 				} else {
 					await server.addSpectator(
 						gameState.id,
@@ -126,6 +127,10 @@ export async function handleGameEvent(
 				event.name,
 				event.image,
 			);
+			break;
+
+		case "chat-send":
+			server.handleChatSend(event.text, sender);
 			break;
 	}
 }

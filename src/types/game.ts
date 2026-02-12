@@ -40,6 +40,7 @@ export type {
 	TricksState,
 } from "./game/state";
 
+import type { ChatMessage } from "./game/chat";
 // Import für GameState Definition
 import type {
 	AnnouncementsState,
@@ -52,6 +53,12 @@ import type {
 	TricksState,
 } from "./game/state";
 import type { Player } from "./tables";
+
+export type {
+	ChatAuthorRole,
+	ChatMessage,
+	ChatMessageAuthor,
+} from "./game/chat";
 
 // =============================================================================
 // GameState - Vollständiger Spielzustand
@@ -134,6 +141,10 @@ export type GameEvent =
 			playerId: string;
 			name: string;
 			image?: string | null;
+	  }
+	| {
+			type: "chat-send";
+			text: string;
 	  };
 
 // =============================================================================
@@ -145,4 +156,6 @@ export type GameMessage =
 	| { type: "error"; message: string }
 	| { type: "game-started"; gameId: string }
 	| { type: "spectator-count"; gameId: string; count: number }
-	| { type: "redirect-to-lobby"; tableId: string };
+	| { type: "redirect-to-lobby"; tableId: string }
+	| { type: "chat-history"; messages: ChatMessage[] }
+	| { type: "chat-message"; message: ChatMessage };

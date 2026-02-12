@@ -5,6 +5,10 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { onProfileUpdate } from "@/lib/profile-sync";
 import {
+	useAppendChatMessage,
+	useSetChatCooldownUntil,
+	useSetChatHistory,
+	useSetChatLocalError,
 	useSetConnected,
 	useSetError,
 	useSetGameActions,
@@ -13,6 +17,14 @@ import {
 } from "@/stores/game-selectors";
 import type { GameEvent, GameMessage } from "@/types/game";
 import type { Player, TableEvent, TableMessage } from "@/types/tables";
+
+const CHAT_RATE_LIMIT_MESSAGE = "Bitte warte kurz, bevor du erneut schreibst.";
+const CHAT_LOCAL_ERROR_MESSAGES = new Set([
+	CHAT_RATE_LIMIT_MESSAGE,
+	"Nachricht darf nicht leer sein.",
+	"Nachricht ist zu lang (max. 500 Zeichen).",
+	"Chat nicht verfügbar.",
+]);
 
 interface UseGameConnectionOptions {
 	gameId: string;
@@ -44,6 +56,10 @@ export function useGameConnection({
 	const setConnected = useSetConnected();
 	const setSpectatorMode = useSetSpectatorMode();
 	const setGameActions = useSetGameActions();
+	const setChatHistory = useSetChatHistory();
+	const appendChatMessage = useAppendChatMessage();
+	const setChatCooldownUntil = useSetChatCooldownUntil();
+	const setChatLocalError = useSetChatLocalError();
 
 	useEffect(() => {
 		playerRef.current = player;
@@ -207,11 +223,22 @@ export function useGameConnection({
 				} else if (message.type === "redirect-to-lobby") {
 					// Player has been removed from the game — redirect to tables
 					window.location.href = "/tables";
+				} else if (message.type === "chat-history") {
+					setChatHistory(message.messages);
+				} else if (message.type === "chat-message") {
+					appendChatMessage(message.message);
 				} else if (message.type === "error") {
 					if (message.message === "Stich wird gerade ausgewertet.") {
 						console.debug(
 							"Ignoring transient trick-resolution error from server",
 						);
+						return;
+					}
+					if (CHAT_LOCAL_ERROR_MESSAGES.has(message.message)) {
+						setChatLocalError(message.message);
+						if (message.message === CHAT_RATE_LIMIT_MESSAGE) {
+							setChatCooldownUntil(Date.now() + 1_000);
+						}
 						return;
 					}
 					setError(message.message);
@@ -290,6 +317,15 @@ export function useGameConnection({
 				};
 				socket.send(JSON.stringify(event));
 			},
+
+			sendChatMessage: (text: string) => {
+				if (!socket) return;
+				const event: GameEvent = {
+					type: "chat-send",
+					text,
+				};
+				socket.send(JSON.stringify(event));
+			},
 		});
 
 		const cleanupProfileSync = onProfileUpdate((update) => {
@@ -317,5 +353,9 @@ export function useGameConnection({
 		setConnected,
 		setSpectatorMode,
 		setGameActions,
+		setChatHistory,
+		appendChatMessage,
+		setChatCooldownUntil,
+		setChatLocalError,
 	]);
 }

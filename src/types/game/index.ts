@@ -26,6 +26,7 @@ export type {
 	Suit,
 	Trick,
 } from "./base";
+export type { ChatAuthorRole, ChatMessage, ChatMessageAuthor } from "./chat";
 
 // Helper Types für Components
 export type {

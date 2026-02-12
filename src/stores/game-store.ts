@@ -8,6 +8,7 @@
 import { createStore } from "zustand/vanilla";
 import type {
 	AnnouncementType,
+	ChatMessage,
 	ContractType,
 	GameState,
 	ReservationType,
@@ -32,6 +33,12 @@ export interface GameStoreState {
 	error: string | null;
 	/** Vorschau-Trumpfmodus (für Solo-Auswahl im Bidding) */
 	previewTrumpMode: TrumpMode | null;
+	/** Chat-Nachrichten für den aktuellen Tisch */
+	chatMessages: ChatMessage[];
+	/** Lokaler Chat-Cooldown bis Timestamp (ms) */
+	chatCooldownUntil: number | null;
+	/** Lokaler Chat-Fehler */
+	chatLocalError: string | null;
 }
 
 // =============================================================================
@@ -46,6 +53,10 @@ export interface GameStoreActions {
 	setConnected: (connected: boolean) => void;
 	setError: (error: string | null) => void;
 	setPreviewTrumpMode: (mode: TrumpMode | null) => void;
+	setChatHistory: (messages: ChatMessage[]) => void;
+	appendChatMessage: (message: ChatMessage) => void;
+	setChatCooldownUntil: (timestamp: number | null) => void;
+	setChatLocalError: (message: string | null) => void;
 
 	// Game Actions (WebSocket calls, set by useGameConnection)
 	playCard: (cardId: string) => void;
@@ -56,6 +67,7 @@ export interface GameStoreActions {
 	autoPlayAll: () => void;
 	resetGame: () => void;
 	toggleStandUp: () => void;
+	sendChatMessage: (text: string) => void;
 
 	// Action Setter (for useGameConnection to register WebSocket actions)
 	setGameActions: (actions: Partial<GameActions>) => void;
@@ -72,6 +84,7 @@ export type GameActions = Pick<
 	| "autoPlayAll"
 	| "resetGame"
 	| "toggleStandUp"
+	| "sendChatMessage"
 >;
 
 // =============================================================================
@@ -91,6 +104,9 @@ export const defaultInitState: GameStoreState = {
 	isConnected: false,
 	error: null,
 	previewTrumpMode: null,
+	chatMessages: [],
+	chatCooldownUntil: null,
+	chatLocalError: null,
 };
 
 // =============================================================================
@@ -121,6 +137,13 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 		setConnected: (isConnected) => set({ isConnected }),
 		setError: (error) => set({ error }),
 		setPreviewTrumpMode: (previewTrumpMode) => set({ previewTrumpMode }),
+		setChatHistory: (chatMessages) => set({ chatMessages }),
+		appendChatMessage: (message) =>
+			set((state) => ({
+				chatMessages: [...state.chatMessages, message],
+			})),
+		setChatCooldownUntil: (chatCooldownUntil) => set({ chatCooldownUntil }),
+		setChatLocalError: (chatLocalError) => set({ chatLocalError }),
 
 		// Game Actions (no-op until set by useGameConnection)
 		playCard: () => {},
@@ -131,6 +154,7 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 		autoPlayAll: () => {},
 		resetGame: () => {},
 		toggleStandUp: () => {},
+		sendChatMessage: () => {},
 
 		// Action Setter
 		setGameActions: (actions) => set(actions),

@@ -65,6 +65,10 @@ export async function onClose(server: Server, conn: Party.Connection) {
 		await server.removeSpectator(spectatorInfo.gameId, conn.id);
 		server.connectionToSpectator.delete(conn.id);
 	}
+
+	if (server.room.id.startsWith("game-")) {
+		server.onChatParticipantDisconnected(conn.id);
+	}
 }
 
 export function onMessage(

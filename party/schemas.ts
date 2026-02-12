@@ -11,6 +11,21 @@ const playerSchema = z.object({
 	balance: z.number(),
 });
 
+const chatAuthorSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	image: z.string().nullable().optional(),
+	role: z.enum(["player", "spectator", "system"]),
+});
+
+const chatMessageSchema = z.object({
+	id: z.string(),
+	tableId: z.string(),
+	text: z.string(),
+	createdAt: z.number(),
+	author: chatAuthorSchema,
+});
+
 export const gameEventSchema = z.discriminatedUnion("type", [
 	z.object({
 		type: z.literal("get-state"),
@@ -73,6 +88,10 @@ export const gameEventSchema = z.discriminatedUnion("type", [
 		name: z.string(),
 		image: z.string().nullable().optional(),
 	}),
+	z.object({
+		type: z.literal("chat-send"),
+		text: z.string(),
+	}),
 ]);
 
 const gameStateSchema = z.custom<GameState>(
@@ -101,6 +120,14 @@ export const gameMessageSchema = z.discriminatedUnion("type", [
 	z.object({
 		type: z.literal("redirect-to-lobby"),
 		tableId: z.string(),
+	}),
+	z.object({
+		type: z.literal("chat-history"),
+		messages: z.array(chatMessageSchema),
+	}),
+	z.object({
+		type: z.literal("chat-message"),
+		message: chatMessageSchema,
 	}),
 ]);
 
