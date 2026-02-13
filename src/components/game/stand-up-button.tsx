@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownToLine, LogOut } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -28,22 +28,13 @@ export function StandUpButton({ className }: StandUpButtonProps) {
 		<Tooltip>
 			<TooltipTrigger asChild>
 				<Button
+					aria-label={isStandingUp ? "Platz nehmen" : "Aufstehen"}
 					className={cn(className)}
 					onClick={() => toggleStandUp()}
-					size="sm"
-					variant={isStandingUp ? "destructive" : "outline"}
+					size="icon"
+					variant="outline"
 				>
-					{isStandingUp ? (
-						<>
-							<ArrowDownToLine className="size-4" />
-							<span className="hidden sm:inline">Platz nehmen</span>
-						</>
-					) : (
-						<>
-							<LogOut className="size-4" />
-							<span className="hidden sm:inline">Aufstehen</span>
-						</>
-					)}
+					{isStandingUp ? <ArrowDownToLine /> : <ArrowUpFromLine />}
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent>

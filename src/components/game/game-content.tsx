@@ -7,7 +7,9 @@ import {
 	useIsConnected,
 } from "@/stores/game-selectors";
 import type { Player } from "@/types/tables";
+import { ConnectionLoadingCard } from "./connection-loading-card";
 import { GameBoard } from "./game-board";
+import { useConnectionLoadingState } from "./hooks/use-connection-loading-state";
 import { useGameConnection } from "./hooks/use-game-connection";
 
 interface GameContentProps {
@@ -29,21 +31,22 @@ export function GameContent({ player, gameId }: GameContentProps) {
 	const gameState = useGameState();
 	const error = useError();
 	const isConnected = useIsConnected();
+	const loadingState = useConnectionLoadingState({
+		isConnected,
+		hasGameState: Boolean(gameState),
+	});
 
 	// Loading state
 	if (!gameState) {
 		return (
 			<div className="flex h-dvh w-screen items-center justify-center">
-				<Card className="border-none bg-black/40 text-white backdrop-blur-sm">
-					<CardContent className="pt-6">
-						<div className="flex items-center gap-3">
-							<div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
-							<p className="text-white/80">
-								{isConnected ? "Warte auf Spielstart..." : "Verbinde..."}
-							</p>
-						</div>
-					</CardContent>
-				</Card>
+				<ConnectionLoadingCard
+					loadingState={loadingState}
+					onBackToLobby={() => {
+						window.location.href = "/tables";
+					}}
+					onRetry={() => window.location.reload()}
+				/>
 			</div>
 		);
 	}

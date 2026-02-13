@@ -367,7 +367,7 @@ export function GameChatPanel() {
 				</div>
 
 				<div
-					className="flex min-h-0 flex-1 grow flex-col overflow-y-auto"
+					className="flex min-h-0 flex-1 grow flex-col overflow-y-auto pt-8"
 					ref={messagesContainerRef}
 				>
 					<div className="p-3">

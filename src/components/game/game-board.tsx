@@ -12,17 +12,13 @@ import {
 } from "@dnd-kit/core";
 import {
 	Bot,
-	Eye,
 	FastForward,
-	History,
 	Hourglass,
 	MessageSquare,
 	RotateCcw,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card as UiCard,
@@ -59,13 +55,14 @@ import { GameEndDialog } from "./game-end-dialog";
 import { GameSettingsMenu } from "./game-settings-menu";
 import { GameShareMenu } from "./game-share-menu";
 import { LastTrickPanel } from "./last-trick-panel";
+import { LastTrickToggleButton } from "./last-trick-toggle-button";
 import { OpponentHand } from "./opponent-hand";
 import { PlayerHand } from "./player-hand";
 import { PlayerInfo } from "./player-info";
 import { PlayerStatus } from "./player-status";
+import { SpectatorList } from "./spectator-list";
 import { StandUpButton } from "./stand-up-button";
 import { TrickArea } from "./trick-area";
-import { TurnIndicator } from "./turn-indicator";
 
 /**
  * GameBoard - Hauptspielfeld
@@ -527,7 +524,6 @@ export function GameBoard() {
 											>
 												<div className="flex items-center gap-1.5">
 													{!isBiddingActive && <AnnouncementButtons />}
-													<StandUpButton />
 												</div>
 											</PlayerStatus>
 										}
@@ -556,76 +552,10 @@ export function GameBoard() {
 							</DragOverlay>
 						)}
 
-						{/* Turn-Indikator */}
-						<TurnIndicator
-							currentPlayerName={
-								gameState.players[gameState.currentPlayerIndex]?.name ?? ""
-							}
-							isMyTurn={isMyTurn}
-						/>
-
-						{/* Verbindungsstatus & Zuschauer */}
-						<div className="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
-							<div className="flex items-center gap-2">
-								<div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
-									<div
-										className={cn(
-											"h-2 w-2 rounded-full",
-											"bg-emerald-500", // Immer verbunden wenn GameBoard gerendert wird
-										)}
-									/>
-									<span className="text-white/70 text-xs">Verbunden</span>
-								</div>
-								{!isSpectator && (
-									<GameShareMenu
-										gameId={gameState.id}
-										tableId={gameState.tableId}
-									/>
-								)}
-								<GameSettingsMenu />
-							</div>
-
-							{/* Zuschauer-Liste */}
-							{gameState.spectators && gameState.spectators.length > 0 && (
-								<div className="rounded-lg bg-black/40 px-3 py-2 backdrop-blur-sm">
-									<div className="mb-1.5 flex items-center gap-1.5 text-white/50 text-xs">
-										<Eye className="h-3 w-3" />
-										Zuschauer ({gameState.spectators.length})
-									</div>
-									<div className="flex flex-col gap-1.5">
-										{gameState.spectators.map((spectator) => (
-											<div
-												className="flex items-center gap-2"
-												key={spectator.id}
-											>
-												<Avatar
-													alt={spectator.name}
-													fallback={spectator.name.charAt(0).toUpperCase()}
-													size="xs"
-													src={spectator.image}
-												/>
-												<span className="text-white/70 text-xs">
-													{spectator.name}
-												</span>
-											</div>
-										))}
-									</div>
-								</div>
-							)}
+						{/* Top left corner */}
+						<div className="fixed top-0 left-0 z-20 flex flex-col items-end gap-2 p-2">
+							<SpectatorList spectators={gameState.spectators} />
 						</div>
-
-						{/* Spectator Badge */}
-						{isSpectator && (
-							<div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
-								<Badge
-									className="gap-2 bg-amber-500/20 px-4 py-2 text-amber-700 dark:text-amber-400"
-									variant="secondary"
-								>
-									<Eye className="h-4 w-4" />
-									Zuschauer-Modus
-								</Badge>
-							</div>
-						)}
 
 						{/* Last Trick Panel */}
 						{lastTrick && (
@@ -642,18 +572,22 @@ export function GameBoard() {
 									trick={lastTrick}
 									trickNumber={gameState.completedTricks.length}
 								/>
-								<Button
-									aria-label="Letzten Stich anzeigen"
-									className="flex h-8 items-center gap-2 rounded-full bg-black/50 px-3 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
-									onClick={() => setShowLastTrick((prev) => !prev)}
-									size="sm"
-									variant="ghost"
-								>
-									<History className="h-4 w-4" />
-									Letzter Stich
-								</Button>
 							</div>
 						)}
+
+						{/* Button bar bottom right	 */}
+						<div className="fixed right-0 bottom-0 z-50 flex items-center gap-1 p-2">
+							<LastTrickToggleButton
+								onClick={() => setShowLastTrick((prev) => !prev)}
+							/>
+
+							<GameShareMenu
+								gameId={gameState.id}
+								tableId={gameState.tableId}
+							/>
+							<GameSettingsMenu />
+							<StandUpButton />
+						</div>
 
 						{/* Auto-Play & Reset Game Buttons (Development only, nicht für Zuschauer) */}
 						{!isSpectator && process.env.NODE_ENV === "development" && (

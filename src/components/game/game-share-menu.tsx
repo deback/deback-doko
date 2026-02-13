@@ -9,6 +9,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface GameShareMenuProps {
 	gameId: string;
@@ -98,16 +103,16 @@ export function GameShareMenu({ gameId, tableId }: GameShareMenuProps) {
 
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					className="h-8 w-8 rounded-full bg-black/40 text-white/70 backdrop-blur-sm hover:bg-black/60 hover:text-white"
-					size="icon"
-					variant="ghost"
-				>
-					<Share2 className="h-4 w-4" />
-					<span className="sr-only">Einladung teilen</span>
-				</Button>
-			</DropdownMenuTrigger>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<DropdownMenuTrigger asChild>
+						<Button aria-label="Einladung teilen" size="icon" variant="outline">
+							<Share2 />
+						</Button>
+					</DropdownMenuTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="left">Einladung teilen</TooltipContent>
+			</Tooltip>
 			<DropdownMenuContent
 				align="end"
 				className="w-44"
