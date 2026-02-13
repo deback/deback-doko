@@ -65,6 +65,32 @@ function createDefaultAnnouncements(): GameState["announcements"] {
 	};
 }
 
+function createDefaultBotControl(
+	players: Player[],
+): GameState["botControlByPlayer"] {
+	const control: GameState["botControlByPlayer"] = {};
+	for (const player of players) {
+		control[player.id] = {
+			mode: "human",
+		};
+	}
+	return control;
+}
+
+function createDefaultPresence(
+	players: Player[],
+): GameState["presenceByPlayer"] {
+	const now = Date.now();
+	const presence: GameState["presenceByPlayer"] = {};
+	for (const player of players) {
+		presence[player.id] = {
+			connected: false,
+			lastSeenAt: now,
+		};
+	}
+	return presence;
+}
+
 export function createWaitingGameState(params: {
 	gameId: string;
 	tableId: string;
@@ -94,6 +120,9 @@ export function createWaitingGameState(params: {
 		spectators: params.spectators ?? [],
 		announcements: createDefaultAnnouncements(),
 		contractType: "normal",
+		botControlByPlayer: createDefaultBotControl(params.players),
+		presenceByPlayer: createDefaultPresence(params.players),
+		botRoundScope: "current-round",
 	};
 }
 
@@ -142,5 +171,8 @@ export function createStartedGameState(params: {
 			pendingContracts: {},
 		},
 		contractType: "normal",
+		botControlByPlayer: createDefaultBotControl(params.players),
+		presenceByPlayer: createDefaultPresence(params.players),
+		botRoundScope: "current-round",
 	};
 }

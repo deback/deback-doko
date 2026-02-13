@@ -40,6 +40,20 @@ export function hasOtherActivePlayerConnection(
 	return false;
 }
 
+export function detachPlayerConnection(
+	server: Server,
+	connectionId: string,
+): { gameId: string; playerId: string } | null {
+	const playerInfo = server.connectionToPlayer.get(connectionId) ?? null;
+
+	for (const players of server.playerConnections.values()) {
+		players.delete(connectionId);
+	}
+	server.connectionToPlayer.delete(connectionId);
+
+	return playerInfo;
+}
+
 export function scheduleWaitingPlayerDisconnect(
 	server: Server,
 	gameId: string,
@@ -127,6 +141,20 @@ export async function addSpectator(
 	spectatorImage: string | null | undefined,
 	conn: Party.Connection,
 ) {
+	const gameState = server.games.get(gameId);
+	if (gameId !== server.room.id || !gameState) {
+		server.sendGameError(conn, "Kein Spiel gefunden.");
+		return;
+	}
+
+	const detachedPlayerInfo = server.detachPlayerConnection(conn.id);
+	if (detachedPlayerInfo) {
+		await server.markPlayerDisconnected(
+			detachedPlayerInfo.gameId,
+			detachedPlayerInfo.playerId,
+		);
+	}
+
 	if (!server.spectatorConnections.has(gameId)) {
 		server.spectatorConnections.set(gameId, new Set());
 	}
@@ -141,20 +169,16 @@ export async function addSpectator(
 		spectatorImage,
 	});
 
-	const gameState = server.games.get(gameId);
-	if (gameState) {
-		gameState.spectatorCount =
-			server.spectatorConnections.get(gameId)?.size || 0;
-		gameState.spectators = server.getSpectatorList(gameId);
+	gameState.spectatorCount = server.spectatorConnections.get(gameId)?.size || 0;
+	gameState.spectators = server.getSpectatorList(gameId);
 
-		server.sendSpectatorState(conn, gameState);
-		server.onChatParticipantConnected(conn);
-		server.broadcastGameState(gameState);
-		await server.updateTableSpectatorCount(
-			gameState.tableId,
-			gameState.spectatorCount,
-		);
-	}
+	server.sendSpectatorState(conn, gameState);
+	server.onChatParticipantConnected(conn);
+	server.broadcastGameState(gameState);
+	await server.updateTableSpectatorCount(
+		gameState.tableId,
+		gameState.spectatorCount,
+	);
 }
 
 export function getSpectatorList(

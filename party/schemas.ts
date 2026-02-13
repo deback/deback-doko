@@ -83,6 +83,11 @@ export const gameEventSchema = z.discriminatedUnion("type", [
 		playerId: z.string(),
 	}),
 	z.object({
+		type: z.literal("bot-control"),
+		action: z.enum(["takeover", "release"]),
+		targetPlayerId: z.string(),
+	}),
+	z.object({
 		type: z.literal("update-player-info"),
 		playerId: z.string(),
 		name: z.string(),
@@ -94,9 +99,19 @@ export const gameEventSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-const gameStateSchema = z.custom<GameState>(
-	(value) => typeof value === "object" && value !== null,
-);
+const gameStateSchema = z.custom<GameState>((value) => {
+	if (typeof value !== "object" || value === null) return false;
+	const candidate = value as Partial<GameState>;
+	return (
+		typeof candidate.id === "string" &&
+		typeof candidate.tableId === "string" &&
+		typeof candidate.botControlByPlayer === "object" &&
+		candidate.botControlByPlayer !== null &&
+		typeof candidate.presenceByPlayer === "object" &&
+		candidate.presenceByPlayer !== null &&
+		candidate.botRoundScope === "current-round"
+	);
+});
 
 export const gameMessageSchema = z.discriminatedUnion("type", [
 	z.object({

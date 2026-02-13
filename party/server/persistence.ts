@@ -2,6 +2,7 @@ import { env } from "@/env";
 import { calculateBalanceChange, isSoloGame } from "../../src/lib/game/rules";
 import { logger } from "../logger";
 import type { GameState, Table } from "../types";
+import { ensureBotStateShape } from "./bot/orchestrator";
 import type Server from "./game-lifecycle";
 
 export async function onStart(server: Server) {
@@ -20,6 +21,7 @@ export async function onStart(server: Server) {
 			storedGame?.gameEnded,
 		);
 		if (storedGame) {
+			ensureBotStateShape(storedGame);
 			server.games.set(server.room.id, storedGame);
 
 			if (storedGame.gameEnded) {
@@ -29,6 +31,8 @@ export async function onStart(server: Server) {
 					logger.info("[onStart] Restarting game now...");
 					server.restartGame(storedGame);
 				}, RESTART_DELAY);
+			} else {
+				server.maybeScheduleBotTurn(storedGame.id);
 			}
 		}
 	}
@@ -41,6 +45,7 @@ export async function persistTables(server: Server) {
 }
 
 export async function persistGameState(server: Server, gameState: GameState) {
+	ensureBotStateShape(gameState);
 	await server.room.storage.put("gameState", gameState);
 }
 
@@ -51,6 +56,7 @@ export async function persistAndBroadcastGame(
 	await server.persistGameState(gameState);
 	server.broadcastGameState(gameState);
 	server.broadcastToSpectators(gameState);
+	server.maybeScheduleBotTurn(gameState.id);
 }
 
 export async function saveGameResults(_server: Server, gameState: GameState) {

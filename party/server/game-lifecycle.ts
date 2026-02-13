@@ -17,12 +17,21 @@ import type {
 	TablesState,
 	Trick,
 } from "../types";
+import {
+	clearBotRuntimeForGame as clearBotRuntimeForGameHandler,
+	clearDisconnectTakeoverTimer as clearDisconnectTakeoverTimerHandler,
+	handleBotControl as handleBotControlHandler,
+	markPlayerConnected as markPlayerConnectedHandler,
+	markPlayerDisconnected as markPlayerDisconnectedHandler,
+	maybeScheduleBotTurn as maybeScheduleBotTurnHandler,
+} from "./bot/orchestrator";
 import type { ChatPresenceEntry } from "./chat-registry";
 import {
 	addSpectator as addSpectatorHandler,
 	broadcastToSpectators as broadcastToSpectatorsHandler,
 	clearWaitingPlayerDisconnectTimer as clearWaitingPlayerDisconnectTimerHandler,
 	createSpectatorView as createSpectatorViewHandler,
+	detachPlayerConnection as detachPlayerConnectionHandler,
 	getSpectatorList as getSpectatorListHandler,
 	getWaitingDisconnectKey as getWaitingDisconnectKeyHandler,
 	handleWaitingPlayerDisconnect as handleWaitingPlayerDisconnectHandler,
@@ -56,6 +65,7 @@ import {
 	handleChatSend as handleChatSendHandler,
 	onChatParticipantConnected as onChatParticipantConnectedHandler,
 	onChatParticipantDisconnected as onChatParticipantDisconnectedHandler,
+	sendSystemChatMessage as sendSystemChatMessageHandler,
 } from "./message-handlers/chat";
 import {
 	onClose as onCloseHandler,
@@ -99,6 +109,10 @@ export default class Server implements Party.Server {
 	connectionToTablePlayer: Map<string, string> = new Map();
 	waitingPlayerDisconnectTimers: Map<string, ReturnType<typeof setTimeout>> =
 		new Map();
+	botDisconnectTakeoverTimers: Map<string, ReturnType<typeof setTimeout>> =
+		new Map();
+	botTurnTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+	botTurnDeadlineTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 	chatMessagesByTable: Map<string, ChatMessage[]> = new Map();
 	chatPresenceByKey: Map<string, ChatPresenceEntry> = new Map();
 	chatPresenceKeyByConnection: Map<string, string> = new Map();
@@ -146,6 +160,12 @@ export default class Server implements Party.Server {
 			playerId,
 			excludeConnId,
 		);
+	}
+
+	detachPlayerConnection(
+		connectionId: string,
+	): { gameId: string; playerId: string } | null {
+		return detachPlayerConnectionHandler(this, connectionId);
 	}
 
 	scheduleWaitingPlayerDisconnect(gameId: string, playerId: string) {
@@ -248,6 +268,10 @@ export default class Server implements Party.Server {
 
 	handleChatSend(text: string, sender: Party.Connection) {
 		handleChatSendHandler(this, text, sender);
+	}
+
+	sendSystemChatMessage(gameId: string, tableId: string, text: string) {
+		sendSystemChatMessageHandler(this, gameId, tableId, text);
 	}
 
 	onChatParticipantConnected(conn: Party.Connection) {
@@ -388,6 +412,41 @@ export default class Server implements Party.Server {
 
 	async saveGameResults(gameState: GameState) {
 		await saveGameResultsHandler(this, gameState);
+	}
+
+	async markPlayerConnected(gameId: string, playerId: string) {
+		await markPlayerConnectedHandler(this, gameId, playerId);
+	}
+
+	async markPlayerDisconnected(gameId: string, playerId: string) {
+		await markPlayerDisconnectedHandler(this, gameId, playerId);
+	}
+
+	async handleBotControl(
+		action: "takeover" | "release",
+		targetPlayerId: string,
+		controllerPlayerId: string,
+		sender: Party.Connection,
+	) {
+		await handleBotControlHandler(
+			this,
+			action,
+			targetPlayerId,
+			controllerPlayerId,
+			sender,
+		);
+	}
+
+	maybeScheduleBotTurn(gameId: string) {
+		maybeScheduleBotTurnHandler(this, gameId);
+	}
+
+	clearBotRuntimeForGame(gameId: string) {
+		clearBotRuntimeForGameHandler(this, gameId);
+	}
+
+	clearDisconnectTakeoverTimer(gameId: string, playerId: string) {
+		clearDisconnectTakeoverTimerHandler(this, gameId, playerId);
 	}
 
 	async autoPlay(sender: Party.Connection) {

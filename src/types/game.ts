@@ -10,6 +10,9 @@ export type {
 	Announcements,
 	AnnouncementType,
 	BiddingPhase,
+	BotControlMode,
+	BotControlReason,
+	BotRoundScope,
 	Card,
 	CardBackDesign,
 	CardRenderMode,
@@ -18,6 +21,8 @@ export type {
 	GamePointEntry,
 	GamePointsResult,
 	HochzeitState,
+	PlayerBotControl,
+	PlayerPresence,
 	PointAnnouncement,
 	PointAnnouncementType,
 	Rank,
@@ -31,6 +36,7 @@ export type {
 // Re-export der Sub-Interfaces (für Dokumentation und Selektoren)
 export type {
 	AnnouncementsState,
+	BotState,
 	GameBiddingState,
 	GameFlowState,
 	GameIdentity,
@@ -44,6 +50,7 @@ import type { ChatMessage } from "./game/chat";
 // Import für GameState Definition
 import type {
 	AnnouncementsState,
+	BotState,
 	GameBiddingState,
 	GameFlowState,
 	GameIdentity,
@@ -84,6 +91,7 @@ export interface GameState
 		TeamsState,
 		TricksState,
 		GameBiddingState,
+		BotState,
 		SpectatorsState,
 		AnnouncementsState {}
 
@@ -136,6 +144,11 @@ export type GameEvent =
 			contract: ContractType;
 	  }
 	| { type: "toggle-stand-up"; playerId: string }
+	| {
+			type: "bot-control";
+			action: "takeover" | "release";
+			targetPlayerId: string;
+	  }
 	| {
 			type: "update-player-info";
 			playerId: string;

@@ -11,6 +11,9 @@ export type {
 	Announcements,
 	AnnouncementType,
 	BiddingPhase,
+	BotControlMode,
+	BotControlReason,
+	BotRoundScope,
 	Card,
 	CardBackDesign,
 	CardRenderMode,
@@ -19,6 +22,8 @@ export type {
 	GamePointEntry,
 	GamePointsResult,
 	HochzeitState,
+	PlayerBotControl,
+	PlayerPresence,
 	PointAnnouncement,
 	PointAnnouncementType,
 	Rank,
@@ -43,6 +48,7 @@ export type {
 // Sub-Interfaces (logische Gruppierungen)
 export type {
 	AnnouncementsState,
+	BotState,
 	GameBiddingState,
 	GameFlowState,
 	GameIdentity,

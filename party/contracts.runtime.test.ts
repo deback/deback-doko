@@ -73,6 +73,11 @@ describe("GameEvent runtime contract", () => {
 			},
 			{ type: "toggle-stand-up", playerId: "player-1" },
 			{
+				type: "bot-control",
+				action: "takeover",
+				targetPlayerId: "player-2",
+			},
+			{
 				type: "update-player-info",
 				playerId: "player-1",
 				name: "Alice Updated",
@@ -133,6 +138,8 @@ describe("GameEvent runtime contract", () => {
 			},
 			// toggle-stand-up
 			{ type: "toggle-stand-up" },
+			// bot-control
+			{ type: "bot-control", action: "pause", targetPlayerId: "player-1" },
 			// update-player-info
 			{ type: "update-player-info", playerId: "player-1" },
 			// chat-send
@@ -161,7 +168,13 @@ describe("GameMessage runtime contract", () => {
 		const validMessages = [
 			{
 				type: "state",
-				state: { id: "game-1", any: "object" },
+				state: {
+					id: "game-1",
+					tableId: "table-1",
+					botControlByPlayer: {},
+					presenceByPlayer: {},
+					botRoundScope: "current-round",
+				},
 				isSpectator: true,
 			},
 			{ type: "error", message: "Fehler" },

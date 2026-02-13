@@ -10,7 +10,7 @@ import {
 } from "../chat-registry";
 import type Server from "../game-lifecycle";
 
-function broadcastSystemMessage(
+export function broadcastSystemMessage(
 	server: Server,
 	params: { gameId: string; tableId: string; text: string },
 ): void {
@@ -22,6 +22,19 @@ function broadcastSystemMessage(
 	});
 	appendChatMessage(server, systemMessage);
 	broadcastChatMessage(server, params.gameId, systemMessage);
+}
+
+export function sendSystemChatMessage(
+	server: Server,
+	gameId: string,
+	tableId: string,
+	text: string,
+): void {
+	broadcastSystemMessage(server, {
+		gameId,
+		tableId,
+		text,
+	});
 }
 
 export function onChatParticipantConnected(

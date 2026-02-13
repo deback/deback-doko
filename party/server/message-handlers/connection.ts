@@ -24,6 +24,9 @@ export function onConnect(
 }
 
 export async function onClose(server: Server, conn: Party.Connection) {
+	const closingPlayerInfo = server.connectionToPlayer.get(conn.id);
+	const closingSpectatorInfo = server.connectionToSpectator.get(conn.id);
+
 	if (server.room.id === "tables-room") {
 		const playerId = server.connectionToTablePlayer.get(conn.id);
 		if (playerId) {
@@ -35,34 +38,42 @@ export async function onClose(server: Server, conn: Party.Connection) {
 		}
 	}
 
-	if (server.room.id.startsWith("game-")) {
-		const playerInfo = server.connectionToPlayer.get(conn.id);
-		if (playerInfo) {
-			const gameState = server.games.get(playerInfo.gameId);
-			if (gameState && !gameState.gameStarted) {
-				const hasOtherConnection = server.hasOtherActivePlayerConnection(
-					playerInfo.gameId,
-					playerInfo.playerId,
-					conn.id,
+	if (
+		server.room.id.startsWith("game-") &&
+		closingPlayerInfo &&
+		!closingSpectatorInfo
+	) {
+		const gameState = server.games.get(closingPlayerInfo.gameId);
+		if (gameState && !gameState.gameStarted) {
+			const hasOtherConnection = server.hasOtherActivePlayerConnection(
+				closingPlayerInfo.gameId,
+				closingPlayerInfo.playerId,
+				conn.id,
+			);
+			if (!hasOtherConnection) {
+				server.scheduleWaitingPlayerDisconnect(
+					closingPlayerInfo.gameId,
+					closingPlayerInfo.playerId,
 				);
-				if (!hasOtherConnection) {
-					server.scheduleWaitingPlayerDisconnect(
-						playerInfo.gameId,
-						playerInfo.playerId,
-					);
-				}
 			}
 		}
 	}
 
-	for (const players of server.playerConnections.values()) {
-		players.delete(conn.id);
-	}
-	server.connectionToPlayer.delete(conn.id);
+	server.detachPlayerConnection(conn.id);
 
-	const spectatorInfo = server.connectionToSpectator.get(conn.id);
-	if (spectatorInfo) {
-		await server.removeSpectator(spectatorInfo.gameId, conn.id);
+	if (
+		closingPlayerInfo &&
+		!closingSpectatorInfo &&
+		server.room.id.startsWith("game-")
+	) {
+		await server.markPlayerDisconnected(
+			closingPlayerInfo.gameId,
+			closingPlayerInfo.playerId,
+		);
+	}
+
+	if (closingSpectatorInfo) {
+		await server.removeSpectator(closingSpectatorInfo.gameId, conn.id);
 		server.connectionToSpectator.delete(conn.id);
 	}
 

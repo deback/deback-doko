@@ -313,6 +313,8 @@ export const useResetGame = () => useGameStore((s) => s.resetGame);
 
 /** Aufstehen/Platz nehmen umschalten */
 export const useToggleStandUp = () => useGameStore((s) => s.toggleStandUp);
+/** Bot-Steuerung (Übernehmen/Freigeben) */
+export const useSetBotControl = () => useGameStore((s) => s.setBotControl);
 /** Chat-Nachricht senden */
 export const useSendChatMessage = () => useGameStore((s) => s.sendChatMessage);
 

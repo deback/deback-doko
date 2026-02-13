@@ -18,10 +18,11 @@
 		"deploy:partykit": "partykit deploy",
 		"preview": "next build && next start",
 		"start": "next start",
-		"test": "pnpm run test:contracts && pnpm run test:engine && pnpm run test:services",
+		"test": "pnpm run test:contracts && pnpm run test:engine && pnpm run test:server && pnpm run test:services",
 		"test:contracts": "pnpm run typecheck && pnpm run test:contracts:runtime",
 		"test:contracts:runtime": "vitest run party/contracts.runtime.test.ts",
 		"test:engine": "vitest run party/engine/*.engine.test.ts",
+		"test:server": "vitest run party/server/*.test.ts party/server/**/*.test.ts",
 		"test:services": "vitest run src/server/services/*.test.ts",
 		"typecheck": "tsc --noEmit"
 	},

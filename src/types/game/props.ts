@@ -75,6 +75,9 @@ export type SpectatorViewProps = Pick<
 	| "announcements"
 	| "biddingPhase"
 	| "contractType"
+	| "botControlByPlayer"
+	| "presenceByPlayer"
+	| "botRoundScope"
 >;
 
 /**

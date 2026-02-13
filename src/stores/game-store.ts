@@ -78,6 +78,10 @@ export interface GameStoreActions {
 	autoPlayAll: () => void;
 	resetGame: () => void;
 	toggleStandUp: () => void;
+	setBotControl: (
+		action: "takeover" | "release",
+		targetPlayerId: string,
+	) => void;
 	sendChatMessage: (text: string) => void;
 
 	// Action Setter (for useGameConnection to register WebSocket actions)
@@ -95,6 +99,7 @@ export type GameActions = Pick<
 	| "autoPlayAll"
 	| "resetGame"
 	| "toggleStandUp"
+	| "setBotControl"
 	| "sendChatMessage"
 >;
 
@@ -181,6 +186,7 @@ export const createGameStore = (initState: Partial<GameStoreState> = {}) => {
 				autoPlayAll: () => {},
 				resetGame: () => {},
 				toggleStandUp: () => {},
+				setBotControl: () => {},
 				sendChatMessage: () => {},
 
 				// Action Setter

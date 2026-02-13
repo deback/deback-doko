@@ -9,10 +9,13 @@ import type { Player } from "../tables";
 import type {
 	Announcements,
 	BiddingPhase,
+	BotRoundScope,
 	Card,
 	ContractType,
 	GamePointsResult,
 	HochzeitState,
+	PlayerBotControl,
+	PlayerPresence,
 	Trick,
 	TrumpMode,
 } from "./base";
@@ -127,4 +130,18 @@ export interface SpectatorsState {
 export interface AnnouncementsState {
 	/** Alle Ansagen */
 	announcements: Announcements;
+}
+
+// =============================================================================
+// Bot-Steuerung / Präsenz
+// =============================================================================
+
+/** Bot-/Präsenzstatus pro Spieler */
+export interface BotState {
+	/** Spielersteuerung (playerId -> Modus/Metadaten) */
+	botControlByPlayer: Record<string, PlayerBotControl>;
+	/** Verbindungsstatus (playerId -> Presence) */
+	presenceByPlayer: Record<string, PlayerPresence>;
+	/** Gültigkeitsbereich der Bot-Steuerung */
+	botRoundScope: BotRoundScope;
 }

@@ -160,6 +160,7 @@ export async function restartGame(server: Server, oldGameState: GameState) {
 	const gameId = server.room.id;
 	const tableId = oldGameState.tableId;
 	const newRound = oldGameState.round + 1;
+	server.clearBotRuntimeForGame(gameId);
 
 	const standingPlayers = oldGameState.standingUpPlayers ?? [];
 	const remainingPlayers = oldGameState.players.filter(

@@ -318,6 +318,16 @@ export function useGameConnection({
 				socket.send(JSON.stringify(event));
 			},
 
+			setBotControl: (action, targetPlayerId) => {
+				if (!socket) return;
+				const event: GameEvent = {
+					type: "bot-control",
+					action,
+					targetPlayerId,
+				};
+				socket.send(JSON.stringify(event));
+			},
+
 			sendChatMessage: (text: string) => {
 				if (!socket) return;
 				const event: GameEvent = {

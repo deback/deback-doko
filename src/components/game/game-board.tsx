@@ -38,6 +38,7 @@ import {
 	usePlayerAnnouncements,
 	usePlayerAtPosition,
 	useResetGame,
+	useSetBotControl,
 	useSetChatPanelOpen,
 	useSortedHand,
 } from "@/stores/game-selectors";
@@ -109,6 +110,7 @@ export function GameBoard() {
 	const autoPlay = useAutoPlay();
 	const autoPlayAll = useAutoPlayAll();
 	const resetGame = useResetGame();
+	const setBotControl = useSetBotControl();
 	const setChatPanelOpen = useSetChatPanelOpen();
 
 	// =========================================================================
@@ -301,6 +303,14 @@ export function GameBoard() {
 	// Card count helper: uses handCounts (available for spectators) with fallback to hands array
 	const getCardCount = (playerId: string) =>
 		gameState.handCounts[playerId] ?? gameState.hands[playerId]?.length ?? 0;
+	const isPlayerBotControlled = (playerId: string) =>
+		gameState.botControlByPlayer[playerId]?.mode === "bot";
+	const togglePlayerBotControl = (playerId: string) => {
+		setBotControl(
+			isPlayerBotControlled(playerId) ? "release" : "takeover",
+			playerId,
+		);
+	};
 	const settingsDialogUser = currentPlayer
 		? {
 				id: currentPlayer.id,
@@ -352,6 +362,7 @@ export function GameBoard() {
 						{topPlayer && (
 							<>
 								<PlayerInfo
+									isBotControlled={isPlayerBotControlled(topPlayer.id)}
 									isCurrentTurn={
 										gameState.players[gameState.currentPlayerIndex]?.id ===
 										topPlayer.id
@@ -383,6 +394,7 @@ export function GameBoard() {
 						{leftPlayer && (
 							<>
 								<PlayerInfo
+									isBotControlled={isPlayerBotControlled(leftPlayer.id)}
 									isCurrentTurn={
 										gameState.players[gameState.currentPlayerIndex]?.id ===
 										leftPlayer.id
@@ -414,6 +426,7 @@ export function GameBoard() {
 						{rightPlayer && (
 							<>
 								<PlayerInfo
+									isBotControlled={isPlayerBotControlled(rightPlayer.id)}
 									isCurrentTurn={
 										gameState.players[gameState.currentPlayerIndex]?.id ===
 										rightPlayer.id
@@ -478,6 +491,7 @@ export function GameBoard() {
 						{bottomPlayer && (
 							<>
 								<PlayerInfo
+									isBotControlled={isPlayerBotControlled(bottomPlayer.id)}
 									isCurrentTurn={
 										isSpectator
 											? gameState.players[gameState.currentPlayerIndex]?.id ===
@@ -635,6 +649,36 @@ export function GameBoard() {
 									<RotateCcw className="h-4 w-4" />
 									<span className="hidden">Reset</span>
 								</Button>
+							</div>
+						)}
+
+						{/* Produktive Bot-Steuerung (nur aktive Spieler) */}
+						{!isSpectator && (
+							<div className="fixed bottom-16 left-2 z-50 max-w-56 rounded-xl border border-border/50 bg-background/85 p-2 shadow-lg backdrop-blur-sm">
+								<div className="mb-1 px-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
+									Bot-Steuerung
+								</div>
+								<div className="flex flex-col gap-1">
+									{gameState.players.map((player) => {
+										const isControlled = isPlayerBotControlled(player.id);
+										return (
+											<Button
+												className="h-8 justify-between gap-2 px-2"
+												key={player.id}
+												onClick={() => togglePlayerBotControl(player.id)}
+												size="sm"
+												variant={isControlled ? "secondary" : "outline"}
+											>
+												<span className="max-w-28 truncate text-xs">
+													{player.name}
+												</span>
+												<span className="text-[10px] uppercase">
+													{isControlled ? "Release" : "Takeover"}
+												</span>
+											</Button>
+										);
+									})}
+								</div>
 							</div>
 						)}
 

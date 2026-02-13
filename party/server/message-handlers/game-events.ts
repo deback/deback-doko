@@ -2,9 +2,13 @@ import type * as Party from "partykit/server";
 import type { GameEvent } from "../../types";
 import type Server from "../game-lifecycle";
 import {
-	handleResetGame as handleResetGameImpl,
-	handleToggleStandUp as handleToggleStandUpImpl,
+	handleResetGame as handleResetGameHandler,
+	handleToggleStandUp as handleToggleStandUpHandler,
 } from "../game-lifecycle-handlers";
+import {
+	assertSenderOwnsPlayerId,
+	handleBotControl as handleBotControlEvent,
+} from "./bot-control";
 
 export async function handleGameEvent(
 	server: Server,
@@ -52,6 +56,11 @@ export async function handleGameEvent(
 						gameId: gameState.id,
 						playerId: event.playerId as string,
 					});
+
+					await server.markPlayerConnected(
+						gameState.id,
+						event.playerId as string,
+					);
 					server.sendGameState(sender, gameState);
 					server.onChatParticipantConnected(sender);
 				} else {
@@ -72,6 +81,9 @@ export async function handleGameEvent(
 			break;
 
 		case "play-card":
+			if (!assertSenderOwnsPlayerId(server, sender, event.playerId)) {
+				return;
+			}
 			await server.playCard(event.cardId, event.playerId, sender);
 			break;
 
@@ -94,6 +106,9 @@ export async function handleGameEvent(
 			break;
 
 		case "announce":
+			if (!assertSenderOwnsPlayerId(server, sender, event.playerId)) {
+				return;
+			}
 			await server.handleAnnouncement(
 				event.announcement,
 				event.playerId,
@@ -102,14 +117,20 @@ export async function handleGameEvent(
 			break;
 
 		case "reset-game":
-			await handleResetGameImpl(server, sender);
+			await handleResetGameHandler(server, sender);
 			break;
 
 		case "bid":
+			if (!assertSenderOwnsPlayerId(server, sender, event.playerId)) {
+				return;
+			}
 			await server.handleBid(event.playerId, event.bid, sender);
 			break;
 
 		case "declare-contract":
+			if (!assertSenderOwnsPlayerId(server, sender, event.playerId)) {
+				return;
+			}
 			await server.handleDeclareContract(
 				event.playerId,
 				event.contract,
@@ -118,7 +139,19 @@ export async function handleGameEvent(
 			break;
 
 		case "toggle-stand-up":
-			await handleToggleStandUpImpl(server, event.playerId, sender);
+			if (!assertSenderOwnsPlayerId(server, sender, event.playerId)) {
+				return;
+			}
+			await handleToggleStandUpHandler(server, event.playerId, sender);
+			break;
+
+		case "bot-control":
+			await handleBotControlEvent(
+				server,
+				event.action,
+				event.targetPlayerId,
+				sender,
+			);
 			break;
 
 		case "update-player-info":
@@ -139,7 +172,7 @@ export async function handleResetGame(
 	server: Server,
 	sender: Party.Connection,
 ) {
-	await handleResetGameImpl(server, sender);
+	await handleResetGameHandler(server, sender);
 }
 
 export async function handleToggleStandUp(
@@ -147,5 +180,5 @@ export async function handleToggleStandUp(
 	playerId: string,
 	sender: Party.Connection,
 ) {
-	await handleToggleStandUpImpl(server, playerId, sender);
+	await handleToggleStandUpHandler(server, playerId, sender);
 }

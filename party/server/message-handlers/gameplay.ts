@@ -208,6 +208,11 @@ export async function completeTrick(server: Server, gameState: GameState) {
 }
 
 export async function autoPlay(server: Server, sender: Party.Connection) {
+	if (process.env.NODE_ENV !== "development") {
+		server.sendGameError(sender, "Auto-Play ist nur in Development verfügbar.");
+		return;
+	}
+
 	const gameState = server.games.get(server.room.id);
 	if (!gameState || !gameState.gameStarted || gameState.gameEnded) {
 		server.sendGameError(sender, "Spiel läuft nicht.");
@@ -263,6 +268,14 @@ export async function autoPlay(server: Server, sender: Party.Connection) {
 }
 
 export async function autoPlayAll(server: Server, sender: Party.Connection) {
+	if (process.env.NODE_ENV !== "development") {
+		server.sendGameError(
+			sender,
+			"Auto-Play-All ist nur in Development verfügbar.",
+		);
+		return;
+	}
+
 	const gameState = server.games.get(server.room.id);
 	if (!gameState || !gameState.gameStarted || gameState.gameEnded) return;
 

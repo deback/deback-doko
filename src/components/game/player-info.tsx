@@ -7,6 +7,7 @@ import type { Player } from "@/types/tables";
 interface PlayerInfoProps {
 	player: Player;
 	isCurrentTurn?: boolean;
+	isBotControlled?: boolean;
 	position: "top" | "bottom" | "left" | "right";
 	className?: string;
 }
@@ -14,6 +15,7 @@ interface PlayerInfoProps {
 export function PlayerInfo({
 	player,
 	isCurrentTurn = false,
+	isBotControlled = false,
 	position,
 	className,
 }: PlayerInfoProps) {
@@ -55,6 +57,11 @@ export function PlayerInfo({
 			<span className="max-w-32 truncate pr-1 font-medium text-sm text-white lg:text-base">
 				{player.name}
 			</span>
+			{isBotControlled && (
+				<span className="rounded-full bg-amber-500/90 px-2 py-0.5 font-semibold text-[10px] text-white uppercase">
+					Bot
+				</span>
+			)}
 		</div>
 	);
 }

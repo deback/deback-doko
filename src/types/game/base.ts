@@ -128,6 +128,28 @@ export interface HochzeitState {
 }
 
 // =============================================================================
+// Bot-/Präsenz-Typen
+// =============================================================================
+
+export type BotControlMode = "human" | "bot";
+export type BotControlReason = "manual" | "disconnect";
+export type BotRoundScope = "current-round";
+
+export interface PlayerBotControl {
+	mode: BotControlMode;
+	reason?: BotControlReason;
+	since?: number;
+	/** playerId des Auslösers oder "system" */
+	controlledBy?: string;
+}
+
+export interface PlayerPresence {
+	connected: boolean;
+	lastSeenAt: number;
+	disconnectedAt?: number;
+}
+
+// =============================================================================
 // Spielpunkte (DDV-Turnierregeln Abschnitt 7)
 // =============================================================================
 

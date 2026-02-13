@@ -106,6 +106,32 @@ function createDefaultTeams(
 	return teams;
 }
 
+function createDefaultBotControl(
+	players: Player[],
+): GameState["botControlByPlayer"] {
+	const control: GameState["botControlByPlayer"] = {};
+	for (const currentPlayer of players) {
+		control[currentPlayer.id] = {
+			mode: "human",
+		};
+	}
+	return control;
+}
+
+function createDefaultPresence(
+	players: Player[],
+): GameState["presenceByPlayer"] {
+	const now = Date.now();
+	const presence: GameState["presenceByPlayer"] = {};
+	for (const currentPlayer of players) {
+		presence[currentPlayer.id] = {
+			connected: false,
+			lastSeenAt: now,
+		};
+	}
+	return presence;
+}
+
 export function baseGameState(overrides: Partial<GameState> = {}): GameState {
 	const players = overrides.players ?? createDefaultPlayers();
 	const base: GameState = {
@@ -132,6 +158,9 @@ export function baseGameState(overrides: Partial<GameState> = {}): GameState {
 		spectators: [],
 		spectatorCount: 0,
 		announcements: announcements(),
+		botControlByPlayer: createDefaultBotControl(players),
+		presenceByPlayer: createDefaultPresence(players),
+		botRoundScope: "current-round",
 	};
 
 	return {
