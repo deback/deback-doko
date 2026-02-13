@@ -1,64 +1,27 @@
 import { canMakeAnnouncement } from "../../announcements";
 import type {
 	AnnouncementType,
-	ContractType,
 	GameState,
 	PointAnnouncementType,
 	ReservationType,
 } from "../../types";
 import {
+	getEmergencySpecialContract,
+	getPreferredSpecialContract,
+	hasSpecialContract,
+} from "./contract-policy";
+import {
 	chooseCheapestWinningCard,
 	chooseLowestRiskCard,
-	countCardsBySuit,
 	estimateHandStrength,
 	getBotHand,
 	getBotPlayableCards,
-	hasBothClubsQueens,
 	isCurrentTrickWonByTeam,
 } from "./legal-view";
 import type { BotDecision } from "./types";
 
 function decideBid(gameState: GameState, playerId: string): ReservationType {
-	const hand = getBotHand(gameState, playerId);
-	const strength = estimateHandStrength(gameState, hand);
-	if (hasBothClubsQueens(hand)) return "vorbehalt";
-	if (strength >= 70) return "vorbehalt";
-	return "gesund";
-}
-
-function decideContract(gameState: GameState, playerId: string): ContractType {
-	const hand = getBotHand(gameState, playerId);
-	if (hasBothClubsQueens(hand)) {
-		return "hochzeit";
-	}
-
-	const suits = countCardsBySuit(hand);
-	const suitOrder: Array<{
-		suit: "clubs" | "spades" | "hearts" | "diamonds";
-		contract: ContractType;
-	}> = [
-		{ suit: "clubs", contract: "solo-clubs" },
-		{ suit: "spades", contract: "solo-spades" },
-		{ suit: "hearts", contract: "solo-hearts" },
-		{ suit: "diamonds", contract: "solo-diamonds" },
-	];
-
-	for (const { suit, contract } of suitOrder) {
-		if (suits[suit] >= 8) {
-			return contract;
-		}
-	}
-
-	const queens = hand.filter((card) => card.rank === "queen").length;
-	if (queens >= 5) return "solo-queens";
-
-	const jacks = hand.filter((card) => card.rank === "jack").length;
-	if (jacks >= 5) return "solo-jacks";
-
-	const aces = hand.filter((card) => card.rank === "ace").length;
-	if (aces >= 6) return "solo-aces";
-
-	return "normal";
+	return hasSpecialContract(gameState, playerId) ? "vorbehalt" : "gesund";
 }
 
 function decideAnnouncement(
@@ -71,12 +34,13 @@ function decideAnnouncement(
 	if (!team) return null;
 
 	const hand = getBotHand(gameState, playerId);
+	const cardCount = hand.length;
 	const strength = estimateHandStrength(gameState, hand);
 	const baseAnnouncement: AnnouncementType = team === "re" ? "re" : "kontra";
 	const teamAnnouncement =
 		team === "re" ? gameState.announcements.re : gameState.announcements.kontra;
 
-	if (!teamAnnouncement.announced && strength >= 64) {
+	if (!teamAnnouncement.announced && strength >= 86) {
 		const validation = canMakeAnnouncement(
 			gameState,
 			playerId,
@@ -93,28 +57,44 @@ function decideAnnouncement(
 
 	if (!teamAnnouncement.announced) return null;
 
+	const teamPointAnnouncements =
+		team === "re"
+			? gameState.announcements.rePointAnnouncements
+			: gameState.announcements.kontraPointAnnouncements;
+
 	const thresholds: Array<{
 		type: PointAnnouncementType;
+		requiredCardCount: number;
 		minStrength: number;
 	}> = [
-		{ type: "no90", minStrength: 78 },
-		{ type: "no60", minStrength: 88 },
-		{ type: "no30", minStrength: 96 },
-		{ type: "schwarz", minStrength: 104 },
+		{ type: "no90", requiredCardCount: 10, minStrength: 110 },
+		{ type: "no60", requiredCardCount: 9, minStrength: 122 },
+		{ type: "no30", requiredCardCount: 8, minStrength: 134 },
+		{ type: "schwarz", requiredCardCount: 7, minStrength: 146 },
 	];
 
-	for (const threshold of thresholds) {
-		if (strength < threshold.minStrength) continue;
-		const validation = canMakeAnnouncement(gameState, playerId, threshold.type);
-		if (!validation.allowed) continue;
-		return {
-			type: "announce",
-			announcement: threshold.type,
-			reasonCode: `announcement.${threshold.type}.safe-threshold`,
-		};
-	}
+	const nextThreshold = thresholds.find(
+		(threshold) =>
+			!teamPointAnnouncements.some(
+				(announcement) => announcement.type === threshold.type,
+			),
+	);
+	if (!nextThreshold) return null;
+	if (cardCount !== nextThreshold.requiredCardCount) return null;
+	if (strength < nextThreshold.minStrength) return null;
 
-	return null;
+	const validation = canMakeAnnouncement(
+		gameState,
+		playerId,
+		nextThreshold.type,
+	);
+	if (!validation.allowed) return null;
+
+	return {
+		type: "announce",
+		announcement: nextThreshold.type,
+		reasonCode: `announcement.${nextThreshold.type}.safe-threshold`,
+	};
 }
 
 function decideCard(
@@ -184,14 +164,13 @@ export function decideBotAction(
 	if (gameState.biddingPhase?.active) {
 		const awaiting = gameState.biddingPhase.awaitingContractDeclaration ?? [];
 		if (awaiting.includes(playerId)) {
-			const contract = decideContract(gameState, playerId);
+			const contract =
+				getPreferredSpecialContract(gameState, playerId) ??
+				getEmergencySpecialContract(gameState, playerId);
 			return {
 				type: "declare-contract",
 				contract,
-				reasonCode:
-					contract === "normal"
-						? "contract.default-normal"
-						: `contract.conservative.${contract}`,
+				reasonCode: `contract.conservative.${contract}`,
 			};
 		}
 

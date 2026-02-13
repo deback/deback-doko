@@ -12,7 +12,12 @@ import {
 } from "@/components/ui/dialog";
 import { calculateBalanceChange, isSoloGame } from "@/lib/game/rules";
 import { cn, formatBalance } from "@/lib/utils";
-import type { GamePointsResult, GameState } from "@/types/game";
+import type {
+	Announcements,
+	GamePointsResult,
+	GameState,
+	PointAnnouncementType,
+} from "@/types/game";
 import type { Player } from "@/types/tables";
 
 // =============================================================================
@@ -37,6 +42,65 @@ const POINT_THRESHOLDS: Record<string, number> = {
 	Schwarz: 240,
 };
 
+const POINT_ANNOUNCEMENT_ORDER: PointAnnouncementType[] = [
+	"no90",
+	"no60",
+	"no30",
+	"schwarz",
+];
+
+type NonScoredAnnouncement = {
+	team: "re" | "kontra";
+	label: string;
+};
+
+function getPointAnnouncementLabel(type: PointAnnouncementType): string {
+	switch (type) {
+		case "no90":
+			return "Keine 90";
+		case "no60":
+			return "Keine 60";
+		case "no30":
+			return "Keine 30";
+		case "schwarz":
+			return "Schwarz";
+	}
+}
+
+function buildNonScoredAnnouncements(
+	announcements: Announcements,
+): NonScoredAnnouncement[] {
+	const result: NonScoredAnnouncement[] = [];
+	const seen = new Set<string>();
+
+	const append = (team: "re" | "kontra", label: string) => {
+		const key = `${team}:${label}`;
+		if (seen.has(key)) return;
+		seen.add(key);
+		result.push({ team, label });
+	};
+
+	if (announcements.re.announced) {
+		append("re", "Re angesagt");
+	}
+	if (announcements.kontra.announced) {
+		append("kontra", "Kontra angesagt");
+	}
+
+	for (const type of POINT_ANNOUNCEMENT_ORDER) {
+		if (announcements.rePointAnnouncements.some((a) => a.type === type)) {
+			append("re", `${getPointAnnouncementLabel(type)} angesagt`);
+		}
+	}
+	for (const type of POINT_ANNOUNCEMENT_ORDER) {
+		if (announcements.kontraPointAnnouncements.some((a) => a.type === type)) {
+			append("kontra", `${getPointAnnouncementLabel(type)} angesagt`);
+		}
+	}
+
+	return result;
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -59,6 +123,11 @@ export function GameEndDialog({
 
 	const gpr = testGpr ?? gameState.gamePointsResult;
 	const myTeam = currentPlayer ? gameState.teams[currentPlayer.id] : undefined;
+	const noTeamWon = !!gpr && !gpr.reWon && !gpr.kontraWon;
+	const nonScoredAnnouncements =
+		noTeamWon && gameState.announcements
+			? buildNonScoredAnnouncements(gameState.announcements)
+			: [];
 	const myCardPoints =
 		myTeam === "re" ? (gpr?.reCardPoints ?? 0) : (gpr?.kontraCardPoints ?? 0);
 	const iWon = myTeam === "re" ? gpr?.reWon : gpr?.kontraWon;
@@ -344,99 +413,148 @@ export function GameEndDialog({
 						</div>
 
 						{/* Game Points List */}
-						{gpr && gpr.points.length > 0 && (
-							<div className="space-y-1">
-								<h4 className="font-semibold text-sm">Spielpunkte</h4>
-								<div className="space-y-0.5 rounded-lg border p-2">
-									{gpr.points.map(
-										(
-											point: {
-												label: string;
-												team: "re" | "kontra";
-												value: number;
-											},
-											idx: number,
-										) => {
-											const isVisible = visiblePoints.has(idx);
-											const isMyPoint = point.team === myTeam;
-											return (
-												<motion.div
-													animate={
-														isVisible
-															? {
-																	opacity: 1,
-																	x: 0,
-																}
-															: {
-																	opacity: 0,
-																	x: -10,
-																}
-													}
-													className="flex items-center justify-between text-sm"
-													initial={{
-														opacity: 0,
-														x: -10,
-													}}
-													key={`${point.label}-${point.team}-${idx}`}
-													transition={{
-														duration: 0.3,
-													}}
-												>
-													<span className="text-muted-foreground">
-														{point.label}
-													</span>
-													<span
-														className={cn(
-															"font-medium font-mono",
-															isMyPoint ? "text-emerald-600" : "text-red-500",
-														)}
+						{gpr &&
+							(gpr.points.length > 0 || nonScoredAnnouncements.length > 0) && (
+								<div className="space-y-1">
+									<h4 className="font-semibold text-sm">Spielpunkte</h4>
+									<div className="space-y-0.5 rounded-lg border p-2">
+										{noTeamWon && (
+											<div className="mb-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-amber-900 text-xs">
+												Regel 7.1.4: Ansagen wurden nicht gewertet.
+											</div>
+										)}
+										{gpr.points.map(
+											(
+												point: {
+													label: string;
+													team: "re" | "kontra";
+													value: number;
+												},
+												idx: number,
+											) => {
+												const isVisible = visiblePoints.has(idx);
+												const isMyPoint = point.team === myTeam;
+												return (
+													<motion.div
+														animate={
+															isVisible
+																? {
+																		opacity: 1,
+																		x: 0,
+																	}
+																: {
+																		opacity: 0,
+																		x: -10,
+																	}
+														}
+														className="flex items-center justify-between text-sm"
+														initial={{
+															opacity: 0,
+															x: -10,
+														}}
+														key={`${point.label}-${point.team}-${idx}`}
+														transition={{
+															duration: 0.3,
+														}}
 													>
-														{isMyPoint ? "+" : "\u2212"}
-														{point.value}
-													</span>
-												</motion.div>
-											);
-										},
-									)}
+														<span className="flex items-center gap-2 text-muted-foreground">
+															<span
+																className={cn(
+																	"inline-flex min-w-7 items-center justify-center rounded px-1 py-0.5 font-mono font-semibold text-[10px]",
+																	point.team === "re"
+																		? "bg-indigo-500/15 text-indigo-700"
+																		: "bg-rose-500/15 text-rose-700",
+																)}
+															>
+																{point.team === "re" ? "RE" : "KO"}
+															</span>
+															<span>{point.label}</span>
+														</span>
+														<span
+															className={cn(
+																"font-medium font-mono",
+																isMyPoint ? "text-emerald-600" : "text-red-500",
+															)}
+														>
+															{isMyPoint ? "+" : "\u2212"}
+															{point.value}
+														</span>
+													</motion.div>
+												);
+											},
+										)}
 
-									{/* Solomultiplikator */}
-									{isSolo && myTeam === "re" && (
+										{nonScoredAnnouncements.length > 0 && (
+											<div className="mt-1 rounded-md border border-dashed bg-muted/30 p-2">
+												<div className="mb-1 font-medium text-muted-foreground text-xs">
+													Nicht gewertet
+												</div>
+												<div className="space-y-0.5">
+													{nonScoredAnnouncements.map((entry, idx) => (
+														<div
+															className="flex items-center justify-between text-sm"
+															key={`${entry.team}-${entry.label}-${idx}`}
+														>
+															<span className="flex items-center gap-2 text-muted-foreground">
+																<span
+																	className={cn(
+																		"inline-flex min-w-7 items-center justify-center rounded px-1 py-0.5 font-mono font-semibold text-[10px]",
+																		entry.team === "re"
+																			? "bg-indigo-500/15 text-indigo-700"
+																			: "bg-rose-500/15 text-rose-700",
+																	)}
+																>
+																	{entry.team === "re" ? "RE" : "KO"}
+																</span>
+																<span>{entry.label}</span>
+															</span>
+															<span className="font-medium font-mono text-muted-foreground">
+																—
+															</span>
+														</div>
+													))}
+												</div>
+											</div>
+										)}
+
+										{/* Solomultiplikator */}
+										{isSolo && myTeam === "re" && (
+											<motion.div
+												animate={
+													showSummary
+														? { opacity: 1, x: 0 }
+														: { opacity: 0, x: -10 }
+												}
+												className="flex items-center justify-between text-sm"
+												initial={{ opacity: 0, x: -10 }}
+												transition={{ duration: 0.3 }}
+											>
+												<span className="text-muted-foreground">
+													Solomultiplikator
+												</span>
+												<span className="font-medium font-mono text-muted-foreground">
+													× 3
+												</span>
+											</motion.div>
+										)}
+
+										{/* Gesamt */}
 										<motion.div
-											animate={
-												showSummary
-													? { opacity: 1, x: 0 }
-													: { opacity: 0, x: -10 }
-											}
-											className="flex items-center justify-between text-sm"
-											initial={{ opacity: 0, x: -10 }}
-											transition={{ duration: 0.3 }}
+											animate={showSummary ? { opacity: 1 } : { opacity: 0 }}
+											className="mt-1 flex items-center justify-between border-t pt-2 font-bold text-sm"
+											initial={{ opacity: 0 }}
+											transition={{ duration: 0.4 }}
 										>
-											<span className="text-muted-foreground">
-												Solomultiplikator
-											</span>
-											<span className="font-medium font-mono text-muted-foreground">
-												× 3
+											<span>Gesamt</span>
+											<span>
+												{myNetPoints > 0 ? "+" : ""}
+												{myNetPoints}{" "}
+												{Math.abs(myNetPoints) === 1 ? "Punkt" : "Punkte"}
 											</span>
 										</motion.div>
-									)}
-
-									{/* Gesamt */}
-									<motion.div
-										animate={showSummary ? { opacity: 1 } : { opacity: 0 }}
-										className="mt-1 flex items-center justify-between border-t pt-2 font-bold text-sm"
-										initial={{ opacity: 0 }}
-										transition={{ duration: 0.4 }}
-									>
-										<span>Gesamt</span>
-										<span>
-											{myNetPoints > 0 ? "+" : ""}
-											{myNetPoints}{" "}
-											{Math.abs(myNetPoints) === 1 ? "Punkt" : "Punkte"}
-										</span>
-									</motion.div>
+									</div>
 								</div>
-							</div>
-						)}
+							)}
 
 						{/* Abrechnung */}
 						{gpr && currentPlayer && (

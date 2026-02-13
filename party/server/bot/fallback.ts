@@ -1,4 +1,5 @@
 import type { GameState } from "../../types";
+import { getEmergencySpecialContract } from "./contract-policy";
 import { chooseLowestRiskCard, getBotPlayableCards } from "./legal-view";
 import type { BotDecision } from "./types";
 
@@ -11,8 +12,8 @@ export function decideFallbackBotAction(
 		if (awaiting.includes(playerId)) {
 			return {
 				type: "declare-contract",
-				contract: "normal",
-				reasonCode: "fallback.contract.normal",
+				contract: getEmergencySpecialContract(gameState, playerId),
+				reasonCode: "fallback.contract.emergency-special",
 			};
 		}
 

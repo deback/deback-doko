@@ -89,6 +89,34 @@ describe("game scoring engine", () => {
 		expect(getLabels(result)).toContain("Keine 90 angesagt");
 	});
 
+	it("suppresses (b/c/d) when both teams miss announced targets (rule 7.1.4)", () => {
+		const state = baseGameState({
+			scores: {
+				p1: 65,
+				p2: 65,
+				p3: 55,
+				p4: 55,
+			},
+			announcements: announcements({
+				re: { announced: true, by: "p1" },
+				kontra: { announced: true, by: "p3" },
+				rePointAnnouncements: [{ type: "no90", by: "p1" }],
+				kontraPointAnnouncements: [{ type: "no90", by: "p3" }],
+			}),
+		});
+
+		const result = calculateGamePoints(state);
+		const labels = getLabels(result);
+
+		expect(result.reWon).toBe(false);
+		expect(result.kontraWon).toBe(false);
+		expect(labels).not.toContain("Re angesagt");
+		expect(labels).not.toContain("Kontra angesagt");
+		expect(labels).not.toContain("Keine 90 angesagt");
+		expect(labels).toContain("120 gegen Keine 90");
+		expect(labels).toHaveLength(1);
+	});
+
 	it.each<ContractType>([
 		"solo-hearts",
 		"solo-queens",

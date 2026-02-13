@@ -8,6 +8,8 @@ interface SpectatorListProps {
 }
 
 export function SpectatorList({ spectators }: SpectatorListProps) {
+	if (spectators.length === 0) return null;
+
 	return (
 		<div className="flex max-h-[30vh] max-w-[min(30vw,20rem)] flex-col overflow-hidden rounded-lg bg-black/40 backdrop-blur-sm">
 			<div className="flex shrink-0 items-center gap-1.5 px-2 py-1.5 text-white/50 text-xs">

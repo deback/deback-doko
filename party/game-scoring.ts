@@ -63,6 +63,7 @@ export function calculateGamePoints(gameState: GameState): GamePointsResult {
 		reHighest,
 		kontraHighest,
 	);
+	const noTeamWon = !reWon && !kontraWon;
 
 	// === 7.2.2 Spielpunkte ===
 
@@ -88,38 +89,41 @@ export function calculateGamePoints(gameState: GameState): GamePointsResult {
 		}
 	}
 
-	// (b) Re/Kontra Ansagen (immer, egal wer gewinnt)
-	if (reAnnounced) {
-		points.push({
-			label: "Re angesagt",
-			team: reWon ? "re" : "kontra",
-			value: 2,
-		});
-	}
-	if (kontraAnnounced) {
-		points.push({
-			label: "Kontra angesagt",
-			team: kontraWon ? "kontra" : "re",
-			value: 2,
-		});
-	}
+	// 7.1.4: Falls beide Seiten ihr Ziel verfehlen, zählen nur (a), (e), (f) + Sonderpunkte.
+	if (!noTeamWon) {
+		// (b) Re/Kontra Ansagen
+		if (reAnnounced) {
+			points.push({
+				label: "Re angesagt",
+				team: reWon ? "re" : "kontra",
+				value: 2,
+			});
+		}
+		if (kontraAnnounced) {
+			points.push({
+				label: "Kontra angesagt",
+				team: kontraWon ? "kontra" : "re",
+				value: 2,
+			});
+		}
 
-	// (c) Re-Punktansagen
-	for (const ann of rePointAnnouncements) {
-		points.push({
-			label: `${announcementLabel(ann)} angesagt`,
-			team: reWon ? "re" : "kontra",
-			value: 1,
-		});
-	}
+		// (c) Re-Punktansagen
+		for (const ann of rePointAnnouncements) {
+			points.push({
+				label: `${announcementLabel(ann)} angesagt`,
+				team: reWon ? "re" : "kontra",
+				value: 1,
+			});
+		}
 
-	// (d) Kontra-Punktansagen
-	for (const ann of kontraPointAnnouncements) {
-		points.push({
-			label: `${announcementLabel(ann)} angesagt`,
-			team: kontraWon ? "kontra" : "re",
-			value: 1,
-		});
+		// (d) Kontra-Punktansagen
+		for (const ann of kontraPointAnnouncements) {
+			points.push({
+				label: `${announcementLabel(ann)} angesagt`,
+				team: kontraWon ? "kontra" : "re",
+				value: 1,
+			});
+		}
 	}
 
 	// (e) Re-Team erzielt Punkte gegen Kontra-Ansagen
