@@ -2,6 +2,7 @@
 
 import { Laptop, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const themeOptions = [
@@ -10,7 +11,11 @@ const themeOptions = [
 	{ value: "system", label: "System", icon: Laptop },
 ] as const;
 
-export function AppearanceTab() {
+interface AppearanceTabProps {
+	extension?: ReactNode;
+}
+
+export function AppearanceTab({ extension }: AppearanceTabProps) {
 	const { setTheme, theme } = useTheme();
 
 	return (
@@ -39,6 +44,7 @@ export function AppearanceTab() {
 					);
 				})}
 			</div>
+			{extension}
 		</div>
 	);
 }

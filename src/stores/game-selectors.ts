@@ -342,3 +342,4 @@ export const useSetChatPanelOpen = () =>
 	useGameStore((s) => s.setChatPanelOpen);
 export const useSetChatPanelHydrated = () =>
 	useGameStore((s) => s.setChatPanelHydrated);
+export const useIsChatPanelOpen = () => useGameStore((s) => s.chatPanelOpen);

@@ -1,7 +1,7 @@
 "use client";
 
 import { Settings } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import {
 	Dialog,
 	DialogContent,
@@ -10,8 +10,11 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "../ui/button";
 import { AppearanceTab } from "./appearance-tab";
 import { ProfileTab } from "./profile-tab";
+
+type SettingsTab = "profile" | "appearance";
 
 interface SettingsDialogProps {
 	user?: {
@@ -19,22 +22,40 @@ interface SettingsDialogProps {
 		name: string;
 		image: string | null;
 	} | null;
+	trigger?: ReactNode;
+	appearanceExtension?: ReactNode;
+	initialTab?: SettingsTab;
 }
 
-export function SettingsDialog({ user }: SettingsDialogProps) {
+export function SettingsDialog({
+	user,
+	trigger,
+	appearanceExtension,
+	initialTab = "profile",
+}: SettingsDialogProps) {
 	const [open, setOpen] = useState(false);
+	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+
+	function handleOpenChange(nextOpen: boolean) {
+		setOpen(nextOpen);
+		if (nextOpen) {
+			setActiveTab(initialTab);
+		}
+	}
 
 	return (
-		<Dialog onOpenChange={setOpen} open={open}>
+		<Dialog onOpenChange={handleOpenChange} open={open}>
 			<DialogTrigger asChild>
-				<button
-					aria-label="Einstellungen"
-					className="flex flex-col items-center gap-1 rounded-lg px-4 py-2 text-muted-foreground transition-colors hover:text-foreground"
-					type="button"
-				>
-					<Settings className="size-6" />
-					<span className="text-xs">Optionen</span>
-				</button>
+				{trigger ?? (
+					<Button
+						aria-label="Einstellungen"
+						className="flex flex-col items-center gap-1 rounded-lg px-4 py-2 text-muted-foreground transition-colors hover:text-foreground"
+						type="button"
+					>
+						<Settings className="size-6" />
+						<span className="text-xs">Optionen</span>
+					</Button>
+				)}
 			</DialogTrigger>
 			<DialogContent className="content-start">
 				<DialogHeader>
@@ -42,7 +63,11 @@ export function SettingsDialog({ user }: SettingsDialogProps) {
 				</DialogHeader>
 
 				{user ? (
-					<Tabs className="w-full" defaultValue="profile">
+					<Tabs
+						className="w-full"
+						onValueChange={(value) => setActiveTab(value as SettingsTab)}
+						value={activeTab}
+					>
 						<TabsList className="w-full">
 							<TabsTrigger className="flex-1" value="profile">
 								Profil
@@ -64,12 +89,12 @@ export function SettingsDialog({ user }: SettingsDialogProps) {
 								forceMount
 								value="appearance"
 							>
-								<AppearanceTab />
+								<AppearanceTab extension={appearanceExtension} />
 							</TabsContent>
 						</div>
 					</Tabs>
 				) : (
-					<AppearanceTab />
+					<AppearanceTab extension={appearanceExtension} />
 				)}
 			</DialogContent>
 		</Dialog>

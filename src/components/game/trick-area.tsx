@@ -589,13 +589,6 @@ export function TrickArea({
 				</div>
 			)}
 
-			{/* Drop-Zone Hinweis */}
-			{trickCards.length === 0 && !playedCard && !isOver && !isAnimating && (
-				<div className="absolute inset-0 flex items-center justify-center">
-					<span className="text-sm text-white/30">Karte hier ablegen</span>
-				</div>
-			)}
-
 			{/* Hover-Effekt */}
 			{isOver && canDrop && (
 				<div className="pointer-events-none absolute inset-0 flex items-center justify-center">

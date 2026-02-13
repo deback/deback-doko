@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Mic, MicOff, Send, Square, XIcon } from "lucide-react";
+import { Loader2, Mic, MicOff, Send, Square } from "lucide-react";
 import {
 	useCallback,
 	useEffect,
@@ -31,7 +31,6 @@ import {
 	useSendChatMessage,
 	useSetChatCooldownUntil,
 	useSetChatLocalError,
-	useSetChatPanelOpen,
 } from "@/stores/game-selectors";
 
 const MAX_CHAT_LENGTH = 500;
@@ -44,7 +43,11 @@ const SPEECH_PERMISSION_DENIED_MESSAGE = "Mikrofonzugriff wurde nicht erlaubt.";
 const SPEECH_UNSUPPORTED_MESSAGE =
 	"Spracherkennung wird in diesem Browser nicht unterstützt.";
 
-export function GameChatPanel() {
+interface GameChatPanelProps {
+	onUnreadCountChange: (count: number) => void;
+}
+
+export function GameChatPanel({ onUnreadCountChange }: GameChatPanelProps) {
 	const currentPlayer = useCurrentPlayer();
 	const chatMessages = useChatMessages();
 	const chatHistoryVersion = useChatHistoryVersion();
@@ -55,7 +58,7 @@ export function GameChatPanel() {
 	const sendChatMessage = useSendChatMessage();
 	const setChatCooldownUntil = useSetChatCooldownUntil();
 	const setChatLocalError = useSetChatLocalError();
-	const setChatPanelOpen = useSetChatPanelOpen();
+
 	const {
 		status: speechStatus,
 		isSupported: isSpeechSupported,
@@ -246,6 +249,10 @@ export function GameChatPanel() {
 	}, [open, chatMessages.length, scrollToBottomInstant]);
 
 	useEffect(() => {
+		onUnreadCountChange(unreadCount);
+	}, [onUnreadCountChange, unreadCount]);
+
+	useEffect(() => {
 		if (!open) return;
 		if (chatHistoryVersion <= lastHandledHistoryVersionRef.current) return;
 
@@ -348,26 +355,9 @@ export function GameChatPanel() {
 					open ? "md:translate-x-0" : "md:translate-x-full",
 				)}
 			>
-				<div className="fixed top-0 right-0 left-0 z-60 flex items-center justify-between bg-linear-to-b from-background via-background/70 to-background/0 px-3 py-2">
-					<div className="flex min-w-0 items-center gap-2">
-						{unreadCount > 0 && (
-							<span className="rounded-full bg-primary/20 px-2 py-0.5 text-primary text-xs">
-								{unreadCount}
-							</span>
-						)}
-					</div>
-					<Button
-						aria-label="Chat schließen"
-						onClick={() => setChatPanelOpen(false)}
-						size="icon"
-						variant="outline"
-					>
-						<XIcon className="size-4" />
-					</Button>
-				</div>
-
+				<div className="fixed top-0 right-0 left-0 z-10 h-12 shrink-0 bg-linear-to-b from-background to-background/0 px-3 py-2" />
 				<div
-					className="flex min-h-0 flex-1 grow flex-col overflow-y-auto pt-8"
+					className="flex min-h-0 flex-1 grow flex-col overflow-y-auto"
 					ref={messagesContainerRef}
 				>
 					<div className="p-3">

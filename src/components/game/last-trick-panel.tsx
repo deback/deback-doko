@@ -91,12 +91,12 @@ export function LastTrickPanel({
 					<p className="text-white/70 text-xs">{trick.points ?? 0} Punkte</p>
 				</div>
 				<Button
-					className="size-7 rounded-full bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
+					className="absolute top-0 right-0"
 					onClick={() => onOpenChange(false)}
 					size="icon"
-					variant="ghost"
+					variant="transparent"
 				>
-					<X className="h-4 w-4" />
+					<X />
 					<span className="sr-only">Letzten Stich schließen</span>
 				</Button>
 			</div>

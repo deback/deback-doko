@@ -14,6 +14,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { FloatingButtonWrapper } from "./floating-button-wrapper";
 
 interface GameShareMenuProps {
 	gameId: string;
@@ -106,9 +107,15 @@ export function GameShareMenu({ gameId, tableId }: GameShareMenuProps) {
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<DropdownMenuTrigger asChild>
-						<Button aria-label="Einladung teilen" size="icon" variant="outline">
-							<Share2 />
-						</Button>
+						<FloatingButtonWrapper>
+							<Button
+								aria-label="Einladung teilen"
+								size="icon"
+								variant="outline"
+							>
+								<Share2 />
+							</Button>
+						</FloatingButtonWrapper>
 					</DropdownMenuTrigger>
 				</TooltipTrigger>
 				<TooltipContent side="left">Einladung teilen</TooltipContent>

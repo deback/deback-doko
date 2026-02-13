@@ -13,6 +13,7 @@ import {
 	useIsStandingUp,
 	useToggleStandUp,
 } from "@/stores/game-selectors";
+import { FloatingButtonWrapper } from "./floating-button-wrapper";
 
 interface StandUpButtonProps {
 	className?: string;
@@ -25,25 +26,27 @@ export function StandUpButton({ className }: StandUpButtonProps) {
 	const isWaiting = gameState && !gameState.gameStarted;
 
 	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<Button
-					aria-label={isStandingUp ? "Platz nehmen" : "Aufstehen"}
-					className={cn(className)}
-					onClick={() => toggleStandUp()}
-					size="icon"
-					variant="outline"
-				>
-					{isStandingUp ? <ArrowDownToLine /> : <ArrowUpFromLine />}
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent>
-				{isStandingUp
-					? "Am Tisch bleiben (Platz nehmen)"
-					: isWaiting
-						? "Tisch sofort verlassen"
-						: "Nach dieser Runde den Tisch verlassen"}
-			</TooltipContent>
-		</Tooltip>
+		<FloatingButtonWrapper>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						aria-label={isStandingUp ? "Platz nehmen" : "Aufstehen"}
+						className={cn(className)}
+						onClick={() => toggleStandUp()}
+						size="icon"
+						variant="outline"
+					>
+						{isStandingUp ? <ArrowDownToLine /> : <ArrowUpFromLine />}
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>
+					{isStandingUp
+						? "Am Tisch bleiben (Platz nehmen)"
+						: isWaiting
+							? "Tisch sofort verlassen"
+							: "Nach dieser Runde den Tisch verlassen"}
+				</TooltipContent>
+			</Tooltip>
+		</FloatingButtonWrapper>
 	);
 }

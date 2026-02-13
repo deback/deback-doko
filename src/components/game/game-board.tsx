@@ -10,15 +10,10 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import {
-	Bot,
-	FastForward,
-	Hourglass,
-	MessageSquare,
-	RotateCcw,
-} from "lucide-react";
+import { Bot, FastForward, Hourglass, RotateCcw, Settings } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Card as UiCard,
@@ -50,9 +45,11 @@ import type { Card, GameState } from "@/types/game";
 import { AnnouncementButtons } from "./announcement-buttons";
 import { BiddingSelect } from "./bidding-select";
 import { CARD_SIZE, type CardOrigin } from "./card";
+import { FloatingButtonWrapper } from "./floating-button-wrapper";
+import { GameCardAppearanceSettings } from "./game-card-appearance-settings";
+import { GameChatControls } from "./game-chat-controls";
 import { GameChatPanel } from "./game-chat-panel";
 import { GameEndDialog } from "./game-end-dialog";
-import { GameSettingsMenu } from "./game-settings-menu";
 import { GameShareMenu } from "./game-share-menu";
 import { LastTrickPanel } from "./last-trick-panel";
 import { LastTrickToggleButton } from "./last-trick-toggle-button";
@@ -129,6 +126,7 @@ export function GameBoard() {
 		useState<GameState | null>(null);
 	const [isTrickAnimating, setIsTrickAnimating] = useState(false);
 	const [showLastTrick, setShowLastTrick] = useState(false);
+	const [unreadCount, setUnreadCount] = useState(0);
 
 	// =========================================================================
 	// DnD Sensors
@@ -303,6 +301,13 @@ export function GameBoard() {
 	// Card count helper: uses handCounts (available for spectators) with fallback to hands array
 	const getCardCount = (playerId: string) =>
 		gameState.handCounts[playerId] ?? gameState.hands[playerId]?.length ?? 0;
+	const settingsDialogUser = currentPlayer
+		? {
+				id: currentPlayer.id,
+				name: currentPlayer.name,
+				image: currentPlayer.image ?? null,
+			}
+		: null;
 
 	// =========================================================================
 	// Render
@@ -328,18 +333,14 @@ export function GameBoard() {
 				onClick={() => setChatPanelOpen(false)}
 				type="button"
 			/>
+			<div className="fixed top-2 right-2 z-60 flex items-center gap-1">
+				<GameChatControls
+					chatPanelOpen={chatPanelOpen}
+					onToggleChat={() => setChatPanelOpen(!chatPanelOpen)}
+					unreadCount={unreadCount}
+				/>
+			</div>
 			<main className="relative h-dvh min-h-0 min-w-0 flex-1 transform-gpu md:h-full">
-				<div className="fixed top-2 right-2 z-60">
-					<Button
-						aria-expanded={chatPanelOpen}
-						aria-label="Chat öffnen oder schließen"
-						onClick={() => setChatPanelOpen(!chatPanelOpen)}
-						size="icon"
-						variant="outline"
-					>
-						<MessageSquare className="size-4" />
-					</Button>
-				</div>
 				<DndContext
 					id={dndContextId}
 					onDragEnd={handleDragEnd}
@@ -559,7 +560,7 @@ export function GameBoard() {
 
 						{/* Last Trick Panel */}
 						{lastTrick && (
-							<div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2">
+							<div className="fixed right-0 bottom-12 z-50 flex flex-col items-end gap-2 p-2">
 								<LastTrickPanel
 									onOpenChange={setShowLastTrick}
 									open={showLastTrick}
@@ -574,7 +575,6 @@ export function GameBoard() {
 								/>
 							</div>
 						)}
-
 						{/* Button bar bottom right	 */}
 						<div className="fixed right-0 bottom-0 z-50 flex items-center gap-1 p-2">
 							<LastTrickToggleButton
@@ -585,7 +585,23 @@ export function GameBoard() {
 								gameId={gameState.id}
 								tableId={gameState.tableId}
 							/>
-							<GameSettingsMenu />
+							<SettingsDialog
+								appearanceExtension={<GameCardAppearanceSettings />}
+								initialTab="appearance"
+								trigger={
+									<FloatingButtonWrapper>
+										<Button
+											aria-label="Einstellungen"
+											size="icon"
+											variant="outline"
+										>
+											<Settings className="size-4" />
+											<span className="sr-only">Einstellungen</span>
+										</Button>
+									</FloatingButtonWrapper>
+								}
+								user={settingsDialogUser}
+							/>
 							<StandUpButton />
 						</div>
 
@@ -658,7 +674,7 @@ export function GameBoard() {
 				</DndContext>
 			</main>
 
-			<GameChatPanel />
+			<GameChatPanel onUnreadCountChange={setUnreadCount} />
 		</div>
 	);
 }
