@@ -336,7 +336,7 @@ export function GameChatPanel() {
 	return (
 		<div
 			className={cn(
-				"fixed inset-y-0 right-0 z-50 h-dvh w-72 transition-transform duration-300 ease-in-out md:static md:relative md:z-auto md:h-full md:w-full md:shrink-0 md:overflow-hidden md:transition-none",
+				"fixed inset-y-0 right-0 z-50 h-dvh w-72 transition-transform duration-300 ease-in-out md:relative md:z-auto md:h-full md:w-full md:shrink-0 md:overflow-hidden md:transition-none",
 				open
 					? "translate-x-0"
 					: "pointer-events-none translate-x-full md:pointer-events-auto md:translate-x-0",
@@ -348,7 +348,7 @@ export function GameChatPanel() {
 					open ? "md:translate-x-0" : "md:translate-x-full",
 				)}
 			>
-				<div className="fixed top-0 right-0 left-0 z-60 flex items-center justify-between bg-background/10 px-3 py-2 backdrop-blur-sm">
+				<div className="fixed top-0 right-0 left-0 z-60 flex items-center justify-between bg-linear-to-b from-background via-background/70 to-background/0 px-3 py-2">
 					<div className="flex min-w-0 items-center gap-2">
 						{unreadCount > 0 && (
 							<span className="rounded-full bg-primary/20 px-2 py-0.5 text-primary text-xs">
