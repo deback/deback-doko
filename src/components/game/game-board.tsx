@@ -331,8 +331,8 @@ export function GameBoard() {
 				onClick={() => setChatPanelOpen(false)}
 				type="button"
 			/>
-			<main className="relative h-dvh min-h-0 min-w-0 flex-1 transform-gpu overflow-hidden overscroll-none md:h-full">
-				<div className="fixed top-2 right-2 z-[60]">
+			<main className="relative h-dvh min-h-0 min-w-0 flex-1 transform-gpu md:h-full">
+				<div className="fixed top-2 right-2 z-60">
 					<Button
 						aria-expanded={chatPanelOpen}
 						aria-label="Chat öffnen oder schließen"

@@ -77,6 +77,18 @@ export function PlayerHand({
 		[],
 	);
 
+	const scheduleGhostCleanup = useCallback(
+		(cardId: string) => {
+			clearTimeout(ghostTimerRef.current);
+			setGhostCardId(cardId);
+			ghostTimerRef.current = setTimeout(() => {
+				onRemoveCard?.(cardId);
+				setGhostCardId((prev) => (prev === cardId ? null : prev));
+			}, CLOSE_GAP_DELAY);
+		},
+		[onRemoveCard],
+	);
+
 	// Cleanup ghost timer on unmount
 	useEffect(() => {
 		return () => {
@@ -87,22 +99,9 @@ export function PlayerHand({
 	// When a card is played via drag, trigger ghost + removal
 	useEffect(() => {
 		if (!activeDragCard) return;
-		const card = cards.find((c) => c.id === activeDragCard);
-		if (!card) return;
-
-		clearTimeout(ghostTimerRef.current);
-		setGhostCardId(activeDragCard);
 		setSelectedCardId(null);
-		const timerId = setTimeout(() => {
-			onRemoveCard?.(activeDragCard);
-			setGhostCardId(null);
-		}, CLOSE_GAP_DELAY);
-		ghostTimerRef.current = timerId;
-
-		return () => {
-			clearTimeout(timerId);
-		};
-	}, [activeDragCard, cards, onRemoveCard]);
+		scheduleGhostCleanup(activeDragCard);
+	}, [activeDragCard, scheduleGhostCleanup]);
 
 	// Wenn der Spieler am Zug ist und eine vorher ausgewählte Karte spielbar ist,
 	// spiele sie automatisch
@@ -134,12 +133,7 @@ export function PlayerHand({
 				onPlayCardWithOrigin?.(selectedCardId, origin);
 				// Actually play the card
 				playCard(selectedCardId);
-
-				setGhostCardId(selectedCardId);
-				ghostTimerRef.current = setTimeout(() => {
-					onRemoveCard?.(selectedCardId);
-					setGhostCardId(null);
-				}, CLOSE_GAP_DELAY);
+				scheduleGhostCleanup(selectedCardId);
 			}
 			setSelectedCardId(null);
 		}
@@ -152,8 +146,8 @@ export function PlayerHand({
 		cards,
 		playCard,
 		onPlayCardWithOrigin,
-		onRemoveCard,
 		ghostCardId,
+		scheduleGhostCleanup,
 	]);
 
 	// Wenn sich die spielbaren Karten ändern und die ausgewählte Karte nicht mehr spielbar ist,
@@ -219,12 +213,7 @@ export function PlayerHand({
 			onPlayCardWithOrigin?.(card.id, origin);
 			// Actually play the card
 			playCard(card.id);
-
-			setGhostCardId(card.id);
-			ghostTimerRef.current = setTimeout(() => {
-				onRemoveCard?.(card.id);
-				setGhostCardId(null);
-			}, CLOSE_GAP_DELAY);
+			scheduleGhostCleanup(card.id);
 		}
 		setSelectedCardId(null);
 	};

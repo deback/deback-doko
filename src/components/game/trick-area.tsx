@@ -375,11 +375,7 @@ export function TrickArea({
 	return (
 		<div
 			className={cn(
-				"fixed border-2 transition-all duration-200",
-
-				isOver && canDrop
-					? "scale-[1.02] border-primary bg-primary/10"
-					: "border-transparent",
+				"fixed transition-all duration-200",
 
 				// -- Top --
 				"top-[calc(min(30vw,10rem)*1.4*0.2)]",
@@ -603,7 +599,13 @@ export function TrickArea({
 			{/* Hover-Effekt */}
 			{isOver && canDrop && (
 				<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-					<div className="animate-pulse font-semibold text-emerald-400 text-lg">
+					<div
+						className={cn(
+							"absolute rounded-full border-2 border-yellow-400/90 border-dashed bg-yellow-300/10",
+							"aspect-square h-full max-w-full",
+						)}
+					/>
+					<div className="z-10 animate-pulse font-semibold text-emerald-400 text-lg">
 						Loslassen zum Spielen
 					</div>
 				</div>

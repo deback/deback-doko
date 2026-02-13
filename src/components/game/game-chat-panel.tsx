@@ -37,6 +37,7 @@ import {
 const MAX_CHAT_LENGTH = 500;
 const CHAT_COOLDOWN_MS = 1_000;
 const SMOOTH_SCROLL_SNAP_DELAY_MS = 250;
+const CHAT_PANEL_TRANSITION_MS = 300;
 const CHAT_SPEECH_LANGUAGE = "de-DE";
 const CHAT_SPEECH_SILENCE_TIMEOUT_MS = 3_000;
 const SPEECH_PERMISSION_DENIED_MESSAGE = "Mikrofonzugriff wurde nicht erlaubt.";
@@ -113,6 +114,7 @@ export function GameChatPanel() {
 
 	const resizeTextarea = useCallback((element: HTMLTextAreaElement | null) => {
 		if (!element) return;
+		if (element.getBoundingClientRect().width <= 1) return;
 		element.style.height = "auto";
 		element.style.height = `${element.scrollHeight}px`;
 	}, []);
@@ -190,13 +192,28 @@ export function GameChatPanel() {
 	}, [isSpeechActive, speechFinalText, speechInterimText]);
 
 	useEffect(() => {
-		const currentDraftLength = draft.length;
+		if (!open) return;
+		const draftValue = draft;
 		const id = window.requestAnimationFrame(() => {
-			if (currentDraftLength < 0) return;
+			if (chatTextareaRef.current?.value !== draftValue) return;
 			resizeTextarea(chatTextareaRef.current);
 		});
 		return () => window.cancelAnimationFrame(id);
-	}, [draft, resizeTextarea]);
+	}, [draft, open, resizeTextarea]);
+
+	useEffect(() => {
+		if (!open) return;
+		const frameId = window.requestAnimationFrame(() => {
+			resizeTextarea(chatTextareaRef.current);
+		});
+		const timeoutId = window.setTimeout(() => {
+			resizeTextarea(chatTextareaRef.current);
+		}, CHAT_PANEL_TRANSITION_MS);
+		return () => {
+			window.cancelAnimationFrame(frameId);
+			window.clearTimeout(timeoutId);
+		};
+	}, [open, resizeTextarea]);
 
 	useEffect(() => {
 		const previousCount = previousMessageCountRef.current;
@@ -319,192 +336,202 @@ export function GameChatPanel() {
 	return (
 		<div
 			className={cn(
-				"fixed inset-y-0 right-0 z-50 flex h-dvh w-72 flex-col border-border border-l bg-background/70 backdrop-blur-md transition-transform duration-300 ease-in-out md:static md:z-auto md:h-full md:w-full md:shrink-0",
+				"fixed inset-y-0 right-0 z-50 h-dvh w-72 transition-transform duration-300 ease-in-out md:static md:relative md:z-auto md:h-full md:w-full md:shrink-0 md:overflow-hidden md:transition-none",
 				open
 					? "translate-x-0"
-					: "pointer-events-none translate-x-full md:translate-x-0",
+					: "pointer-events-none translate-x-full md:pointer-events-auto md:translate-x-0",
 			)}
 		>
-			<div className="flex items-center justify-between border-border border-b bg-background/80 px-3 py-2">
-				<div className="flex min-w-0 items-center gap-2">
-					<span className="truncate font-medium text-sm">Tisch-Chat</span>
-					{unreadCount > 0 && (
-						<span className="rounded-full bg-primary/20 px-2 py-0.5 text-primary text-xs">
-							{unreadCount}
-						</span>
-					)}
-				</div>
-				<Button
-					aria-label="Chat schließen"
-					onClick={() => setChatPanelOpen(false)}
-					size="icon"
-					variant="outline"
-				>
-					<XIcon className="size-4" />
-				</Button>
-			</div>
-
 			<div
-				className="flex min-h-0 flex-1 flex-col overflow-y-auto"
-				ref={messagesContainerRef}
+				className={cn(
+					"flex h-dvh w-72 flex-col border-border border-l bg-background/70 backdrop-blur-md transition-transform duration-300 ease-in-out md:absolute md:inset-y-0 md:right-0 md:h-full md:w-72",
+					open ? "md:translate-x-0" : "md:translate-x-full",
+				)}
 			>
-				<div className="p-3">
-					{chatMessages.length === 0 ? (
-						<Card className="border-dashed py-4 text-center text-muted-foreground text-sm shadow-none">
-							Noch keine Nachrichten.
-						</Card>
-					) : (
-						chatMessages.map((message, index) => {
-							const isSystem = message.author.role === "system";
-							const isOwnMessage =
-								!isSystem && message.author.id === currentPlayer?.id;
-							const prevMessage = chatMessages[index - 1];
-							const nextMessage = chatMessages[index + 1];
-							const isPrevSameAuthor =
-								!!prevMessage &&
-								prevMessage.author.role !== "system" &&
-								prevMessage.author.id === message.author.id &&
-								prevMessage.author.role === message.author.role;
-							const isNextSameAuthor =
-								!!nextMessage &&
-								nextMessage.author.role !== "system" &&
-								nextMessage.author.id === message.author.id &&
-								nextMessage.author.role === message.author.role;
-							const showName = !isPrevSameAuthor;
-							const isGroupBottom = !isNextSameAuthor;
-							const rowMarginClass =
-								index === 0 ? "mt-0" : isPrevSameAuthor ? "mt-1" : "mt-2";
-							const bubbleTailClass = isGroupBottom
-								? isOwnMessage
-									? "before:absolute before:right-[-5px] before:bottom-[7px] before:h-0 before:w-0 before:border-y-[5px] before:border-l-[8px] before:border-y-transparent before:border-l-[#D3C4B5] dark:before:border-l-[#5A4A3B] before:content-['']"
-									: "before:absolute before:bottom-[7px] before:left-[-5px] before:h-0 before:w-0 before:border-y-[5px] before:border-r-[8px] before:border-y-transparent before:border-r-background before:content-['']"
-								: "";
+				<div className="fixed top-0 right-0 left-0 z-60 flex items-center justify-between bg-background/10 px-3 py-2 backdrop-blur-sm">
+					<div className="flex min-w-0 items-center gap-2">
+						{unreadCount > 0 && (
+							<span className="rounded-full bg-primary/20 px-2 py-0.5 text-primary text-xs">
+								{unreadCount}
+							</span>
+						)}
+					</div>
+					<Button
+						aria-label="Chat schließen"
+						onClick={() => setChatPanelOpen(false)}
+						size="icon"
+						variant="outline"
+					>
+						<XIcon className="size-4" />
+					</Button>
+				</div>
 
-							if (isSystem) {
+				<div
+					className="flex min-h-0 flex-1 grow flex-col overflow-y-auto"
+					ref={messagesContainerRef}
+				>
+					<div className="p-3">
+						{chatMessages.length === 0 ? (
+							<Card className="border-dashed py-4 text-center text-muted-foreground text-sm shadow-none">
+								Noch keine Nachrichten.
+							</Card>
+						) : (
+							chatMessages.map((message, index) => {
+								const isSystem = message.author.role === "system";
+								const isOwnMessage =
+									!isSystem && message.author.id === currentPlayer?.id;
+								const prevMessage = chatMessages[index - 1];
+								const nextMessage = chatMessages[index + 1];
+								const isPrevSameAuthor =
+									!!prevMessage &&
+									prevMessage.author.role !== "system" &&
+									prevMessage.author.id === message.author.id &&
+									prevMessage.author.role === message.author.role;
+								const isNextSameAuthor =
+									!!nextMessage &&
+									nextMessage.author.role !== "system" &&
+									nextMessage.author.id === message.author.id &&
+									nextMessage.author.role === message.author.role;
+								const showName = !isPrevSameAuthor;
+								const isGroupBottom = !isNextSameAuthor;
+								const rowMarginClass =
+									index === 0 ? "mt-0" : isPrevSameAuthor ? "mt-1" : "mt-2";
+								const bubbleTailClass = isGroupBottom
+									? isOwnMessage
+										? "before:absolute before:right-[-5px] before:bottom-[7px] before:h-0 before:w-0 before:border-y-[5px] before:border-l-[8px] before:border-y-transparent before:border-l-[#D3C4B5] dark:before:border-l-[#5A4A3B] before:content-['']"
+										: "before:absolute before:bottom-[7px] before:left-[-5px] before:h-0 before:w-0 before:border-y-[5px] before:border-r-[8px] before:border-y-transparent before:border-r-background before:content-['']"
+									: "";
+
+								if (isSystem) {
+									return (
+										<div
+											className={`${index === 0 ? "mt-0" : "mt-2"} px-2 py-1 text-center text-muted-foreground text-xs`}
+											key={message.id}
+										>
+											{message.text}
+										</div>
+									);
+								}
+
 								return (
 									<div
-										className={`${index === 0 ? "mt-0" : "mt-2"} px-2 py-1 text-center text-muted-foreground text-xs`}
+										className={`flex items-end gap-2 ${rowMarginClass} ${isOwnMessage ? "justify-end" : "justify-start"}`}
 										key={message.id}
 									>
-										{message.text}
+										{!isOwnMessage && (
+											<div className="flex size-6 items-end justify-center">
+												{isGroupBottom && (
+													<Avatar
+														alt={message.author.name}
+														fallback={message.author.name
+															.charAt(0)
+															.toUpperCase()}
+														size="xs"
+														src={message.author.image}
+													/>
+												)}
+											</div>
+										)}
+										<div
+											className={`relative max-w-[80%] gap-2 overflow-visible rounded-xl px-2 py-1 shadow-sm ${bubbleTailClass} ${
+												isOwnMessage
+													? "bg-[#D3C4B5] text-foreground dark:bg-[#5A4A3B]"
+													: "bg-background"
+											}`}
+										>
+											{showName && (
+												<div className="truncate text-muted-foreground text-xs">
+													{message.author.name}
+												</div>
+											)}
+											<div className="relative">
+												<div className="wrap-break-words whitespace-pre-wrap text-sm after:inline-block after:h-0 after:w-8 after:content-['']">
+													{message.text}
+												</div>
+												<div className="absolute right-0 bottom-0 text-[11px] text-muted-foreground">
+													{timeFormatter.format(message.createdAt)}
+												</div>
+											</div>
+										</div>
 									</div>
 								);
-							}
-
-							return (
-								<div
-									className={`flex items-end gap-2 ${rowMarginClass} ${isOwnMessage ? "justify-end" : "justify-start"}`}
-									key={message.id}
-								>
-									{!isOwnMessage && (
-										<div className="flex size-6 items-end justify-center">
-											{isGroupBottom && (
-												<Avatar
-													alt={message.author.name}
-													fallback={message.author.name.charAt(0).toUpperCase()}
-													size="xs"
-													src={message.author.image}
-												/>
-											)}
-										</div>
-									)}
-									<div
-										className={`relative max-w-[80%] gap-2 overflow-visible rounded-xl px-2 py-1 shadow-sm ${bubbleTailClass} ${
-											isOwnMessage
-												? "bg-[#D3C4B5] text-foreground dark:bg-[#5A4A3B]"
-												: "bg-background"
-										}`}
-									>
-										{showName && (
-											<div className="truncate text-muted-foreground text-xs">
-												{message.author.name}
-											</div>
-										)}
-										<div className="relative">
-											<div className="wrap-break-words whitespace-pre-wrap text-sm after:inline-block after:h-0 after:w-8 after:content-['']">
-												{message.text}
-											</div>
-											<div className="absolute right-0 bottom-0 text-[11px] text-muted-foreground">
-												{timeFormatter.format(message.createdAt)}
-											</div>
-										</div>
-									</div>
-								</div>
-							);
-						})
-					)}
-				</div>
-			</div>
-
-			<div className="shrink-0 bg-background/80 px-3 py-2 shadow-lg">
-				<div className="flex flex-row items-end gap-2">
-					<Textarea
-						className="min-h-9 resize-none overflow-hidden bg-background"
-						disabled={isSpeechActive}
-						id={chatTextareaId}
-						maxLength={MAX_CHAT_LENGTH}
-						name="table-chat-message"
-						onChange={(event) => {
-							setDraft(event.target.value);
-							setChatLocalError(null);
-							resizeTextarea(event.currentTarget);
-						}}
-						onKeyDown={(event) => {
-							if (event.key === "Enter" && !event.shiftKey) {
-								event.preventDefault();
-								onSendMessage();
-							}
-						}}
-						placeholder="Nachricht schreiben..."
-						ref={chatTextareaRef}
-						rows={1}
-						value={draft}
-					/>
-					<div className="flex items-center justify-between">
-						{canSend ? (
-							<Button onClick={onSendMessage} size="icon">
-								<Send className="size-4" />
-							</Button>
-						) : (
-							<Tooltip open={speechTooltipMessage ? undefined : false}>
-								<TooltipTrigger asChild>
-									<Button
-										aria-label={
-											isSpeechActive
-												? "Spracherkennung stoppen"
-												: "Spracherkennung starten"
-										}
-										className={`${speechStatus === "listening" ? "animate-pulse" : ""} ${
-											!isSpeechSupported ? "cursor-not-allowed opacity-50" : ""
-										}`}
-										onClick={onSpeechButtonClick}
-										size="icon"
-										type="button"
-										variant={
-											speechStatus === "listening" ? "destructive" : "outline"
-										}
-									>
-										{speechStatus === "processing" ? (
-											<Loader2 className="size-4 animate-spin" />
-										) : speechStatus === "listening" ? (
-											<Square className="size-4" />
-										) : permissionDenied || !isSpeechSupported ? (
-											<MicOff className="size-4" />
-										) : (
-											<Mic className="size-4" />
-										)}
-									</Button>
-								</TooltipTrigger>
-								{speechTooltipMessage && (
-									<TooltipContent>{speechTooltipMessage}</TooltipContent>
-								)}
-							</Tooltip>
+							})
 						)}
 					</div>
 				</div>
-				{chatLocalError && (
-					<p className="mt-1 text-destructive text-xs">{chatLocalError}</p>
-				)}
+
+				<div className="shrink-0 bg-background/80 px-3 py-2 shadow-lg">
+					<div className="flex flex-row items-end gap-2">
+						<Textarea
+							className="min-h-9 resize-none overflow-hidden bg-background"
+							disabled={isSpeechActive}
+							id={chatTextareaId}
+							maxLength={MAX_CHAT_LENGTH}
+							name="table-chat-message"
+							onChange={(event) => {
+								setDraft(event.target.value);
+								setChatLocalError(null);
+								resizeTextarea(event.currentTarget);
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter" && !event.shiftKey) {
+									event.preventDefault();
+									onSendMessage();
+								}
+							}}
+							placeholder="Nachricht schreiben..."
+							ref={chatTextareaRef}
+							rows={1}
+							value={draft}
+						/>
+						<div className="flex items-center justify-between">
+							{canSend ? (
+								<Button onClick={onSendMessage} size="icon">
+									<Send className="size-4" />
+								</Button>
+							) : (
+								<Tooltip open={speechTooltipMessage ? undefined : false}>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label={
+												isSpeechActive
+													? "Spracherkennung stoppen"
+													: "Spracherkennung starten"
+											}
+											className={`${speechStatus === "listening" ? "animate-pulse" : ""} ${
+												!isSpeechSupported
+													? "cursor-not-allowed opacity-50"
+													: ""
+											}`}
+											onClick={onSpeechButtonClick}
+											size="icon"
+											type="button"
+											variant={
+												speechStatus === "listening" ? "destructive" : "outline"
+											}
+										>
+											{speechStatus === "processing" ? (
+												<Loader2 className="size-4 animate-spin" />
+											) : speechStatus === "listening" ? (
+												<Square className="size-4" />
+											) : permissionDenied || !isSpeechSupported ? (
+												<MicOff className="size-4" />
+											) : (
+												<Mic className="size-4" />
+											)}
+										</Button>
+									</TooltipTrigger>
+									{speechTooltipMessage && (
+										<TooltipContent>{speechTooltipMessage}</TooltipContent>
+									)}
+								</Tooltip>
+							)}
+						</div>
+					</div>
+					{chatLocalError && (
+						<p className="mt-1 text-destructive text-xs">{chatLocalError}</p>
+					)}
+				</div>
 			</div>
 		</div>
 	);
