@@ -48,7 +48,10 @@ function buildCompletedTrickKey(
 	trickWinnerId?: string | null,
 ): string | null {
 	if (trickCards.length !== 4 || !trickWinnerId) return null;
-	const cardKey = trickCards.map((tc) => tc.card.id).sort().join("|");
+	const cardKey = trickCards
+		.map((tc) => tc.card.id)
+		.sort()
+		.join("|");
 	return `${cardKey}::${trickWinnerId}`;
 }
 
