@@ -1,5 +1,6 @@
 "use client";
 
+import { useAnnouncementAudioSettings } from "@/lib/hooks/use-announcement-audio-settings";
 import {
 	type CardDesign,
 	type DarkModeCardStyle,
@@ -34,6 +35,10 @@ function optionButtonClass(isActive: boolean) {
 export function GameCardAppearanceSettings() {
 	const { cardDesign, setCardDesign, darkModeStyle, setDarkModeStyle } =
 		useCardDesign();
+	const {
+		enabled: announcementAudioEnabled,
+		setEnabled: setAnnouncementAudio,
+	} = useAnnouncementAudioSettings();
 
 	return (
 		<div className="flex flex-col gap-4 border-t pt-4">
@@ -66,6 +71,26 @@ export function GameCardAppearanceSettings() {
 							{option.label}
 						</button>
 					))}
+				</div>
+			</div>
+
+			<div className="flex flex-col gap-2">
+				<p className="text-muted-foreground text-sm">Ansage-Audio</p>
+				<div className="grid grid-cols-2 gap-2">
+					<button
+						className={optionButtonClass(announcementAudioEnabled)}
+						onClick={() => setAnnouncementAudio(true)}
+						type="button"
+					>
+						Ein
+					</button>
+					<button
+						className={optionButtonClass(!announcementAudioEnabled)}
+						onClick={() => setAnnouncementAudio(false)}
+						type="button"
+					>
+						Aus
+					</button>
 				</div>
 			</div>
 		</div>

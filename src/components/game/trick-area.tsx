@@ -218,11 +218,10 @@ export function TrickArea({
 	// Ref to track if animation is in progress (prevents timer cancellation)
 	const animationInProgressRef = useRef(false);
 	const lastAnimatedTrickKeyRef = useRef<string | null>(null);
+	const completedTrickKey = buildCompletedTrickKey(trickCards, trickWinnerId);
 
 	// Detect completed trick and start animation sequence
 	useEffect(() => {
-		const completedTrickKey = buildCompletedTrickKey(trickCards, trickWinnerId);
-
 		// Trick is complete when we have 4 cards AND a winner
 		if (
 			completedTrickKey &&
@@ -240,7 +239,7 @@ export function TrickArea({
 			// Start animation sequence
 			setAnimationPhase("waiting");
 		}
-	}, [trickCards, trickWinnerId, animationPhase]);
+	}, [trickCards, trickWinnerId, animationPhase, completedTrickKey]);
 
 	// Handle waiting -> collecting transition
 	useEffect(() => {
@@ -309,17 +308,22 @@ export function TrickArea({
 		}
 	}, [animationPhase]);
 
-	// Reset animation and unlock completion guard when trick is cleared by server.
+	// Unlock completion guard as soon as the completed trick is no longer active.
 	useEffect(() => {
-		if (trickCards.length === 0 && animationPhase === "playing") {
+		if (animationPhase !== "playing" || completedTrickKey) {
+			return;
+		}
+
+		animationInProgressRef.current = false;
+		lastAnimatedTrickKeyRef.current = null;
+
+		if (trickCards.length === 0) {
 			setCachedTrickCards([]);
 			setCachedWinnerId(null);
 			setFlipProgress(0);
 			knownCardIdsRef.current.clear();
-			animationInProgressRef.current = false;
-			lastAnimatedTrickKeyRef.current = null;
 		}
-	}, [trickCards.length, animationPhase]);
+	}, [trickCards.length, animationPhase, completedTrickKey]);
 
 	// Compute snapshot synchronously for the played card animation
 	if (

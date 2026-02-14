@@ -9,6 +9,7 @@ import {
 import type { Player } from "@/types/tables";
 import { ConnectionLoadingCard } from "./connection-loading-card";
 import { GameBoard } from "./game-board";
+import { useAnnouncementAudio } from "./hooks/use-announcement-audio";
 import { useConnectionLoadingState } from "./hooks/use-connection-loading-state";
 import { useGameConnection } from "./hooks/use-game-connection";
 
@@ -26,6 +27,7 @@ interface GameContentProps {
 export function GameContent({ player, gameId }: GameContentProps) {
 	// Initialize WebSocket connection and sync with store
 	useGameConnection({ gameId, player });
+	useAnnouncementAudio();
 
 	// Read state from store
 	const gameState = useGameState();
