@@ -228,6 +228,7 @@ export async function setupHochzeit(
 		active: true,
 		seekerPlayerId,
 		clarificationTrickNumber: 3,
+		resolvedClarificationTrickNumber: undefined,
 	};
 
 	for (const player of gameState.players) {
@@ -256,8 +257,10 @@ export function checkHochzeitPartner(
 	const isFehlStich = !isTrump(firstCard, gameState.trump);
 
 	if (isFehlStich && winnerId !== seekerId) {
+		const resolvedTrick = Math.min(Math.max(trickNumber, 1), 3) as 1 | 2 | 3;
 		gameState.hochzeit.partnerPlayerId = winnerId;
 		gameState.hochzeit.active = false;
+		gameState.hochzeit.resolvedClarificationTrickNumber = resolvedTrick;
 
 		gameState.teams[seekerId] = "re";
 		gameState.teams[winnerId] = "re";
@@ -268,5 +271,7 @@ export function checkHochzeitPartner(
 		}
 	} else if (trickNumber >= gameState.hochzeit.clarificationTrickNumber) {
 		gameState.hochzeit.active = false;
+		gameState.hochzeit.resolvedClarificationTrickNumber = gameState.hochzeit
+			.clarificationTrickNumber as 1 | 2 | 3;
 	}
 }

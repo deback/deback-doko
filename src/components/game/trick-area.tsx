@@ -43,6 +43,15 @@ interface TrickCard {
 	playerId: string;
 }
 
+function buildCompletedTrickKey(
+	trickCards: TrickCard[],
+	trickWinnerId?: string | null,
+): string | null {
+	if (trickCards.length !== 4 || !trickWinnerId) return null;
+	const cardKey = trickCards.map((tc) => tc.card.id).sort().join("|");
+	return `${cardKey}::${trickWinnerId}`;
+}
+
 // Animation phases for trick completion
 type TrickAnimationPhase =
 	| "playing" // Normal play phase
@@ -205,21 +214,25 @@ export function TrickArea({
 
 	// Ref to track if animation is in progress (prevents timer cancellation)
 	const animationInProgressRef = useRef(false);
+	const lastAnimatedTrickKeyRef = useRef<string | null>(null);
 
 	// Detect completed trick and start animation sequence
 	useEffect(() => {
+		const completedTrickKey = buildCompletedTrickKey(trickCards, trickWinnerId);
+
 		// Trick is complete when we have 4 cards AND a winner
 		if (
-			trickCards.length === 4 &&
-			trickWinnerId &&
+			completedTrickKey &&
 			animationPhase === "playing" &&
-			!animationInProgressRef.current
+			!animationInProgressRef.current &&
+			completedTrickKey !== lastAnimatedTrickKeyRef.current
 		) {
 			animationInProgressRef.current = true;
+			lastAnimatedTrickKeyRef.current = completedTrickKey;
 
 			// Cache the trick cards and winner before animation starts
 			setCachedTrickCards([...trickCards]);
-			setCachedWinnerId(trickWinnerId);
+			setCachedWinnerId(trickWinnerId ?? null);
 
 			// Start animation sequence
 			setAnimationPhase("waiting");
@@ -287,24 +300,21 @@ export function TrickArea({
 				setCachedWinnerId(null);
 				setFlipProgress(0);
 				anglesRef.current.clear();
-				animationInProgressRef.current = false;
 			}, TRICK_TO_WINNER_DURATION);
 
 			return () => clearTimeout(toWinnerTimer);
 		}
 	}, [animationPhase]);
 
-	// Reset animation when trick is cleared by server (only if not animating)
+	// Reset animation and unlock completion guard when trick is cleared by server.
 	useEffect(() => {
-		if (
-			trickCards.length === 0 &&
-			animationPhase === "playing" &&
-			!animationInProgressRef.current
-		) {
+		if (trickCards.length === 0 && animationPhase === "playing") {
 			setCachedTrickCards([]);
 			setCachedWinnerId(null);
 			setFlipProgress(0);
 			knownCardIdsRef.current.clear();
+			animationInProgressRef.current = false;
+			lastAnimatedTrickKeyRef.current = null;
 		}
 	}, [trickCards.length, animationPhase]);
 

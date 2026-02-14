@@ -1,3 +1,8 @@
+import {
+	getAnnouncementMinCards,
+	getBaseMinCardsForAnnouncement,
+	isAnnouncementBlockedByHochzeitWindow,
+} from "../src/lib/game/announcement-windows";
 import type {
 	AnnouncementType,
 	GameState,
@@ -15,22 +20,7 @@ export function getPlayerCardCount(
 export function getMinCardsForAnnouncement(
 	announcement: AnnouncementType,
 ): number {
-	// Zeitfenster basierend auf Kartenanzahl
-	switch (announcement) {
-		case "re":
-		case "kontra":
-			return 11; // Mit 11 Karten (erster Stich = Freistich)
-		case "no90":
-			return 10;
-		case "no60":
-			return 9;
-		case "no30":
-			return 8;
-		case "schwarz":
-			return 7;
-		default:
-			return 12;
-	}
+	return getBaseMinCardsForAnnouncement(announcement);
 }
 
 export function canMakeAnnouncement(
@@ -44,7 +34,15 @@ export function canMakeAnnouncement(
 	}
 
 	const cardCount = getPlayerCardCount(gameState, playerId);
-	const minCards = getMinCardsForAnnouncement(announcement);
+	const minCards = getAnnouncementMinCards(gameState, playerId, announcement);
+
+	if (isAnnouncementBlockedByHochzeitWindow(gameState, announcement)) {
+		return {
+			allowed: false,
+			reason:
+				"In der angesagten Hochzeit ist die erste Re/Kontra-Ansage erst nach dem Klärungsstich erlaubt.",
+		};
+	}
 
 	if (cardCount < minCards) {
 		return {
@@ -124,7 +122,11 @@ export function canMakeAnnouncement(
 			!teamPointAnnouncements.some((pa) => pa.type === skippedAnnouncement)
 		) {
 			// Diese Ansage wird übersprungen - prüfe ob genug Karten
-			const skippedMinCards = getMinCardsForAnnouncement(skippedAnnouncement);
+			const skippedMinCards = getAnnouncementMinCards(
+				gameState,
+				playerId,
+				skippedAnnouncement,
+			);
 			if (cardCount < skippedMinCards) {
 				return {
 					allowed: false,

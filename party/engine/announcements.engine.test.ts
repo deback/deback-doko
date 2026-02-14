@@ -184,4 +184,119 @@ describe("announcements engine", () => {
 
 		expect(canMakeAnnouncement(state, "p1", "no60").allowed).toBe(true);
 	});
+
+	it("allows counter announcement with one card less (rule 6.4.4)", () => {
+		const state = baseGameState({
+			hands: {
+				p1: Array.from({ length: 11 }, (_, index) =>
+					card("clubs", "9", `counter-re-${index}`),
+				),
+				p2: [],
+				p3: Array.from({ length: 10 }, (_, index) =>
+					card("spades", "9", `counter-kontra-${index}`),
+				),
+				p4: [],
+			},
+			announcements: announcements({
+				re: { announced: true, by: "p1" },
+			}),
+		});
+
+		expect(canMakeAnnouncement(state, "p3", "kontra").allowed).toBe(true);
+	});
+
+	it("blocks counter announcement when one-card-less window is missed", () => {
+		const state = baseGameState({
+			hands: {
+				p1: Array.from({ length: 11 }, (_, index) =>
+					card("clubs", "9", `counter-late-re-${index}`),
+				),
+				p2: [],
+				p3: Array.from({ length: 9 }, (_, index) =>
+					card("spades", "9", `counter-late-kontra-${index}`),
+				),
+				p4: [],
+			},
+			announcements: announcements({
+				re: { announced: true, by: "p1" },
+			}),
+		});
+
+		expect(canMakeAnnouncement(state, "p3", "kontra").allowed).toBe(false);
+	});
+
+	it("blocks first Re/Kontra announcement before Hochzeit clarification is resolved", () => {
+		const state = baseGameState({
+			contractType: "hochzeit",
+			hochzeit: {
+				active: true,
+				seekerPlayerId: "p1",
+				clarificationTrickNumber: 3,
+			},
+			hands: {
+				p1: Array.from({ length: 11 }, (_, index) =>
+					card("clubs", "queen", `hochzeit-pending-${index}`),
+				),
+				p2: [],
+				p3: [],
+				p4: [],
+			},
+		});
+
+		const result = canMakeAnnouncement(state, "p1", "re");
+		expect(result.allowed).toBe(false);
+		expect(result.reason).toContain("Klärungsstich");
+	});
+
+	it("reduces windows by one card when Hochzeit clarification happened in trick 2", () => {
+		const state = baseGameState({
+			contractType: "hochzeit",
+			hochzeit: {
+				active: false,
+				seekerPlayerId: "p1",
+				partnerPlayerId: "p2",
+				clarificationTrickNumber: 3,
+				resolvedClarificationTrickNumber: 2,
+			},
+			hands: {
+				p1: Array.from({ length: 10 }, (_, index) =>
+					card("clubs", "queen", `hochzeit-shift-re-${index}`),
+				),
+				p2: [],
+				p3: [],
+				p4: [],
+			},
+		});
+
+		expect(canMakeAnnouncement(state, "p1", "re").allowed).toBe(true);
+
+		state.announcements.re = { announced: true, by: "p1" };
+		state.hands.p1 = Array.from({ length: 9 }, (_, index) =>
+			card("hearts", "ace", `hochzeit-shift-no90-${index}`),
+		);
+
+		expect(canMakeAnnouncement(state, "p1", "no90").allowed).toBe(true);
+	});
+
+	it("reduces windows by two cards when Hochzeit clarification happened in trick 3", () => {
+		const state = baseGameState({
+			contractType: "hochzeit",
+			hochzeit: {
+				active: false,
+				seekerPlayerId: "p1",
+				clarificationTrickNumber: 3,
+				resolvedClarificationTrickNumber: 3,
+			},
+			hands: {
+				p1: Array.from({ length: 9 }, (_, index) =>
+					card("diamonds", "ace", `hochzeit-shift2-re-${index}`),
+				),
+				p2: [],
+				p3: [],
+				p4: [],
+			},
+		});
+
+		expect(canMakeAnnouncement(state, "p1", "re").allowed).toBe(true);
+	});
 });

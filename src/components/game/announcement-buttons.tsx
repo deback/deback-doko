@@ -15,6 +15,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getAnnouncementMinCards } from "@/lib/game/announcement-windows";
 import { cn } from "@/lib/utils";
 import {
 	useAnnounce,
@@ -28,16 +29,6 @@ import type { AnnouncementType, PointAnnouncementType } from "@/types/game";
 interface AnnouncementButtonsProps {
 	className?: string;
 }
-
-// Mindest-Kartenanzahl für Ansagen
-const MIN_CARDS: Record<AnnouncementType, number> = {
-	re: 11,
-	kontra: 11,
-	no90: 10,
-	no60: 9,
-	no30: 8,
-	schwarz: 7,
-};
 
 // Labels für Select-Optionen (lang)
 const POINT_LABELS: Record<PointAnnouncementType, string> = {
@@ -108,7 +99,11 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 	// Laut Regel 6.4.3: Man kann Stufen überspringen, aber alle übersprungenen
 	// Ansagen müssen zu diesem Zeitpunkt noch legal sein (genug Karten)
 	const canAnnounce = (announcement: AnnouncementType): boolean => {
-		const minCards = MIN_CARDS[announcement];
+		const minCards = getAnnouncementMinCards(
+			gameState,
+			currentPlayer.id,
+			announcement,
+		);
 		if (cardCount < minCards) return false;
 
 		if (announcement === "re" || announcement === "kontra") {
@@ -128,7 +123,11 @@ export function AnnouncementButtons({ className }: AnnouncementButtonsProps) {
 		for (let i = 0; i < requestedIndex; i++) {
 			const skipped = order[i];
 			if (skipped && !hasPointAnnouncement(skipped)) {
-				const skippedMinCards = MIN_CARDS[skipped];
+				const skippedMinCards = getAnnouncementMinCards(
+					gameState,
+					currentPlayer.id,
+					skipped,
+				);
 				if (cardCount < skippedMinCards) {
 					return false;
 				}

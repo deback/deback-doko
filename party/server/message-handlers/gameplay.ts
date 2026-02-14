@@ -15,6 +15,9 @@ import type {
 } from "../../types";
 import type Server from "../game-lifecycle";
 
+const GAME_END_DIALOG_DELAY_MS = 1_000;
+const RESTART_DELAY_MS = 5_000;
+
 export async function handleAnnouncement(
 	server: Server,
 	announcement: AnnouncementType,
@@ -190,16 +193,19 @@ export async function completeTrick(server: Server, gameState: GameState) {
 		};
 
 		if (gameState.completedTricks.length >= 12) {
-			gameState.gameEnded = true;
-			gameState.gamePointsResult = calculateGamePoints(gameState);
-			server.saveGameResults(gameState);
-
 			await server.persistAndBroadcastGame(gameState);
 
-			const RESTART_DELAY = 5000;
-			setTimeout(() => {
-				server.restartGame(gameState);
-			}, RESTART_DELAY);
+			setTimeout(async () => {
+				gameState.gameEnded = true;
+				gameState.gamePointsResult = calculateGamePoints(gameState);
+				server.saveGameResults(gameState);
+
+				await server.persistAndBroadcastGame(gameState);
+
+				setTimeout(() => {
+					server.restartGame(gameState);
+				}, RESTART_DELAY_MS);
+			}, GAME_END_DIALOG_DELAY_MS);
 			return;
 		}
 
@@ -366,9 +372,8 @@ export async function autoPlayAll(server: Server, sender: Party.Connection) {
 	await server.persistAndBroadcastGame(gameState);
 
 	if (gameState.gameEnded) {
-		const RESTART_DELAY = 5000;
 		setTimeout(() => {
 			server.restartGame(gameState);
-		}, RESTART_DELAY);
+		}, RESTART_DELAY_MS);
 	}
 }

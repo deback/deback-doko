@@ -265,11 +265,10 @@ export function GameBoard() {
 			const latestGameState = gameStateRef.current;
 			if (latestGameState) {
 				setCachedEndGameState(latestGameState);
+				setShowGameEndDialog(true);
 			}
-		} else if (cachedEndGameState?.gameEnded) {
-			setShowGameEndDialog(true);
 		}
-	}, [gameEnded, cachedEndGameState?.gameEnded]);
+	}, [gameEnded]);
 
 	// =========================================================================
 	// Helper Functions

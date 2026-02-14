@@ -125,6 +125,8 @@ export interface HochzeitState {
 	partnerPlayerId?: string;
 	/** Spätestens im 3. Stich muss Partner gefunden sein */
 	clarificationTrickNumber: number;
+	/** Tatsächlich aufgelöster Klärungsstich (1/2/3), sobald feststeht */
+	resolvedClarificationTrickNumber?: 1 | 2 | 3;
 }
 
 // =============================================================================
