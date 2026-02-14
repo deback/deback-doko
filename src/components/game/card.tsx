@@ -4,7 +4,11 @@ import type {
 	DraggableAttributes,
 	DraggableSyntheticListeners,
 } from "@dnd-kit/core";
-import { motion, type TargetAndTransition, type Transition } from "framer-motion";
+import {
+	motion,
+	type TargetAndTransition,
+	type Transition,
+} from "framer-motion";
 import Image from "next/image";
 import type { Ref } from "react";
 import { getCardBackPath, getCardImagePath } from "@/lib/card-config";

@@ -198,7 +198,6 @@ export function PlayerHand({
 		clearDealRevealTimers,
 		dealOrderCards,
 		dealCardDurationMs,
-		dealSessionId,
 		dealStaggerMs,
 		isDealAnimating,
 	]);
@@ -340,133 +339,136 @@ export function PlayerHand({
 					`@container relative ${CARD_SIZE}`,
 					isBiddingActive && "pointer-events-none",
 				)}
-				>
-					{statusSlot && <div className="pointer-events-auto">{statusSlot}</div>}
-					{(() => {
-						const dealIndexByCardId = new Map(
-							dealOrderCards.map((card, dealIndex) => [card.id, dealIndex]),
+			>
+				{statusSlot && <div className="pointer-events-auto">{statusSlot}</div>}
+				{(() => {
+					const dealIndexByCardId = new Map(
+						dealOrderCards.map((card, dealIndex) => [card.id, dealIndex]),
+					);
+					const revealedCards = cards.filter((c) =>
+						revealedDealCardIds.has(c.id),
+					);
+					const revealedIndexByCardId = new Map(
+						revealedCards.map((card, revealedIndex) => [
+							card.id,
+							revealedIndex,
+						]),
+					);
+					return cards.map((card, index) => {
+						const dealIndex = dealIndexByCardId.get(card.id) ?? index;
+						const t = index - (cards.length - 1) / 2;
+						const angle = t * 1.2;
+						const isInFlight =
+							isDealAnimating && !revealedDealCardIds.has(card.id);
+						const revealedIndex = revealedIndexByCardId.get(card.id) ?? -1;
+						const revealedT =
+							revealedIndex >= 0
+								? revealedIndex - (revealedCards.length - 1) / 2
+								: t;
+						const handAngle =
+							isDealAnimating && !isInFlight ? revealedT * 1.2 : angle;
+						const handIndex =
+							isDealAnimating && revealedIndex >= 0 ? revealedIndex : index;
+						const cardZIndex = isInFlight ? 10 + dealIndex : 100 + handIndex;
+						const startRotationJitter = getDealStartRotationJitter(
+							card.id,
+							dealSessionId,
 						);
-						const revealedCards = cards.filter((c) =>
-							revealedDealCardIds.has(c.id),
+						const startOffsetX = getDealStartOffsetX(card.id, dealSessionId);
+						const startOffsetYVh = getDealStartOffsetYVh(
+							card.id,
+							dealSessionId,
 						);
-						const revealedIndexByCardId = new Map(
-							revealedCards.map((card, revealedIndex) => [
-								card.id,
-								revealedIndex,
-							]),
+						const targetOffsetX = getDealTargetOffsetX(card.id, dealSessionId);
+						const targetOffsetY = getDealTargetOffsetY(card.id, dealSessionId);
+						const targetRotationJitter = getDealTargetRotationJitter(
+							card.id,
+							dealSessionId,
 						);
-						return cards.map((card, index) => {
-							const dealIndex = dealIndexByCardId.get(card.id) ?? index;
-							const t = index - (cards.length - 1) / 2;
-							const angle = t * 1.2;
-							const isInFlight =
-								isDealAnimating && !revealedDealCardIds.has(card.id);
-							const revealedIndex = revealedIndexByCardId.get(card.id) ?? -1;
-							const revealedT =
-								revealedIndex >= 0
-									? revealedIndex - (revealedCards.length - 1) / 2
-									: t;
-							const handAngle =
-								isDealAnimating && !isInFlight ? revealedT * 1.2 : angle;
-							const handIndex =
-								isDealAnimating && revealedIndex >= 0 ? revealedIndex : index;
-							const cardZIndex = isInFlight ? 10 + dealIndex : 100 + handIndex;
-							const startRotationJitter = getDealStartRotationJitter(
-								card.id,
-								dealSessionId,
-							);
-							const startOffsetX = getDealStartOffsetX(card.id, dealSessionId);
-							const startOffsetYVh = getDealStartOffsetYVh(card.id, dealSessionId);
-							const targetOffsetX = getDealTargetOffsetX(card.id, dealSessionId);
-							const targetOffsetY = getDealTargetOffsetY(card.id, dealSessionId);
-							const targetRotationJitter = getDealTargetRotationJitter(
-								card.id,
-								dealSessionId,
-							);
 
-							const isCardPlayable = playableCardIds.includes(card.id);
-							const isPlayable =
-								isMyTurn &&
-								isCardPlayable &&
-								!isServerTrickResolving &&
-								!isDealAnimating;
-							const isDisabled = showTrickRestrictions && !isCardPlayable;
-							const isSelected = selectedCardId === card.id;
-							const isGhost = ghostCardId === card.id;
-							const isDragging =
-								activeDragCard === card.id && ghostCardId !== card.id;
-							const dealInitial = isInFlight
+						const isCardPlayable = playableCardIds.includes(card.id);
+						const isPlayable =
+							isMyTurn &&
+							isCardPlayable &&
+							!isServerTrickResolving &&
+							!isDealAnimating;
+						const isDisabled = showTrickRestrictions && !isCardPlayable;
+						const isSelected = selectedCardId === card.id;
+						const isGhost = ghostCardId === card.id;
+						const isDragging =
+							activeDragCard === card.id && ghostCardId !== card.id;
+						const dealInitial = isInFlight
+							? {
+									x: startOffsetX,
+									y: `-${110 + startOffsetYVh}vh`,
+									rotate: 180 + startRotationJitter,
+									opacity: 1,
+								}
+							: false;
+						const settledAnimate = {
+							x: 0,
+							y: 0,
+							rotate: handAngle,
+							opacity: 1,
+						};
+						const dealAnimate = isInFlight
+							? {
+									x: targetOffsetX,
+									y: targetOffsetY,
+									rotate: angle + targetRotationJitter,
+									opacity: 1,
+								}
+							: settledAnimate;
+						const dealTransition = isDealAnimating
+							? isInFlight
 								? {
-										x: startOffsetX,
-										y: `-${110 + startOffsetYVh}vh`,
-										rotate: 180 + startRotationJitter,
-										opacity: 1,
+										duration: dealCardDurationMs / 1000,
+										delay: (dealIndex * dealStaggerMs) / 1000,
+										ease: [0.25, 0.1, 0.25, 1] as const,
 									}
-								: false;
-							const settledAnimate = {
-								x: 0,
-								y: 0,
-								rotate: handAngle,
-								opacity: 1,
-							};
-							const dealAnimate = isInFlight
-								? {
-										x: targetOffsetX,
-										y: targetOffsetY,
-										rotate: angle + targetRotationJitter,
-										opacity: 1,
+								: {
+										type: "tween" as const,
+										duration: 0.24,
+										delay: 0,
+										ease: [0.22, 0.61, 0.36, 1] as const,
 									}
-								: settledAnimate;
-							const dealTransition = isDealAnimating
-								? isInFlight
-									? {
-											duration: dealCardDurationMs / 1000,
-											delay: (dealIndex * dealStaggerMs) / 1000,
-											ease: [0.25, 0.1, 0.25, 1] as const,
-										}
-									: {
-											type: "tween" as const,
-											duration: 0.16,
-											delay: 0,
-											ease: [0.22, 1, 0.36, 1] as const,
-										}
-								: undefined;
+							: undefined;
 
-							return (
-								<DraggableCard
-									angle={handAngle}
-									animate={isDealAnimating ? dealAnimate : settledAnimate}
-									card={card}
-									className={cn(
-										"top-0 left-0 h-full w-full touch-none",
-										isInFlight && "origin-center!",
-										(isGhost || isDragging) && "pointer-events-none invisible",
-									)}
-									initial={dealInitial}
-									isDisabled={isDisabled}
-									isDraggingDisabled={
-										!isMyTurn ||
-										isDisabled ||
-										isDealAnimating ||
-										ghostCardId !== null ||
-										isServerTrickResolving
-									}
-									isGhost={isGhost}
-									isPlayable={isPlayable}
-									isSelected={isSelected}
-									key={`${dealSessionId ?? 0}-${card.id}`}
-									onClick={
-										!isDisabled ? () => handleCardClick(card, index) : undefined
-									}
-									onRef={setCardRef(card.id)}
-									showBack={isInFlight}
-									style={{ zIndex: cardZIndex }}
-									transition={dealTransition}
-								/>
-							);
-						});
-					})()}
-				</div>
+						return (
+							<DraggableCard
+								angle={handAngle}
+								animate={isDealAnimating ? dealAnimate : settledAnimate}
+								card={card}
+								className={cn(
+									"top-0 left-0 h-full w-full touch-none",
+									isInFlight && "origin-center!",
+									(isGhost || isDragging) && "pointer-events-none invisible",
+								)}
+								initial={dealInitial}
+								isDisabled={isDisabled}
+								isDraggingDisabled={
+									!isMyTurn ||
+									isDisabled ||
+									isDealAnimating ||
+									ghostCardId !== null ||
+									isServerTrickResolving
+								}
+								isGhost={isGhost}
+								isPlayable={isPlayable}
+								isSelected={isSelected}
+								key={`${dealSessionId ?? 0}-${card.id}`}
+								onClick={
+									!isDisabled ? () => handleCardClick(card, index) : undefined
+								}
+								onRef={setCardRef(card.id)}
+								showBack={isInFlight}
+								style={{ zIndex: cardZIndex }}
+								transition={dealTransition}
+							/>
+						);
+					});
+				})()}
 			</div>
-		);
-	}
+		</div>
+	);
+}

@@ -76,6 +76,7 @@ export function DraggableCard({
 	return (
 		<GameCard
 			angle={angle}
+			animate={animate}
 			card={card}
 			className={cn(
 				"top-0 left-0 h-full w-full touch-none",
@@ -87,8 +88,6 @@ export function DraggableCard({
 			dragAttributes={attributes}
 			dragListeners={listeners}
 			initial={initial}
-			animate={animate}
-			transition={transition}
 			isDragging={isDraggingThis}
 			isGhost={isGhost}
 			onClick={onClick}
@@ -97,6 +96,7 @@ export function DraggableCard({
 			selected={isSelected}
 			showBack={showBack}
 			style={{ ...style, ...dragStyle }}
+			transition={transition}
 		/>
 	);
 }
