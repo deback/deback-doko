@@ -12,6 +12,7 @@ import { GameBoard } from "./game-board";
 import { useAnnouncementAudio } from "./hooks/use-announcement-audio";
 import { useConnectionLoadingState } from "./hooks/use-connection-loading-state";
 import { useGameConnection } from "./hooks/use-game-connection";
+import { useRoundSfx } from "./hooks/use-round-sfx";
 
 interface GameContentProps {
 	player: Player;
@@ -28,6 +29,7 @@ export function GameContent({ player, gameId }: GameContentProps) {
 	// Initialize WebSocket connection and sync with store
 	useGameConnection({ gameId, player });
 	useAnnouncementAudio();
+	useRoundSfx();
 
 	// Read state from store
 	const gameState = useGameState();
