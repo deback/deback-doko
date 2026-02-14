@@ -62,6 +62,12 @@ import { SpectatorList } from "./spectator-list";
 import { StandUpButton } from "./stand-up-button";
 import { TrickArea } from "./trick-area";
 
+const DEAL_CARD_COUNT = 12;
+const DEAL_STAGGER_MS = 340;
+const DEAL_CARD_DURATION_MS = 500;
+const DEAL_TOTAL_DURATION_MS =
+	(DEAL_CARD_COUNT - 1) * DEAL_STAGGER_MS + DEAL_CARD_DURATION_MS;
+
 /**
  * GameBoard - Hauptspielfeld
  *
@@ -127,8 +133,12 @@ export function GameBoard() {
 	const [cachedEndGameState, setCachedEndGameState] =
 		useState<GameState | null>(null);
 	const [isTrickAnimating, setIsTrickAnimating] = useState(false);
+	const [isDealAnimating, setIsDealAnimating] = useState(false);
+	const [dealSessionId, setDealSessionId] = useState(0);
 	const [showLastTrick, setShowLastTrick] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
+	const prevRoundRef = useRef<number | null>(null);
+	const dealTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	// =========================================================================
 	// DnD Sensors
@@ -163,7 +173,7 @@ export function GameBoard() {
 		setActiveDragCard(null);
 
 		if (over?.id !== "trick-area" || !active?.id) return;
-		if (isTrickAnimating || isServerTrickResolving) return;
+		if (isTrickAnimating || isServerTrickResolving || isDealAnimating) return;
 
 		const cardId = active.id as string;
 		if (!playableCardIds.includes(cardId)) return;
@@ -259,6 +269,12 @@ export function GameBoard() {
 		}
 	}, [lastTrick]);
 
+	useEffect(() => {
+		return () => {
+			clearTimeout(dealTimerRef.current);
+		};
+	}, []);
+
 	// Cache game state when game ends
 	useEffect(() => {
 		if (gameEnded) {
@@ -269,6 +285,28 @@ export function GameBoard() {
 			}
 		}
 	}, [gameEnded]);
+
+	useEffect(() => {
+		if (!gameState) return;
+
+		const prevRound = prevRoundRef.current;
+		prevRoundRef.current = gameState.round;
+
+		if (prevRound == null || gameState.round <= prevRound) return;
+		if (isSpectator) return;
+		if (!gameState.gameStarted || gameState.gameEnded) return;
+		if (gameState.currentTrick.cards.length !== 0) return;
+		if (gameState.completedTricks.length !== 0) return;
+		if (sortedHand.length !== DEAL_CARD_COUNT) return;
+
+		clearTimeout(dealTimerRef.current);
+		setDealSessionId((prevSessionId) => prevSessionId + 1);
+		setIsDealAnimating(true);
+
+		dealTimerRef.current = setTimeout(() => {
+			setIsDealAnimating(false);
+		}, DEAL_TOTAL_DURATION_MS);
+	}, [gameState, isSpectator, sortedHand.length]);
 
 	// =========================================================================
 	// Helper Functions
@@ -371,6 +409,7 @@ export function GameBoard() {
 								/>
 								<OpponentHand
 									cardCount={getCardCount(topPlayer.id)}
+									hideCards={isDealAnimating}
 									position="top"
 									statusSlot={
 										<PlayerStatus
@@ -403,6 +442,7 @@ export function GameBoard() {
 								/>
 								<OpponentHand
 									cardCount={getCardCount(leftPlayer.id)}
+									hideCards={isDealAnimating}
 									position="left"
 									statusSlot={
 										<PlayerStatus
@@ -435,6 +475,7 @@ export function GameBoard() {
 								/>
 								<OpponentHand
 									cardCount={getCardCount(rightPlayer.id)}
+									hideCards={isDealAnimating}
 									position="right"
 									statusSlot={
 										<PlayerStatus
@@ -503,6 +544,7 @@ export function GameBoard() {
 								{isSpectator ? (
 									<OpponentHand
 										cardCount={getCardCount(bottomPlayer.id)}
+										hideCards={isDealAnimating}
 										position="bottom"
 										statusSlot={
 											<PlayerStatus
@@ -521,6 +563,10 @@ export function GameBoard() {
 								) : (
 									<PlayerHand
 										activeDragCard={dragPlayedCard}
+										dealCardDurationMs={DEAL_CARD_DURATION_MS}
+										dealSessionId={dealSessionId}
+										dealStaggerMs={DEAL_STAGGER_MS}
+										isDealAnimating={isDealAnimating}
 										isTrickAnimating={isTrickAnimating}
 										onPlayCardWithOrigin={handlePlayCardWithOrigin}
 										onRemoveCard={handleRemoveCard}

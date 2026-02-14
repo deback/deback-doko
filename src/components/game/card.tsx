@@ -4,7 +4,7 @@ import type {
 	DraggableAttributes,
 	DraggableSyntheticListeners,
 } from "@dnd-kit/core";
-import { motion, type TargetAndTransition } from "framer-motion";
+import { motion, type TargetAndTransition, type Transition } from "framer-motion";
 import Image from "next/image";
 import type { Ref } from "react";
 import { getCardBackPath, getCardImagePath } from "@/lib/card-config";
@@ -51,6 +51,7 @@ interface CardProps {
 	// Animation
 	initial?: false | TargetAndTransition;
 	animate?: TargetAndTransition;
+	transition?: Transition;
 	// Interaction
 	onClick?: () => void;
 	ref?: Ref<HTMLButtonElement>;
@@ -77,6 +78,7 @@ export default function Card({
 	isDragging = false,
 	initial,
 	animate,
+	transition,
 	onClick,
 	ref,
 	style,
@@ -169,7 +171,7 @@ export default function Card({
 			onClick={isInteractive ? onClick : undefined}
 			ref={ref}
 			style={mergedStyle}
-			transition={THROW_TRANSITION}
+			transition={transition ?? THROW_TRANSITION}
 			type="button"
 			{...dragListeners}
 			{...dragAttributes}

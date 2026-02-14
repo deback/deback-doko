@@ -8,6 +8,7 @@ type Position = "top" | "left" | "right" | "bottom";
 interface OpponentHandProps {
 	cardCount: number;
 	position: Position;
+	hideCards?: boolean;
 	/** Content rendered in front of the card fan (e.g. PlayerStatus) */
 	statusSlot?: React.ReactNode;
 	className?: string;
@@ -24,6 +25,7 @@ const POSITION_STYLES: Record<Position, string> = {
 export function OpponentHand({
 	cardCount,
 	position,
+	hideCards = false,
 	statusSlot,
 	className,
 }: OpponentHandProps) {
@@ -31,20 +33,27 @@ export function OpponentHand({
 		<div className={cn("fixed z-10", POSITION_STYLES[position], className)}>
 			<div className={`@container relative ${CARD_SIZE}`}>
 				{statusSlot}
-				{Array.from({ length: cardCount }).map((_, index) => {
-					const t = index - (cardCount - 1) / 2;
-					const angle = t * 1.2;
+				<div
+					className={cn("transition-opacity duration-200", {
+						"opacity-0": hideCards,
+						"opacity-100": !hideCards,
+					})}
+				>
+					{Array.from({ length: cardCount }).map((_, index) => {
+						const t = index - (cardCount - 1) / 2;
+						const angle = t * 1.2;
 
-					return (
-						<Card
-							angle={angle}
-							className="top-0 left-0 h-full w-full"
-							// biome-ignore lint/suspicious/noArrayIndexKey: opponent cards are identical, no stable ID available
-							key={`opponent-card-${index}`}
-							showBack
-						/>
-					);
-				})}
+						return (
+							<Card
+								angle={angle}
+								className="top-0 left-0 h-full w-full"
+								// biome-ignore lint/suspicious/noArrayIndexKey: opponent cards are identical, no stable ID available
+								key={`opponent-card-${index}`}
+								showBack
+							/>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);

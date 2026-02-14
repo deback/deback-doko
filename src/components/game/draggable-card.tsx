@@ -1,6 +1,7 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import type { TargetAndTransition, Transition } from "framer-motion";
 import { useCallback } from "react";
 import { cn } from "@/lib/utils";
 import type { Card as CardType } from "@/types/game";
@@ -9,11 +10,15 @@ import GameCard from "./card";
 interface DraggableCardProps {
 	card: CardType;
 	angle?: number;
+	showBack?: boolean;
 	isPlayable?: boolean;
 	isSelected?: boolean;
 	isDisabled?: boolean;
 	isGhost?: boolean;
 	isDraggingDisabled?: boolean;
+	initial?: false | TargetAndTransition;
+	animate?: TargetAndTransition;
+	transition?: Transition;
 	onClick?: () => void;
 	onRef?: (el: HTMLButtonElement | null) => void;
 	className?: string;
@@ -23,11 +28,15 @@ interface DraggableCardProps {
 export function DraggableCard({
 	card,
 	angle = 0,
+	showBack = false,
 	isPlayable = false,
 	isSelected = false,
 	isDisabled = false,
 	isGhost = false,
 	isDraggingDisabled = false,
+	initial,
+	animate,
+	transition,
 	onClick,
 	onRef,
 	className,
@@ -77,12 +86,16 @@ export function DraggableCard({
 			disabled={isDisabled}
 			dragAttributes={attributes}
 			dragListeners={listeners}
+			initial={initial}
+			animate={animate}
+			transition={transition}
 			isDragging={isDraggingThis}
 			isGhost={isGhost}
 			onClick={onClick}
 			playable={isPlayable && !isDraggingThis}
 			ref={mergedRef}
 			selected={isSelected}
+			showBack={showBack}
 			style={{ ...style, ...dragStyle }}
 		/>
 	);
